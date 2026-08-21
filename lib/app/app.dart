@@ -93,68 +93,197 @@ Future<void> _loadSavedGame(BuildContext context) async {
   );
 }
 
+class _RealmBackdrop extends StatelessWidget {
+  const _RealmBackdrop({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: StackFit.expand,
+    children: [
+      CustomPaint(painter: _RealmBackdropPainter()),
+      child,
+    ],
+  );
+}
+
+class _RealmBackdropPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final background = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xff080d12), Color(0xff1b211f), Color(0xff392b1c)],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, background);
+
+    final glow = Paint()
+      ..shader =
+          RadialGradient(
+            colors: [
+              const Color(0xffb78243).withValues(alpha: .38),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * .5, size.height * .42),
+              radius: size.width * .65,
+            ),
+          );
+    canvas.drawCircle(
+      Offset(size.width * .5, size.height * .42),
+      size.width * .65,
+      glow,
+    );
+
+    final mountain = Paint()..color = const Color(0xff111a1a);
+    final ridge = Path()
+      ..moveTo(0, size.height * .55)
+      ..lineTo(size.width * .18, size.height * .34)
+      ..lineTo(size.width * .29, size.height * .49)
+      ..lineTo(size.width * .48, size.height * .27)
+      ..lineTo(size.width * .65, size.height * .48)
+      ..lineTo(size.width * .82, size.height * .32)
+      ..lineTo(size.width, size.height * .52)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(ridge, mountain);
+
+    final wall = Paint()
+      ..color = const Color(0xffb38a4d)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    final fortress = Offset(size.width * .5, size.height * .63);
+    canvas.drawRect(
+      Rect.fromCenter(center: fortress, width: 92, height: 48),
+      wall,
+    );
+    canvas.drawLine(
+      fortress.translate(-46, -24),
+      fortress.translate(-46, -66),
+      wall,
+    );
+    canvas.drawLine(
+      fortress.translate(46, -24),
+      fortress.translate(46, -66),
+      wall,
+    );
+    canvas.drawLine(
+      fortress.translate(0, -24),
+      fortress.translate(0, -90),
+      wall,
+    );
+
+    final vignette = Paint()
+      ..shader = RadialGradient(
+        radius: 1.0,
+        colors: [Colors.transparent, Colors.black.withValues(alpha: .8)],
+        stops: const [.42, 1],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, vignette);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RealmBackdropPainter oldDelegate) => false;
+}
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
   @override
   Widget build(BuildContext context) {
     final scenario = DemoScenario.create();
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(Icons.castle, size: 72, color: Color(0xff385b4d)),
-                  const SizedBox(height: 16),
-                  Text(
-                    'REALM LEDGER',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '한 달의 명령으로 왕국의 운명을 바꾸십시오.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 40),
-                  FilledButton.icon(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ScenarioSelectScreen(scenario: scenario),
+      body: _RealmBackdrop(
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      width: 92,
+                      height: 92,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xff171510).withValues(alpha: .82),
+                        border: Border.all(
+                          color: const Color(0xffb18a4d),
+                          width: 2,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black54, blurRadius: 18),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.castle,
+                        size: 52,
+                        color: Color(0xffd4ad68),
                       ),
                     ),
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Padding(
-                      padding: EdgeInsets.all(14),
-                      child: Text('새 게임'),
+                    const SizedBox(height: 16),
+                    Text(
+                      'REALM LEDGER',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 4,
+                            color: const Color(0xfff0d59a),
+                            shadows: const [
+                              Shadow(color: Colors.black, blurRadius: 10),
+                            ],
+                          ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  OutlinedButton.icon(
-                    onPressed: () => _loadSavedGame(context),
-                    icon: const Icon(Icons.folder_open),
-                    label: const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Text('불러오기'),
+                    const SizedBox(height: 8),
+                    Text(
+                      '한 달의 명령으로 왕국의 운명을 바꾸십시오.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: const Color(0xffd5c09a),
+                        shadows: const [
+                          Shadow(color: Colors.black, blurRadius: 6),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    '프로토타입 · 193년 1월 · 6지역',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                ],
+                    const SizedBox(height: 40),
+                    FilledButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ScenarioSelectScreen(scenario: scenario),
+                        ),
+                      ),
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Padding(
+                        padding: EdgeInsets.all(14),
+                        child: Text('새 게임'),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    OutlinedButton.icon(
+                      onPressed: () => _loadSavedGame(context),
+                      icon: const Icon(Icons.folder_open),
+                      label: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Text('불러오기'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '프로토타입 · 193년 1월 · 6지역',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: const Color(0xffa99572),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -170,29 +299,41 @@ class ScenarioSelectScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('시나리오 선택')),
-    body: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('가상 군웅 시나리오', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          const Text('6개 지역과 3개 세력이 패권을 다투는 기본 시나리오입니다.'),
-          const SizedBox(height: 20),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.map_outlined),
-              title: const Text('193년 · 군웅할거'),
-              subtitle: const Text('난이도 보통 · 6지역 · 3세력 · 20장수'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => RulerSelectScreen(scenario: scenario),
+    body: _RealmBackdrop(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '시나리오 선택',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: const Color(0xffe5c88e),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text('가상의 군웅들이 여섯 지역의 패권을 다투고 있습니다.'),
+            const SizedBox(height: 20),
+            Card(
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(14),
+                leading: const Icon(
+                  Icons.map_outlined,
+                  color: Color(0xffdbb36c),
+                  size: 34,
+                ),
+                title: const Text('193년 · 군웅할거'),
+                subtitle: const Text('난이도 보통 · 6지역 · 3세력 · 20장수'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => RulerSelectScreen(scenario: scenario),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );
@@ -208,28 +349,51 @@ class RulerSelectScreen extends StatelessWidget {
         .cast<Map<String, dynamic>>();
     return Scaffold(
       appBar: AppBar(title: const Text('군주 선택')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: forces.map((force) {
-          final ruler = officers.firstWhere((o) => o['id'] == force['rulerId']);
-          return Card(
-            child: ListTile(
-              isThreeLine: true,
-              leading: CircleAvatar(child: Text('${ruler['war']}')),
-              title: Text('${force['name']} · ${ruler['name']}'),
-              subtitle: Text(
-                '무력 ${ruler['war']} · 지력 ${ruler['intelligence']} · 매력 ${ruler['charisma']}\n영토 ${force['provinceIds'].length}곳 · 장수 ${force['officerIds'].length}명',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      GameScreen(playerForceId: force['id'] as String),
-                ),
+      body: _RealmBackdrop(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              '군주 선택',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: const Color(0xffe5c88e),
               ),
             ),
-          );
-        }).toList(),
+            const SizedBox(height: 6),
+            const Text('당신이 이끌 세력과 군주를 선택하십시오.'),
+            const SizedBox(height: 14),
+            ...forces.map((force) {
+              final ruler = officers.firstWhere(
+                (o) => o['id'] == force['rulerId'],
+              );
+              return Card(
+                child: ListTile(
+                  isThreeLine: true,
+                  contentPadding: const EdgeInsets.all(12),
+                  leading: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: const Color(0xff4f3c26),
+                    child: Text(
+                      '${ruler['war']}',
+                      style: const TextStyle(color: Color(0xffffdf9a)),
+                    ),
+                  ),
+                  title: Text('${force['name']} · ${ruler['name']}'),
+                  subtitle: Text(
+                    '무력 ${ruler['war']} · 지력 ${ruler['intelligence']} · 매력 ${ruler['charisma']}\n영토 ${force['provinceIds'].length}곳 · 장수 ${force['officerIds'].length}명',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          GameScreen(playerForceId: force['id'] as String),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
@@ -1383,134 +1547,139 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
     final max = current?.soldiers.toDouble() ?? 100;
     return Scaffold(
       appBar: AppBar(title: const Text('출병 준비')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text(
-              '목표 지역  ${target.name}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            Text('방어 병력 ${target.soldiers} · 소유 ${target.ownerName}'),
-            const SizedBox(height: 18),
-            const Text('출발지', style: TextStyle(fontWeight: FontWeight.bold)),
-            DropdownButton<String>(
-              isExpanded: true,
-              value: sourceId,
-              items: sources
-                  .map(
-                    (p) => DropdownMenuItem(
-                      value: p.id,
-                      child: Text('${p.name} · 병력 ${p.soldiers}'),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (id) {
-                if (id != null) {
-                  setState(() {
-                    sourceId = id;
-                    committed = (source!.soldiers * .65).roundToDouble();
-                    selectedOfficerIds
-                      ..clear()
-                      ..addAll(source!.officerIds);
-                    commanderId = source!.officerIds.firstOrNull;
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-            const Text('출전 장수', style: TextStyle(fontWeight: FontWeight.bold)),
-            if (current != null)
-              ...current.officerIds.map((id) {
-                final officer = widget.engine.state.officers.firstWhere(
-                  (o) => o.id == id,
-                );
-                return CheckboxListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  value: selectedOfficerIds.contains(id),
-                  title: Text('${officer.name} · WAR ${officer.war}'),
-                  subtitle: Text(
-                    selectedOfficerIds.contains(id) && commanderId == id
-                        ? '총대장'
-                        : '출전 가능',
-                  ),
-                  onChanged: (value) {
-                    if (value == false && selectedOfficerIds.length == 1) {
-                      return;
-                    }
-                    setState(() {
-                      if (value == true) {
-                        selectedOfficerIds.add(id);
-                        commanderId ??= id;
-                      } else {
-                        selectedOfficerIds.remove(id);
-                        if (commanderId == id) {
-                          commanderId = selectedOfficerIds.firstOrNull;
-                        }
-                      }
-                    });
-                  },
-                );
-              }),
-            if (selectedOfficerIds.isNotEmpty)
+      body: _RealmBackdrop(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                '목표 지역  ${target.name}',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              Text('방어 병력 ${target.soldiers} · 소유 ${target.ownerName}'),
+              const SizedBox(height: 18),
+              const Text('출발지', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButton<String>(
                 isExpanded: true,
-                value: commanderId,
-                items: selectedOfficerIds.map((id) {
-                  final o = widget.engine.state.officers.firstWhere(
-                    (x) => x.id == id,
-                  );
-                  return DropdownMenuItem(
-                    value: id,
-                    child: Text('총대장: ${o.name} · WAR ${o.war}'),
-                  );
-                }).toList(),
+                value: sourceId,
+                items: sources
+                    .map(
+                      (p) => DropdownMenuItem(
+                        value: p.id,
+                        child: Text('${p.name} · 병력 ${p.soldiers}'),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (id) {
-                  if (id != null) setState(() => commanderId = id);
+                  if (id != null) {
+                    setState(() {
+                      sourceId = id;
+                      committed = (source!.soldiers * .65).roundToDouble();
+                      selectedOfficerIds
+                        ..clear()
+                        ..addAll(source!.officerIds);
+                      commanderId = source!.officerIds.firstOrNull;
+                    });
+                  }
                 },
               ),
-            const Text(
-              '총대장 및 출전 병력',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(
-              current == null || current.officerIds.isEmpty
-                  ? '총대장 없음'
-                  : '${widget.engine.state.officers.firstWhere((o) => o.id == current.officerIds.first).name} · ${committed.round()}명',
-            ),
-            Slider(
-              min: 100,
-              max: max < 100 ? 100 : max,
-              divisions: max <= 100 ? 1 : (max - 100).round(),
-              value: committed.clamp(100, max < 100 ? 100 : max),
-              label: '${committed.round()}',
-              onChanged: current == null
-                  ? null
-                  : (value) => setState(() => committed = value),
-            ),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Text(
-                  '출병 비용\n군량 -150\n출전 병력 ${committed.round()}\n예상 잔여 병력 ${(current?.soldiers ?? 0) - committed.round()}',
+              const SizedBox(height: 12),
+              const Text(
+                '출전 장수',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              if (current != null)
+                ...current.officerIds.map((id) {
+                  final officer = widget.engine.state.officers.firstWhere(
+                    (o) => o.id == id,
+                  );
+                  return CheckboxListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    value: selectedOfficerIds.contains(id),
+                    title: Text('${officer.name} · WAR ${officer.war}'),
+                    subtitle: Text(
+                      selectedOfficerIds.contains(id) && commanderId == id
+                          ? '총대장'
+                          : '출전 가능',
+                    ),
+                    onChanged: (value) {
+                      if (value == false && selectedOfficerIds.length == 1) {
+                        return;
+                      }
+                      setState(() {
+                        if (value == true) {
+                          selectedOfficerIds.add(id);
+                          commanderId ??= id;
+                        } else {
+                          selectedOfficerIds.remove(id);
+                          if (commanderId == id) {
+                            commanderId = selectedOfficerIds.firstOrNull;
+                          }
+                        }
+                      });
+                    },
+                  );
+                }),
+              if (selectedOfficerIds.isNotEmpty)
+                DropdownButton<String>(
+                  isExpanded: true,
+                  value: commanderId,
+                  items: selectedOfficerIds.map((id) {
+                    final o = widget.engine.state.officers.firstWhere(
+                      (x) => x.id == id,
+                    );
+                    return DropdownMenuItem(
+                      value: id,
+                      child: Text('총대장: ${o.name} · WAR ${o.war}'),
+                    );
+                  }).toList(),
+                  onChanged: (id) {
+                    if (id != null) setState(() => commanderId = id);
+                  },
+                ),
+              const Text(
+                '총대장 및 출전 병력',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                current == null || current.officerIds.isEmpty
+                    ? '총대장 없음'
+                    : '${widget.engine.state.officers.firstWhere((o) => o.id == current.officerIds.first).name} · ${committed.round()}명',
+              ),
+              Slider(
+                min: 100,
+                max: max < 100 ? 100 : max,
+                divisions: max <= 100 ? 1 : (max - 100).round(),
+                value: committed.clamp(100, max < 100 ? 100 : max),
+                label: '${committed.round()}',
+                onChanged: current == null
+                    ? null
+                    : (value) => setState(() => committed = value),
+              ),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Text(
+                    '출병 비용\n군량 -150\n출전 병력 ${committed.round()}\n예상 잔여 병력 ${(current?.soldiers ?? 0) - committed.round()}',
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: current == null ? null : _launch,
-              icon: const Icon(Icons.flag),
-              label: const Padding(
-                padding: EdgeInsets.all(12),
-                child: Text('출병 확정'),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: current == null ? null : _launch,
+                icon: const Icon(Icons.flag),
+                label: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text('출병 확정'),
+                ),
               ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('취소'),
-            ),
-          ],
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('취소'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1752,190 +1921,192 @@ class _BattleScreenState extends State<BattleScreen> {
     final battle = widget.battle.state;
     return Scaffold(
       appBar: AppBar(title: Text('전투 · ${battle.day}일째')),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                color: const Color(0xff263b35),
-                child: GameWidget(game: battleGame),
+      body: _RealmBackdrop(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  color: const Color(0xff263b35),
+                  child: GameWidget(game: battleGame),
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Text(
-                        '${battle.attackerName}\n${battle.attackerSoldiers}명',
-                        textAlign: TextAlign.center,
-                      ),
-                      const Text('VS'),
-                      Text(
-                        '${battle.defenderName}\n${battle.defenderSoldiers}명',
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '전투 군량 ${battle.attackerFood} · 일일 소모 ${battle.dailySupplyCost} · 사기 ${battle.attackerMorale}'
-                      ' / ${battle.defenderMorale}'
-                      '${battle.informationRevealed ? ' · 정보 확보' : ''}'
-                      '${battle.supplyShortageDays > 0 ? ' · 보급 부족 ${battle.supplyShortageDays}일' : ''}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: battle.supplyShortageDays > 0
-                            ? Colors.red
-                            : null,
-                      ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Text(
+                          '${battle.attackerName}\n${battle.attackerSoldiers}명',
+                          textAlign: TextAlign.center,
+                        ),
+                        const Text('VS'),
+                        Text(
+                          '${battle.defenderName}\n${battle.defenderSoldiers}명',
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                  ),
-                  if (battle.attackerUnits.isNotEmpty)
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        '출전 부대 · 총대장 ${battle.commanderName} (WAR ${battle.commanderWar})\n${battle.attackerUnits.map((u) => '${u.name} ${u.soldiers}명').join('  ·  ')}',
-                        style: const TextStyle(fontSize: 12),
+                        '전투 군량 ${battle.attackerFood} · 일일 소모 ${battle.dailySupplyCost} · 사기 ${battle.attackerMorale}'
+                        ' / ${battle.defenderMorale}'
+                        '${battle.informationRevealed ? ' · 정보 확보' : ''}'
+                        '${battle.supplyShortageDays > 0 ? ' · 보급 부족 ${battle.supplyShortageDays}일' : ''}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: battle.supplyShortageDays > 0
+                              ? Colors.red
+                              : null,
+                        ),
                       ),
                     ),
-                  if (battle.attackerUnits.isNotEmpty &&
-                      battle.defenderUnits.isNotEmpty)
+                    if (battle.attackerUnits.isNotEmpty)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '출전 부대 · 총대장 ${battle.commanderName} (WAR ${battle.commanderWar})\n${battle.attackerUnits.map((u) => '${u.name} ${u.soldiers}명').join('  ·  ')}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    if (battle.attackerUnits.isNotEmpty &&
+                        battle.defenderUnits.isNotEmpty)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              value: selectedAttackerId,
+                              items: battle.attackerUnits
+                                  .map(
+                                    (u) => DropdownMenuItem(
+                                      value: u.officerId,
+                                      child: Text('${u.name} ${u.soldiers}'),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: battle.finished
+                                  ? null
+                                  : (id) =>
+                                        setState(() => selectedAttackerId = id),
+                            ),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 6),
+                            child: Text('→'),
+                          ),
+                          Expanded(
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              value: selectedDefenderId,
+                              items: battle.defenderUnits
+                                  .map(
+                                    (u) => DropdownMenuItem(
+                                      value: u.officerId,
+                                      child: Text('${u.name} ${u.soldiers}'),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: battle.finished
+                                  ? null
+                                  : (id) =>
+                                        setState(() => selectedDefenderId = id),
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            value: selectedAttackerId,
-                            items: battle.attackerUnits
-                                .map(
-                                  (u) => DropdownMenuItem(
-                                    value: u.officerId,
-                                    child: Text('${u.name} ${u.soldiers}'),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: battle.finished
+                          child: FilledButton.icon(
+                            onPressed: battle.finished
                                 ? null
-                                : (id) =>
-                                      setState(() => selectedAttackerId = id),
+                                : () => _act(BattleAction.attack),
+                            icon: const Icon(Icons.gavel),
+                            label: const Text('공격'),
                           ),
                         ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 6),
-                          child: Text('→'),
-                        ),
+                        const SizedBox(width: 10),
                         Expanded(
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            value: selectedDefenderId,
-                            items: battle.defenderUnits
-                                .map(
-                                  (u) => DropdownMenuItem(
-                                    value: u.officerId,
-                                    child: Text('${u.name} ${u.soldiers}'),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: battle.finished
+                          child: FilledButton.tonal(
+                            onPressed: battle.finished
                                 ? null
-                                : (id) =>
-                                      setState(() => selectedDefenderId = id),
+                                : () => _act(BattleAction.fire),
+                            child: const Text('화공'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: FilledButton.tonal(
+                            onPressed: battle.finished
+                                ? null
+                                : () => _act(BattleAction.charge),
+                            child: const Text('돌격'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: battle.finished
+                                ? null
+                                : () => _act(BattleAction.wait),
+                            child: const Text('대기'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: battle.finished ? null : _moveSelected,
+                            child: const Text('이동'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: battle.finished
+                                ? null
+                                : () {
+                                    widget.battle.retreat();
+                                    _finishIfNeeded();
+                                  },
+                            icon: const Icon(Icons.undo),
+                            label: const Text('퇴각'),
                           ),
                         ),
                       ],
                     ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: battle.finished
-                              ? null
-                              : () => _act(BattleAction.attack),
-                          icon: const Icon(Icons.gavel),
-                          label: const Text('공격'),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.tonal(
+                            onPressed: battle.finished
+                                ? null
+                                : () => _act(BattleAction.cooperate),
+                            child: const Text('협공'),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: FilledButton.tonal(
-                          onPressed: battle.finished
-                              ? null
-                              : () => _act(BattleAction.fire),
-                          child: const Text('화공'),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: battle.finished
+                                ? null
+                                : () => _act(BattleAction.information),
+                            child: const Text('정보'),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: FilledButton.tonal(
-                          onPressed: battle.finished
-                              ? null
-                              : () => _act(BattleAction.charge),
-                          child: const Text('돌격'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: battle.finished
-                              ? null
-                              : () => _act(BattleAction.wait),
-                          child: const Text('대기'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: battle.finished ? null : _moveSelected,
-                          child: const Text('이동'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: battle.finished
-                              ? null
-                              : () {
-                                  widget.battle.retreat();
-                                  _finishIfNeeded();
-                                },
-                          icon: const Icon(Icons.undo),
-                          label: const Text('퇴각'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.tonal(
-                          onPressed: battle.finished
-                              ? null
-                              : () => _act(BattleAction.cooperate),
-                          child: const Text('협공'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: battle.finished
-                              ? null
-                              : () => _act(BattleAction.information),
-                          child: const Text('정보'),
-                        ),
-                      ),
-                      const Spacer(flex: 2),
-                    ],
-                  ),
-                ],
+                        const Spacer(flex: 2),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -2117,35 +2288,37 @@ class _AiBattleReplayScreenState extends State<AiBattleReplayScreen> {
     final state = battle.state;
     return Scaffold(
       appBar: AppBar(title: Text('AI 전투 관전 · ${state.day}일째')),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                color: const Color(0xff263b35),
-                child: GameWidget(game: battleGame),
+      body: _RealmBackdrop(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  color: const Color(0xff263b35),
+                  child: GameWidget(game: battleGame),
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Text(
-                    '${state.attackerName} ${state.attackerSoldiers} · ${state.defenderName} ${state.defenderSoldiers}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    state.finished
-                        ? (state.attackerWon
-                              ? '관전 결과 · 공격군 승리'
-                              : '관전 결과 · 방어군 승리')
-                        : '월말 보고의 전투 결과를 재현하고 있습니다.',
-                  ),
-                ],
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Text(
+                      '${state.attackerName} ${state.attackerSoldiers} · ${state.defenderName} ${state.defenderSoldiers}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      state.finished
+                          ? (state.attackerWon
+                                ? '관전 결과 · 공격군 승리'
+                                : '관전 결과 · 방어군 승리')
+                          : '월말 보고의 전투 결과를 재현하고 있습니다.',
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
