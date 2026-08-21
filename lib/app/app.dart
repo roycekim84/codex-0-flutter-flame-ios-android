@@ -280,51 +280,195 @@ class ScenarioSelectScreen extends StatelessWidget {
   const ScenarioSelectScreen({super.key, required this.scenario});
   final Map<String, dynamic> scenario;
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('시나리오 선택')),
-    body: _RealmBackdrop(
-      asset: 'assets/images/world_map_background.png',
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              '시나리오 선택',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: const Color(0xffe5c88e),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text('가상의 군웅들이 여섯 지역의 패권을 다투고 있습니다.'),
-            const SizedBox(height: 20),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.asset(
-                AssetRepository.factionEmblemStrip,
-                height: 78,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Card(
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(14),
-                leading: const Icon(
-                  Icons.map_outlined,
-                  color: Color(0xffdbb36c),
-                  size: 34,
-                ),
-                title: const Text('193년 · 군웅할거'),
-                subtitle: const Text('난이도 보통 · 6지역 · 3세력 · 20장수'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => RulerSelectScreen(scenario: scenario),
+  Widget build(BuildContext context) {
+    final scenarios = [
+      ('184년 · 황혼의 반란', '난이도 쉬움 · 6지역 · 3세력', '평화로운 봄의 시작'),
+      ('193년 · 군웅할거', '난이도 보통 · 6지역 · 3세력', '가상의 군웅들이 패권을 다툼'),
+      ('201년 · 북방의 겨울', '난이도 어려움 · 6지역 · 3세력', '산성과 보급선이 핵심'),
+      ('208년 · 강의 전쟁', '난이도 매우 어려움 · 6지역 · 3세력', '강을 둘러싼 최후의 결전'),
+    ];
+    return Scaffold(
+      body: _RealmBackdrop(
+        asset: AssetRepository.worldMapBackground,
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back),
+                    color: const Color(0xffe3c88f),
                   ),
+                  Expanded(
+                    child: Text(
+                      '시나리오 선택',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: const Color(0xffedd49e),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+              const SizedBox(height: 6),
+              AssetPanel(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      '시나리오 선택',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xffebd09a),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      '당신의 첫 장정을 선택하십시오.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Color(0xffbca981), fontSize: 12),
+                    ),
+                    const SizedBox(height: 12),
+                    ...scenarios.asMap().entries.map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _ScenarioCard(
+                          title: entry.value.$1,
+                          subtitle: entry.value.$2,
+                          description: entry.value.$3,
+                          imageIndex: entry.key,
+                          selected: entry.key == 1,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  RulerSelectScreen(scenario: scenario),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xffd8c297),
+                        side: const BorderSide(color: Color(0xff806742)),
+                      ),
+                      child: const Text('뒤로'),
+                    ),
+                  ],
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ScenarioCard extends StatelessWidget {
+  const _ScenarioCard({
+    required this.title,
+    required this.subtitle,
+    required this.description,
+    required this.imageIndex,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final String description;
+  final int imageIndex;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        height: 86,
+        decoration: BoxDecoration(
+          color: selected
+              ? const Color(0xff76572e).withValues(alpha: .94)
+              : const Color(0xff211f1a).withValues(alpha: .94),
+          border: Border.all(
+            color: selected ? const Color(0xffd4aa62) : const Color(0xff665238),
+            width: selected ? 1.5 : 1,
+          ),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        padding: const EdgeInsets.all(5),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: AssetSlice(
+                asset: AssetRepository.scenarioThumbnailStrip,
+                index: imageIndex,
+                segments: 4,
+                width: 104,
+                height: 74,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: selected
+                          ? const Color(0xffffe6ae)
+                          : const Color(0xffead8ad),
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xffc3ae87),
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xff99866a),
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: selected
+                  ? const Color(0xffffdf99)
+                  : const Color(0xffa18a67),
             ),
           ],
         ),

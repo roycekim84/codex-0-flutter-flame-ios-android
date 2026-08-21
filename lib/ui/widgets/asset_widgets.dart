@@ -74,28 +74,34 @@ class AssetSlice extends StatelessWidget {
     required this.index,
     required this.segments,
     this.size = 48,
+    this.width,
+    this.height,
   });
 
   final String asset;
   final int index;
   final int segments;
   final double size;
+  final double? width;
+  final double? height;
 
   @override
   Widget build(BuildContext context) {
+    final frameWidth = width ?? size;
+    final frameHeight = height ?? size;
     final alignment = -1 + (2 * index / (segments - 1));
     return SizedBox(
-      width: size,
-      height: size,
+      width: frameWidth,
+      height: frameHeight,
       child: ClipRect(
         child: OverflowBox(
           alignment: Alignment(alignment, 0),
-          maxWidth: size * segments,
-          maxHeight: size,
+          maxWidth: frameWidth * segments,
+          maxHeight: frameHeight,
           child: Image.asset(
             asset,
-            width: size * segments,
-            height: size,
+            width: frameWidth * segments,
+            height: frameHeight,
             fit: BoxFit.fill,
           ),
         ),

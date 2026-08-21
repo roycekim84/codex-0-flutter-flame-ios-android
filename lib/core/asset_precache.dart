@@ -6,6 +6,7 @@ abstract final class AssetPrecache {
   static const critical = <String>[
     AssetRepository.titleBackground,
     AssetRepository.titleCrest,
+    AssetRepository.scenarioThumbnailStrip,
     AssetRepository.worldMapBackground,
     AssetRepository.battleBackground,
     AssetRepository.panelTexture,

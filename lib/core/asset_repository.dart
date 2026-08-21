@@ -3,6 +3,8 @@ class AssetRepository {
 
   static const titleBackground = 'assets/images/title_background.png';
   static const titleCrest = 'assets/images/title_crest.png';
+  static const scenarioThumbnailStrip =
+      'assets/images/scenario_thumbnail_strip.png';
   static const worldMapBackground = 'assets/images/world_map_background.png';
   static const battleBackground = 'assets/images/battle_background.png';
   static const panelTexture = 'assets/images/panel_texture.png';
