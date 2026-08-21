@@ -6,6 +6,7 @@ class AssetRepository {
   static const scenarioThumbnailStrip =
       'assets/images/scenario_thumbnail_strip.png';
   static const worldMapBackground = 'assets/images/world_map_background.png';
+  static const worldMapRegions = 'assets/images/world_map_regions.png';
   static const battleBackground = 'assets/images/battle_background.png';
   static const panelTexture = 'assets/images/panel_texture.png';
   static const commandIconStrip = 'assets/images/command_icon_strip.png';

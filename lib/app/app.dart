@@ -1418,56 +1418,69 @@ class _GameScreenState extends State<GameScreen> {
       (p) => p.id == selectedProvinceId,
     );
     return Scaffold(
+      backgroundColor: const Color(0xff090807),
       body: SafeArea(
-        child: Column(
-          children: [
-            _WorldMapHeader(
-              force: state.playerForce,
-              state: state,
-              onClose: () => Navigator.pop(context),
-              onOfficers: _showOfficers,
-              onLog: _showLog,
-              onSave: _showSaveDialog,
-            ),
-            Expanded(
-              child: _Map(
-                provinces: state.provinces,
-                playerForceId: state.playerForceId,
-                revealedProvinceIds: state.revealedProvinceIds,
-                selectedId: selectedProvinceId,
-                onSelect: _selectProvince,
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: const Color(0xff9c7137), width: 2),
+            boxShadow: const [
+              BoxShadow(color: Colors.black87, blurRadius: 12, spreadRadius: 1),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              _WorldMapHeader(
+                force: state.playerForce,
+                state: state,
+                onClose: () => Navigator.pop(context),
+                onOfficers: _showOfficers,
+                onLog: _showLog,
+                onSave: _showSaveDialog,
               ),
-            ),
-            _ProvinceDetailPanel(
-              province: selected,
-              state: state,
-              playerOwned: state.isPlayerProvince(selected),
-              informationRevealed:
-                  state.isPlayerProvince(selected) ||
-                  state.revealedProvinceIds.contains(selected.id),
-              governorName: selected.governorId == null
-                  ? '미임명'
-                  : state.officers
-                        .firstWhere((o) => o.id == selected.governorId)
-                        .name,
-            ),
-            _MapCommandBar(
-              playerOwned: state.isPlayerProvince(selected),
-              onDomestic: _showDomesticMenu,
-              onPersonnel: _showOfficers,
-              onMilitary: () {
-                if (state.isPlayerProvince(selected)) {
-                  _showMoveDialog();
-                } else {
-                  _startBattle();
-                }
-              },
-              onDiplomacy: _showDiplomacyDialog,
-              onEspionage: _showEspionageDialog,
-              onInfo: () => _showProvinceInfo(selected, state),
-              onEndMonth: _endMonth,
-            ),
-          ],
+              Expanded(
+                child: _Map(
+                  provinces: state.provinces,
+                  playerForceId: state.playerForceId,
+                  revealedProvinceIds: state.revealedProvinceIds,
+                  selectedId: selectedProvinceId,
+                  onSelect: _selectProvince,
+                ),
+              ),
+              _ProvinceDetailPanel(
+                province: selected,
+                state: state,
+                playerOwned: state.isPlayerProvince(selected),
+                informationRevealed:
+                    state.isPlayerProvince(selected) ||
+                    state.revealedProvinceIds.contains(selected.id),
+                governorName: selected.governorId == null
+                    ? '미임명'
+                    : state.officers
+                          .firstWhere((o) => o.id == selected.governorId)
+                          .name,
+              ),
+              _MapCommandBar(
+                playerOwned: state.isPlayerProvince(selected),
+                onDomestic: _showDomesticMenu,
+                onPersonnel: _showOfficers,
+                onMilitary: () {
+                  if (state.isPlayerProvince(selected)) {
+                    _showMoveDialog();
+                  } else {
+                    _startBattle();
+                  }
+                },
+                onDiplomacy: _showDiplomacyDialog,
+                onEspionage: _showEspionageDialog,
+                onInfo: () => _showProvinceInfo(selected, state),
+                onEndMonth: _endMonth,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1810,15 +1823,12 @@ class _Map extends StatelessWidget {
               children: [
                 Positioned.fill(
                   child: Image.asset(
-                    'assets/images/world_map_background.png',
+                    AssetRepository.worldMapRegions,
                     fit: BoxFit.cover,
                   ),
                 ),
                 Positioned.fill(
                   child: Container(color: Colors.black.withValues(alpha: .25)),
-                ),
-                Positioned.fill(
-                  child: CustomPaint(painter: _RoadPainter(provinces)),
                 ),
                 ...provinces.map(
                   (p) => Positioned(
@@ -1846,6 +1856,8 @@ class _Map extends StatelessWidget {
   );
 }
 
+// Retained for optional adjacency-debug rendering.
+// ignore: unused_element
 class _RoadPainter extends CustomPainter {
   _RoadPainter(this.provinces);
   final List<ProvinceState> provinces;
@@ -1992,6 +2004,9 @@ class _ProvinceDetailPanel extends StatelessWidget {
   final bool informationRevealed;
   @override
   Widget build(BuildContext context) {
+    final ownerForce = state.forces.firstWhere(
+      (force) => force.id == province.ownerForceId,
+    );
     final governor = province.governorId == null
         ? null
         : state.officers.firstWhere((o) => o.id == province.governorId);
@@ -2041,8 +2056,8 @@ class _ProvinceDetailPanel extends StatelessWidget {
                       child: _ProvinceStatColumn(
                         values: informationRevealed
                             ? [
-                                ('금', province.gold),
-                                ('군량', province.food),
+                                ('금', ownerForce.gold),
+                                ('군량', ownerForce.food),
                                 ('병력', province.soldiers),
                                 ('민심', province.publicLoyalty),
                               ]
