@@ -1377,6 +1377,33 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  void _showProvinceInfo(ProvinceState province, GameState state) {
+    final governor = province.governorId == null
+        ? '미임명'
+        : state.officers.firstWhere((o) => o.id == province.governorId).name;
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(province.name),
+        content: Text(
+          '소유 세력  ${province.ownerName}\n'
+          '태수  $governor\n'
+          '개발  ${province.land}\n'
+          '치수  ${province.food}\n'
+          '민심  ${province.publicLoyalty}\n'
+          '병력  ${province.soldiers}\n'
+          '장수  ${province.officerIds.length}',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     engine.removeListener(_refresh);
@@ -1397,6 +1424,7 @@ class _GameScreenState extends State<GameScreen> {
             _WorldMapHeader(
               force: state.playerForce,
               state: state,
+              onClose: () => Navigator.pop(context),
               onOfficers: _showOfficers,
               onLog: _showLog,
               onSave: _showSaveDialog,
@@ -1410,8 +1438,9 @@ class _GameScreenState extends State<GameScreen> {
                 onSelect: _selectProvince,
               ),
             ),
-            _ProvincePanel(
+            _ProvinceDetailPanel(
               province: selected,
+              state: state,
               playerOwned: state.isPlayerProvince(selected),
               informationRevealed:
                   state.isPlayerProvince(selected) ||
@@ -1422,13 +1451,6 @@ class _GameScreenState extends State<GameScreen> {
                         .firstWhere((o) => o.id == selected.governorId)
                         .name,
             ),
-            if (state.isPlayerProvince(selected))
-              _OfficerSelector(
-                province: selected,
-                officers: state.officers,
-                selectedOfficerId: selectedOfficerId,
-                onSelect: (id) => setState(() => selectedOfficerId = id),
-              ),
             _MapCommandBar(
               playerOwned: state.isPlayerProvince(selected),
               onDomestic: _showDomesticMenu,
@@ -1442,6 +1464,7 @@ class _GameScreenState extends State<GameScreen> {
               },
               onDiplomacy: _showDiplomacyDialog,
               onEspionage: _showEspionageDialog,
+              onInfo: () => _showProvinceInfo(selected, state),
               onEndMonth: _endMonth,
             ),
           ],
@@ -1455,12 +1478,14 @@ class _WorldMapHeader extends StatelessWidget {
   const _WorldMapHeader({
     required this.force,
     required this.state,
+    required this.onClose,
     required this.onOfficers,
     required this.onLog,
     required this.onSave,
   });
   final ForceState force;
   final GameState state;
+  final VoidCallback onClose;
   final VoidCallback onOfficers;
   final VoidCallback onLog;
   final VoidCallback onSave;
@@ -1476,49 +1501,41 @@ class _WorldMapHeader extends StatelessWidget {
       children: [
         Row(
           children: [
+            const Icon(Icons.auto_awesome, color: Color(0xffa9894d), size: 22),
+            const SizedBox(width: 7),
             Expanded(
               child: Text(
-                '${state.year}년 ${state.month}월',
+                '세계 지도',
                 style: const TextStyle(
                   color: Color(0xffffdfa1),
-                  fontSize: 17,
+                  fontSize: 22,
                   fontWeight: FontWeight.w800,
+                  letterSpacing: 3,
                 ),
               ),
             ),
-            Text(
-              force.name,
-              style: const TextStyle(color: Color(0xffd6bd8b), fontSize: 12),
-            ),
-            IconButton(
-              onPressed: onSave,
-              icon: const Icon(Icons.save_outlined, size: 19),
-              color: const Color(0xffcdb17d),
-              tooltip: '저장',
-              visualDensity: VisualDensity.compact,
-            ),
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_horiz, size: 21),
-              color: const Color(0xff2a241c),
-              onSelected: (value) {
-                if (value == 'officers') onOfficers();
-                if (value == 'log') onLog();
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'officers', child: Text('장수 목록')),
-                PopupMenuItem(value: 'log', child: Text('게임 기록')),
-              ],
+            IconButton.filled(
+              onPressed: onClose,
+              icon: const Icon(Icons.close, size: 21),
+              style: IconButton.styleFrom(
+                backgroundColor: const Color(0xff5c4528),
+                foregroundColor: const Color(0xffffe2a5),
+                side: const BorderSide(color: Color(0xffc09953)),
+              ),
             ),
           ],
         ),
         Row(
           children: [
-            Expanded(child: _HeaderMetric('금', force.gold)),
-            Expanded(child: _HeaderMetric('군량', force.food)),
-            Expanded(child: _HeaderMetric('병력', state.playerSoldiers)),
             Expanded(
-              child: _HeaderMetric('영토', state.playerProvinceIds.length),
+              child: Text(
+                '${state.year}년 ${state.month}월 · ${force.name}',
+                style: const TextStyle(color: Color(0xffe7d3a5), fontSize: 14),
+              ),
             ),
+            _HeaderMetric('금', force.gold),
+            _HeaderMetric('군량', force.food),
+            _HeaderMetric('병력', state.playerSoldiers),
           ],
         ),
       ],
@@ -1560,6 +1577,7 @@ class _MapCommandBar extends StatelessWidget {
     required this.onMilitary,
     required this.onDiplomacy,
     required this.onEspionage,
+    required this.onInfo,
     required this.onEndMonth,
   });
   final bool playerOwned;
@@ -1568,6 +1586,7 @@ class _MapCommandBar extends StatelessWidget {
   final VoidCallback onMilitary;
   final VoidCallback onDiplomacy;
   final VoidCallback onEspionage;
+  final VoidCallback onInfo;
   final VoidCallback onEndMonth;
 
   @override
@@ -1607,9 +1626,10 @@ class _MapCommandBar extends StatelessWidget {
           icon: Icons.visibility_outlined,
           onTap: onEspionage,
         ),
+        _MapCommand(label: '정보', icon: Icons.menu_book_outlined, onTap: onInfo),
         _MapCommand(
           label: '턴 종료',
-          icon: Icons.fast_forward,
+          icon: Icons.hourglass_bottom,
           onTap: onEndMonth,
           accent: true,
         ),
@@ -1777,6 +1797,7 @@ class _Map extends StatelessWidget {
       return Center(
         child: SizedBox(
           width: width,
+          height: constraints.maxHeight,
           child: DecoratedBox(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -1795,9 +1816,6 @@ class _Map extends StatelessWidget {
                 ),
                 Positioned.fill(
                   child: Container(color: Colors.black.withValues(alpha: .25)),
-                ),
-                Positioned.fill(
-                  child: CustomPaint(painter: _MapBackdropPainter()),
                 ),
                 Positioned.fill(
                   child: CustomPaint(painter: _RoadPainter(provinces)),
@@ -1855,6 +1873,8 @@ class _RoadPainter extends CustomPainter {
   bool shouldRepaint(covariant _RoadPainter oldDelegate) => false;
 }
 
+// Retained as an optional debug map overlay.
+// ignore: unused_element
 class _MapBackdropPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -1909,28 +1929,43 @@ class _ProvinceNode extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     children: [
       Container(
-        width: 68,
-        height: 68,
+        width: 62,
+        height: 62,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
+          shape: BoxShape.rectangle,
+          borderRadius: BorderRadius.circular(8),
           color: playerOwned
-              ? const Color(0xff3f6656)
-              : const Color(0xff754e3d),
+              ? const Color(0xff2d6455).withValues(alpha: .90)
+              : const Color(0xff573f39).withValues(alpha: .90),
           border: Border.all(
             color: selected ? const Color(0xffffd36d) : const Color(0xffc2a66b),
-            width: selected ? 4 : 2,
+            width: selected ? 3 : 1.5,
           ),
-          boxShadow: const [BoxShadow(blurRadius: 5, color: Colors.black26)],
+          boxShadow: selected
+              ? const [BoxShadow(blurRadius: 12, color: Color(0xffe9b74d))]
+              : const [BoxShadow(blurRadius: 5, color: Colors.black54)],
         ),
         child: Center(
-          child: Text(
-            province.name,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.castle,
+                size: 24,
+                color: selected
+                    ? const Color(0xffffd878)
+                    : const Color(0xffd9c596),
+              ),
+              Text(
+                province.name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xffffefd0),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1942,49 +1977,153 @@ class _ProvinceNode extends StatelessWidget {
   );
 }
 
-class _ProvincePanel extends StatelessWidget {
-  const _ProvincePanel({
+class _ProvinceDetailPanel extends StatelessWidget {
+  const _ProvinceDetailPanel({
     required this.province,
+    required this.state,
     required this.playerOwned,
     required this.governorName,
     required this.informationRevealed,
   });
   final ProvinceState province;
+  final GameState state;
   final bool playerOwned;
   final String governorName;
   final bool informationRevealed;
   @override
-  Widget build(BuildContext context) => AssetPanel(
-    width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(
-            informationRevealed
-                ? '${province.name} · ${province.ownerName}\n태수 $governorName · 개발 ${province.land} · 민심 ${province.publicLoyalty} · 병력 ${province.soldiers} · 장수 ${province.officerIds.length}'
-                : '${province.name} · ${province.ownerName}\n태수 ???? · 개발 ???? · 민심 ???? · 병력 ???? · 장수 ${province.officerIds.length}',
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Color(0xffe5d2a6),
-              height: 1.35,
+  Widget build(BuildContext context) {
+    final governor = province.governorId == null
+        ? null
+        : state.officers.firstWhere((o) => o.id == province.governorId);
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xff171612),
+        border: Border(top: BorderSide(color: Color(0xffa27a3e))),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (governor != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: _GeneratedPortrait(seed: governor.id, size: 78),
+            ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      province.name,
+                      style: const TextStyle(
+                        color: Color(0xffffdfa0),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '태수  ${governor?.name ?? governorName}',
+                      style: const TextStyle(
+                        color: Color(0xffd4ba88),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _ProvinceStatColumn(
+                        values: informationRevealed
+                            ? [
+                                ('금', province.gold),
+                                ('군량', province.food),
+                                ('병력', province.soldiers),
+                                ('민심', province.publicLoyalty),
+                              ]
+                            : const [
+                                ('금', '????'),
+                                ('군량', '????'),
+                                ('병력', '????'),
+                                ('민심', '????'),
+                              ],
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 72,
+                      color: const Color(0xff5e4b32),
+                    ),
+                    Expanded(
+                      child: _ProvinceStatColumn(
+                        values: informationRevealed
+                            ? [
+                                ('개발', province.land),
+                                ('치수', province.food ~/ 10),
+                                ('성벽', 35),
+                              ]
+                            : const [
+                                ('개발', '????'),
+                                ('치수', '????'),
+                                ('성벽', '????'),
+                              ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-        ),
-        Text(
-          playerOwned ? '내 영지' : '타 세력',
-          style: TextStyle(
-            color: playerOwned
-                ? const Color(0xff85c49d)
-                : const Color(0xffdd9077),
-            fontWeight: FontWeight.bold,
+        ],
+      ),
+    );
+  }
+}
+
+class _ProvinceStatColumn extends StatelessWidget {
+  const _ProvinceStatColumn({required this.values});
+  final List<(String, Object)> values;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: values
+        .map(
+          (value) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+            child: Row(
+              children: [
+                Text(
+                  value.$1,
+                  style: const TextStyle(
+                    color: Color(0xffb9a47c),
+                    fontSize: 11,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${value.$2}',
+                  style: const TextStyle(
+                    color: Color(0xfff0d9a4),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
+        )
+        .toList(),
   );
 }
 
+// Retained for the detailed officer-management layout.
+// ignore: unused_element
 class _OfficerSelector extends StatelessWidget {
   const _OfficerSelector({
     required this.province,
