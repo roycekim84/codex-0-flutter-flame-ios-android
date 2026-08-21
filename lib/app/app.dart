@@ -8,6 +8,7 @@ import '../core/game_engine.dart';
 import '../data/demo_scenario.dart';
 import '../flame/battle_game.dart';
 import '../models/game_state.dart';
+import '../repositories/save_repository.dart';
 
 class CodexStrategyApp extends StatelessWidget {
   const CodexStrategyApp({super.key});
@@ -20,6 +21,44 @@ class CodexStrategyApp extends StatelessWidget {
       useMaterial3: true,
     ),
     home: const HomeScreen(),
+  );
+}
+
+Future<void> _loadSavedGame(BuildContext context) async {
+  final repository = SaveRepository();
+  const slots = ['AUTO', '1', '2', '3', '4', '5'];
+  final saves = <String, Map<String, dynamic>>{};
+  for (final slot in slots) {
+    final save = await repository.load(slot);
+    if (save != null) saves[slot] = save;
+  }
+  if (!context.mounted) return;
+  final selectedSlot = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => SimpleDialog(
+      title: const Text('불러오기'),
+      children: slots
+          .map(
+            (slot) => SimpleDialogOption(
+              onPressed: saves.containsKey(slot)
+                  ? () => Navigator.pop(dialogContext, slot)
+                  : null,
+              child: Text(
+                saves.containsKey(slot)
+                    ? '$slot · ${saves[slot]!['year']}년 ${saves[slot]!['month']}월'
+                    : '$slot · 비어 있음',
+              ),
+            ),
+          )
+          .toList(),
+    ),
+  );
+  if (selectedSlot == null || !context.mounted) return;
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute(
+      builder: (_) =>
+          GameScreen(initialState: GameState.fromSaveMap(saves[selectedSlot]!)),
+    ),
   );
 }
 
@@ -67,6 +106,15 @@ class HomeScreen extends StatelessWidget {
                     label: const Padding(
                       padding: EdgeInsets.all(14),
                       child: Text('새 게임'),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  OutlinedButton.icon(
+                    onPressed: () => _loadSavedGame(context),
+                    icon: const Icon(Icons.folder_open),
+                    label: const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Text('불러오기'),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -157,29 +205,61 @@ class RulerSelectScreen extends StatelessWidget {
 }
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key, required this.playerForceId});
-  final String playerForceId;
+  const GameScreen({super.key, this.playerForceId, this.initialState});
+  final String? playerForceId;
+  final GameState? initialState;
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
 class _GameScreenState extends State<GameScreen> {
   late final GameEngine engine;
+  final saveRepository = SaveRepository();
   String? selectedProvinceId;
   String? selectedOfficerId;
   @override
   void initState() {
     super.initState();
     engine = GameEngine(
-      GameState.fromScenario(
-        DemoScenario.create(),
-        selectedForceId: widget.playerForceId,
-      ),
+      widget.initialState ??
+          GameState.fromScenario(
+            DemoScenario.create(),
+            selectedForceId: widget.playerForceId,
+          ),
     );
     selectedProvinceId = engine.state.playerProvinceIds.first;
     selectedOfficerId = engine.state.provinces.first.officerIds.first;
     engine.addListener(_refresh);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showStartReport());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showStartReport();
+      _saveAuto();
+    });
+  }
+
+  Future<void> _saveAuto() => saveRepository.save(engine.state, 'AUTO');
+
+  Future<void> _showSaveDialog() async {
+    const slots = ['1', '2', '3', '4', '5'];
+    final slot = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('저장 슬롯'),
+        children: slots
+            .map(
+              (value) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(dialogContext, value),
+                child: Text('슬롯 $value'),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (slot == null || !mounted) return;
+    await saveRepository.save(engine.state, slot);
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('슬롯 $slot에 저장했습니다.')));
   }
 
   void _showStartReport() {
@@ -541,10 +621,12 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  void _endMonth() {
+  Future<void> _endMonth() async {
     final beforeGold = engine.state.playerForce.gold;
     final beforeFood = engine.state.playerForce.food;
     engine.dispatch(const GameCommand(type: GameCommandType.endMonth));
+    await _saveAuto();
+    if (!mounted) return;
     final state = engine.state;
     showDialog<void>(
       context: context,
@@ -589,6 +671,11 @@ class _GameScreenState extends State<GameScreen> {
             onPressed: _showLog,
             tooltip: '기록',
             icon: const Icon(Icons.menu_book_outlined),
+          ),
+          IconButton(
+            onPressed: _showSaveDialog,
+            tooltip: '저장',
+            icon: const Icon(Icons.save_outlined),
           ),
           Padding(
             padding: const EdgeInsets.all(12),

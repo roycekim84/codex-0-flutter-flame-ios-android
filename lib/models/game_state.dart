@@ -119,6 +119,129 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Map<String, dynamic> toSaveMap() => {
+    'scenarioId': scenarioId,
+    'year': year,
+    'month': month,
+    'playerForceId': playerForceId,
+    'randomSeed': randomSeed,
+    'relations': relations,
+    'alliedForceIds': alliedForceIds.toList(),
+    'revealedProvinceIds': revealedProvinceIds.toList(),
+    'gameLog': gameLog,
+    'forces': forces
+        .map(
+          (f) => {
+            'id': f.id,
+            'name': f.name,
+            'gold': f.gold,
+            'food': f.food,
+            'rulerId': f.rulerId,
+            'provinceIds': f.provinceIds,
+            'officerIds': f.officerIds,
+          },
+        )
+        .toList(),
+    'provinces': provinces
+        .map(
+          (p) => {
+            'id': p.id,
+            'name': p.name,
+            'ownerForceId': p.ownerForceId,
+            'ownerName': p.ownerName,
+            'adjacentProvinceIds': p.adjacentProvinceIds,
+            'officerIds': p.officerIds,
+            'land': p.land,
+            'publicLoyalty': p.publicLoyalty,
+            'soldiers': p.soldiers,
+            'gold': p.gold,
+            'food': p.food,
+            'mapX': p.mapX,
+            'mapY': p.mapY,
+            'governorId': p.governorId,
+          },
+        )
+        .toList(),
+    'officers': officers
+        .map(
+          (o) => {
+            'id': o.id,
+            'name': o.name,
+            'forceId': o.forceId,
+            'provinceId': o.provinceId,
+            'war': o.war,
+            'intelligence': o.intelligence,
+            'charisma': o.charisma,
+            'loyalty': o.loyalty,
+            'status': o.status,
+          },
+        )
+        .toList(),
+  };
+
+  static GameState fromSaveMap(Map<String, dynamic> data) {
+    final forces = (data['forces'] as List)
+        .map(
+          (x) => ForceState(
+            id: x['id'],
+            name: x['name'],
+            rulerId: x['rulerId'],
+            gold: x['gold'],
+            food: x['food'],
+            provinceIds: List<String>.from(x['provinceIds']),
+            officerIds: List<String>.from(x['officerIds']),
+          ),
+        )
+        .toList();
+    return GameState(
+      scenarioId: data['scenarioId'],
+      year: data['year'],
+      month: data['month'],
+      playerForceId: data['playerForceId'],
+      randomSeed: data['randomSeed'],
+      relations: Map<String, int>.from(data['relations'] ?? {}),
+      alliedForceIds: Set<String>.from(data['alliedForceIds'] ?? []),
+      revealedProvinceIds: Set<String>.from(data['revealedProvinceIds'] ?? []),
+      gameLog: List<String>.from(data['gameLog'] ?? []),
+      forces: forces,
+      provinces: (data['provinces'] as List)
+          .map(
+            (x) => ProvinceState(
+              id: x['id'],
+              name: x['name'],
+              ownerForceId: x['ownerForceId'],
+              ownerName: x['ownerName'],
+              adjacentProvinceIds: List<String>.from(x['adjacentProvinceIds']),
+              officerIds: List<String>.from(x['officerIds']),
+              land: x['land'],
+              publicLoyalty: x['publicLoyalty'],
+              soldiers: x['soldiers'],
+              gold: x['gold'],
+              food: x['food'],
+              mapX: (x['mapX'] as num).toDouble(),
+              mapY: (x['mapY'] as num).toDouble(),
+              governorId: x['governorId'],
+            ),
+          )
+          .toList(),
+      officers: (data['officers'] as List)
+          .map(
+            (x) => OfficerState(
+              id: x['id'],
+              name: x['name'],
+              forceId: x['forceId'],
+              provinceId: x['provinceId'],
+              war: x['war'],
+              intelligence: x['intelligence'],
+              charisma: x['charisma'],
+              loyalty: x['loyalty'],
+              status: x['status'],
+            ),
+          )
+          .toList(),
+    );
+  }
+
   static GameState fromScenario(
     Map<String, dynamic> data, {
     String? selectedForceId,

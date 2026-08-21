@@ -5,7 +5,8 @@
 - [x] Milestone 1 보강: 세력 선택, 장수 이동, 장수 목록, 월별 로그, 저장 직렬화 경계
 - [x] Milestone 3 초기 전쟁 수직 슬라이스: 출병, 전투 일수, 공격, 퇴각, 승패, 영토 귀속, Flame 전투 화면
 - [x] 내정 보강: 징세, 시혜, 훈련, 축성
-- [ ] Milestone 1 보강: 실제 슬롯 저장/불러오기, JSON asset loader
+- [x] Milestone 1 보강: AUTO·1~5 실제 슬롯 저장/불러오기
+- [ ] Milestone 1 잔여: JSON asset loader
 - [x] Milestone 2 초기 수직 슬라이스: 탐색·등용·충성·태수
 - [x] Milestone 3 보강 1차: 장수별 부대, 지형 보정, 격자 배치, 전투 이동, 선택 부대 행동
 - [x] Milestone 3 보강 2차: 전투 결과별 퇴각·포로·전사, 포로 등용·석방·처형

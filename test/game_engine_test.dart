@@ -53,11 +53,16 @@ void main() {
 
   test('저장 데이터에 버전과 결정성 seed가 포함된다', () {
     final state = createEngine().state;
+    state.playerForce.gold = 1234;
     final decoded = SaveRepository().decode(SaveRepository().encode(state));
     expect(decoded['saveVersion'], 1);
     expect(decoded['randomSeed'], 42);
     expect(decoded['relations']['force_red'], -10);
     expect(decoded['revealedProvinceIds'], isEmpty);
+    final restored = GameState.fromSaveMap(decoded);
+    expect(restored.playerForce.gold, 1234);
+    expect(restored.provinces.length, 6);
+    expect(restored.officers.length, 20);
   });
 
   test('첩보는 적 영지 정보를 공개하고 장수 충성도와 민심을 낮춘다', () {
@@ -65,8 +70,9 @@ void main() {
     final actor = engine.state.playerForce.officerIds.first;
     final target = engine.state.provinces.firstWhere((p) => p.id == 'p_crown');
     final enemyOfficer = target.officerIds.first;
-    final loyaltyBefore =
-        engine.state.officers.firstWhere((o) => o.id == enemyOfficer).loyalty;
+    final loyaltyBefore = engine.state.officers
+        .firstWhere((o) => o.id == enemyOfficer)
+        .loyalty;
     final publicLoyaltyBefore = target.publicLoyalty;
 
     expect(engine.infiltrate(target.id, actor).success, isTrue);
