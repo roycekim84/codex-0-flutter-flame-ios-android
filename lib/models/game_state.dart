@@ -70,14 +70,20 @@ class GameState extends ChangeNotifier {
     required this.provinces,
     required this.officers,
     required this.randomSeed,
+    Map<String, int>? relations,
+    Set<String>? alliedForceIds,
     List<String>? gameLog,
-  }) : gameLog = gameLog ?? [];
+  }) : relations = relations ?? {},
+       alliedForceIds = alliedForceIds ?? {},
+       gameLog = gameLog ?? [];
   final String scenarioId, playerForceId;
   int year, month;
   final List<ForceState> forces;
   final List<ProvinceState> provinces;
   final List<OfficerState> officers;
   final int randomSeed;
+  final Map<String, int> relations;
+  final Set<String> alliedForceIds;
   final List<String> gameLog;
   final Set<String> actedOfficerIds = <String>{};
   ForceState get playerForce => forces.firstWhere((f) => f.id == playerForceId);
@@ -101,6 +107,13 @@ class GameState extends ChangeNotifier {
 
   void resetMonthlyActions() {
     actedOfficerIds.clear();
+  }
+
+  int relationTo(String forceId) => relations[forceId] ?? 0;
+
+  void setRelation(String forceId, int value) {
+    relations[forceId] = value.clamp(-100, 100).toInt();
+    notifyListeners();
   }
 
   static GameState fromScenario(
@@ -127,6 +140,13 @@ class GameState extends ChangeNotifier {
       month: data['month'],
       playerForceId: selectedForceId ?? data['playerForceId'],
       randomSeed: data['randomSeed'],
+      relations: {
+        for (final force in forces.where(
+          (f) => f.id != (selectedForceId ?? data['playerForceId']),
+        ))
+          force.id:
+              ((data['relations'] as Map?)?[force.id] as num?)?.toInt() ?? -10,
+      },
       forces: forces,
       provinces: (data['provinces'] as List)
           .map(

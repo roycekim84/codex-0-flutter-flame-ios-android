@@ -48,6 +48,18 @@ class GameEngine {
             !moveOfficer(command.officerId!, command.destinationProvinceId!)) {
           return const CommandResult.failure('인접한 아군 지역으로만 장수를 이동할 수 있습니다.');
         }
+      case GameCommandType.giftForce:
+        final result = giftForce(command.targetForceId!, command.officerId!);
+        if (!result.success) return result;
+      case GameCommandType.formAlliance:
+        final result = formAlliance(command.targetForceId!, command.officerId!);
+        if (!result.success) return result;
+      case GameCommandType.threatenForce:
+        final result = threatenForce(
+          command.targetForceId!,
+          command.officerId!,
+        );
+        if (!result.success) return result;
       case GameCommandType.endMonth:
         endTurn();
         return const CommandResult.success('월말 정산을 완료했습니다.');
@@ -117,6 +129,53 @@ class GameEngine {
     return CommandResult.success(
       '${officer.name}을 ${province.name} 태수로 임명했습니다.',
     );
+  }
+
+  CommandResult giftForce(String targetForceId, String officerId) {
+    final target = _diplomaticTarget(targetForceId);
+    final officer = _playerOfficer(officerId);
+    if (target == null || officer == null) {
+      return const CommandResult.failure('외교 대상 또는 수행 장수를 찾을 수 없습니다.');
+    }
+    if (state.playerForce.gold < 100) {
+      return const CommandResult.failure('선물할 금이 부족합니다.');
+    }
+    state.playerForce.gold -= 100;
+    final before = state.relationTo(target.id);
+    state.setRelation(target.id, before + 15 + officer.charisma ~/ 30);
+    state.log(
+      '${target.name}에 선물 · 금 -100 · 관계 $before → ${state.relationTo(target.id)}',
+    );
+    return CommandResult.success('${target.name}과의 관계가 좋아졌습니다.');
+  }
+
+  CommandResult formAlliance(String targetForceId, String officerId) {
+    final target = _diplomaticTarget(targetForceId);
+    final officer = _playerOfficer(officerId);
+    if (target == null || officer == null) {
+      return const CommandResult.failure('외교 대상 또는 수행 장수를 찾을 수 없습니다.');
+    }
+    if (state.relationTo(target.id) < 20) {
+      return const CommandResult.failure('관계가 아직 동맹을 맺기에는 낮습니다. 선물을 먼저 보내십시오.');
+    }
+    state.alliedForceIds.add(target.id);
+    state.log('${target.name}과 동맹 체결 · ${officer.name}의 외교');
+    return CommandResult.success('${target.name}과 동맹을 맺었습니다.');
+  }
+
+  CommandResult threatenForce(String targetForceId, String officerId) {
+    final target = _diplomaticTarget(targetForceId);
+    final officer = _playerOfficer(officerId);
+    if (target == null || officer == null) {
+      return const CommandResult.failure('외교 대상 또는 수행 장수를 찾을 수 없습니다.');
+    }
+    final before = state.relationTo(target.id);
+    state.setRelation(target.id, before - 20);
+    state.alliedForceIds.remove(target.id);
+    state.log(
+      '${target.name} 협박 · 관계 $before → ${state.relationTo(target.id)}',
+    );
+    return CommandResult.success('${target.name}을 협박했습니다. 관계가 악화되었습니다.');
   }
 
   void develop(String provinceId) {
@@ -491,5 +550,13 @@ class GameEngine {
 
   ProvinceState? _playerProvince(String id) => state.provinces
       .where((p) => p.id == id && state.isPlayerProvince(p))
+      .firstOrNull;
+
+  ForceState? _diplomaticTarget(String id) => state.forces
+      .where((f) => f.id == id && f.id != state.playerForceId)
+      .firstOrNull;
+
+  OfficerState? _playerOfficer(String id) => state.officers
+      .where((o) => o.id == id && o.forceId == state.playerForceId)
       .firstOrNull;
 }

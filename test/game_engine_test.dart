@@ -56,6 +56,28 @@ void main() {
     final decoded = SaveRepository().decode(SaveRepository().encode(state));
     expect(decoded['saveVersion'], 1);
     expect(decoded['randomSeed'], 42);
+    expect(decoded['relations']['force_red'], -10);
+  });
+
+  test('외교는 선물로 관계를 높이고 동맹을 맺을 수 있다', () {
+    final engine = createEngine();
+    final officer = engine.state.playerForce.officerIds.first;
+    expect(engine.state.relationTo('force_red'), -10);
+    expect(engine.giftForce('force_red', officer).success, isTrue);
+    expect(engine.state.relationTo('force_red'), greaterThan(-10));
+    engine.state.setRelation('force_red', 25);
+    expect(engine.formAlliance('force_red', officer).success, isTrue);
+    expect(engine.state.alliedForceIds, contains('force_red'));
+  });
+
+  test('협박은 관계를 낮추고 기존 동맹을 해제한다', () {
+    final engine = createEngine();
+    final officer = engine.state.playerForce.officerIds.first;
+    engine.state.setRelation('force_blue', 40);
+    engine.state.alliedForceIds.add('force_blue');
+    expect(engine.threatenForce('force_blue', officer).success, isTrue);
+    expect(engine.state.relationTo('force_blue'), 20);
+    expect(engine.state.alliedForceIds, isNot(contains('force_blue')));
   });
 
   test('선택한 세력에 따라 내 영지가 바뀐다', () {

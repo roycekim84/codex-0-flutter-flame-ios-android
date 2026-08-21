@@ -11,6 +11,8 @@ class SaveRepository {
     'month': state.month,
     'playerForceId': state.playerForceId,
     'randomSeed': state.randomSeed,
+    'relations': state.relations,
+    'alliedForceIds': state.alliedForceIds.toList(),
     'gameLog': state.gameLog,
   });
 

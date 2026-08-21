@@ -280,6 +280,9 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.recruitOfficer => '등용',
     GameCommandType.appointGovernor => '태수 임명',
     GameCommandType.moveOfficer => '장수 이동',
+    GameCommandType.giftForce => '외교 · 선물',
+    GameCommandType.formAlliance => '외교 · 동맹',
+    GameCommandType.threatenForce => '외교 · 협박',
     GameCommandType.endMonth => '턴 종료',
   };
   String _commandDescription(GameCommandType type) => switch (type) {
@@ -293,6 +296,9 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.recruitOfficer => '발견한 재야 장수를 금 200으로 등용합니다.',
     GameCommandType.appointGovernor => '선택한 장수를 이 지역의 태수로 임명합니다.',
     GameCommandType.moveOfficer => '인접한 아군 지역으로 장수를 이동합니다.',
+    GameCommandType.giftForce => '금 100으로 관계를 개선합니다.',
+    GameCommandType.formAlliance => '관계 20 이상인 세력과 동맹을 맺습니다.',
+    GameCommandType.threatenForce => '관계를 악화시키고 동맹을 파기합니다.',
     GameCommandType.endMonth => '모든 세력의 명령을 처리하고 다음 달로 넘어갑니다.',
   };
 
@@ -337,6 +343,88 @@ class _GameScreenState extends State<GameScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _showDiplomacyDialog() async {
+    final targets = engine.state.forces
+        .where((f) => f.id != engine.state.playerForceId)
+        .toList();
+    if (targets.isEmpty || selectedOfficerId == null) return;
+    var targetId = targets.first.id;
+    final choice = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('외교'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<String>(
+                isExpanded: true,
+                value: targetId,
+                items: targets
+                    .map(
+                      (force) => DropdownMenuItem(
+                        value: force.id,
+                        child: Text(
+                          '${force.name} · 관계 ${engine.state.relationTo(force.id)}',
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (id) {
+                  if (id != null) setDialogState(() => targetId = id);
+                },
+              ),
+              const SizedBox(height: 8),
+              Text('현재 관계 ${engine.state.relationTo(targetId)}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, {
+                'forceId': targetId,
+                'action': 'gift',
+              }),
+              child: const Text('선물 100금'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, {
+                'forceId': targetId,
+                'action': 'alliance',
+              }),
+              child: const Text('동맹'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: () => Navigator.pop(dialogContext, {
+                'forceId': targetId,
+                'action': 'threaten',
+              }),
+              child: const Text('협박'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    final type = switch (choice['action']) {
+      'gift' => GameCommandType.giftForce,
+      'alliance' => GameCommandType.formAlliance,
+      _ => GameCommandType.threatenForce,
+    };
+    await _dispatch(
+      GameCommand(
+        type: type,
+        officerId: selectedOfficerId,
+        provinceId: selectedProvinceId,
+        targetForceId: choice['forceId'],
+      ),
+    );
   }
 
   void _endMonth() {
@@ -431,6 +519,7 @@ class _GameScreenState extends State<GameScreen> {
               onDispatch: _dispatch,
               onEndMonth: _endMonth,
               onMove: _showMoveDialog,
+              onDiplomacy: _showDiplomacyDialog,
             ),
           ],
         ),
@@ -680,6 +769,7 @@ class _ActionBar extends StatelessWidget {
     required this.onDispatch,
     required this.onEndMonth,
     required this.onMove,
+    required this.onDiplomacy,
   });
   final GameEngine engine;
   final ProvinceState province;
@@ -689,6 +779,7 @@ class _ActionBar extends StatelessWidget {
   final ValueChanged<GameCommand> onDispatch;
   final VoidCallback onEndMonth;
   final VoidCallback onMove;
+  final VoidCallback onDiplomacy;
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
@@ -724,6 +815,10 @@ class _ActionBar extends StatelessWidget {
         FilledButton.tonal(
           onPressed: playerOwned && officerId != null ? onMove : null,
           child: const Text('장수 이동'),
+        ),
+        FilledButton.tonal(
+          onPressed: playerOwned && officerId != null ? onDiplomacy : null,
+          child: const Text('외교'),
         ),
         FilledButton.tonal(
           onPressed: playerOwned && officerId != null
