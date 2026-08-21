@@ -104,11 +104,9 @@ class _RealmBackdrop extends StatelessWidget {
   const _RealmBackdrop({
     required this.child,
     this.asset = 'assets/images/title_background.png',
-    this.showPainterOverlay = true,
   });
   final Widget child;
   final String asset;
-  final bool showPainterOverlay;
 
   @override
   Widget build(BuildContext context) => Stack(
@@ -116,96 +114,9 @@ class _RealmBackdrop extends StatelessWidget {
     children: [
       Image.asset(asset, fit: BoxFit.cover),
       Container(color: Colors.black.withValues(alpha: .46)),
-      if (showPainterOverlay)
-        Opacity(
-          opacity: .12,
-          child: CustomPaint(painter: _RealmBackdropPainter()),
-        ),
       child,
     ],
   );
-}
-
-class _RealmBackdropPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final background = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xff080d12), Color(0xff1b211f), Color(0xff392b1c)],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, background);
-
-    final glow = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              const Color(0xffb78243).withValues(alpha: .38),
-              Colors.transparent,
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(size.width * .5, size.height * .42),
-              radius: size.width * .65,
-            ),
-          );
-    canvas.drawCircle(
-      Offset(size.width * .5, size.height * .42),
-      size.width * .65,
-      glow,
-    );
-
-    final mountain = Paint()..color = const Color(0xff111a1a);
-    final ridge = Path()
-      ..moveTo(0, size.height * .55)
-      ..lineTo(size.width * .18, size.height * .34)
-      ..lineTo(size.width * .29, size.height * .49)
-      ..lineTo(size.width * .48, size.height * .27)
-      ..lineTo(size.width * .65, size.height * .48)
-      ..lineTo(size.width * .82, size.height * .32)
-      ..lineTo(size.width, size.height * .52)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(ridge, mountain);
-
-    final wall = Paint()
-      ..color = const Color(0xffb38a4d)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    final fortress = Offset(size.width * .5, size.height * .63);
-    canvas.drawRect(
-      Rect.fromCenter(center: fortress, width: 92, height: 48),
-      wall,
-    );
-    canvas.drawLine(
-      fortress.translate(-46, -24),
-      fortress.translate(-46, -66),
-      wall,
-    );
-    canvas.drawLine(
-      fortress.translate(46, -24),
-      fortress.translate(46, -66),
-      wall,
-    );
-    canvas.drawLine(
-      fortress.translate(0, -24),
-      fortress.translate(0, -90),
-      wall,
-    );
-
-    final vignette = Paint()
-      ..shader = RadialGradient(
-        radius: 1.0,
-        colors: [Colors.transparent, Colors.black.withValues(alpha: .8)],
-        stops: const [.42, 1],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, vignette);
-  }
-
-  @override
-  bool shouldRepaint(covariant _RealmBackdropPainter oldDelegate) => false;
 }
 
 class HomeScreen extends StatelessWidget {
@@ -215,7 +126,6 @@ class HomeScreen extends StatelessWidget {
     final scenario = DemoScenario.create();
     return Scaffold(
       body: _RealmBackdrop(
-        showPainterOverlay: false,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -266,11 +176,6 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        width: 160,
-                        height: 1,
-                        color: const Color(0xffb18a4d).withValues(alpha: .75),
-                      ),
                       const Spacer(flex: 3),
                       _TitleMenuButton(
                         label: '새 게임',
