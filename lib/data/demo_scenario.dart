@@ -83,6 +83,11 @@ class DemoScenario {
         'gold': 0,
         'food': 0,
         'governorId': i < 6 ? 'officer_${i * 3 + 1}' : null,
+        'settlementType': switch (i) {
+          0 || 4 || 7 => 'large',
+          1 || 2 || 3 || 5 || 6 || 8 => 'medium',
+          _ => 'small',
+        },
         'officerIds': i < 6
             ? [
                 'officer_${i * 3 + 1}',

@@ -1651,33 +1651,17 @@ class _MapCommandBar extends StatelessWidget {
       children: [
         _MapCommand(
           label: '내정',
-          icon: Icons.account_balance,
+          iconIndex: 0,
           onTap: playerOwned ? onDomestic : null,
         ),
-        _MapCommand(
-          label: '인사',
-          icon: Icons.people_alt_outlined,
-          onTap: onPersonnel,
-        ),
-        _MapCommand(
-          label: '군사',
-          icon: Icons.shield_outlined,
-          onTap: onMilitary,
-        ),
-        _MapCommand(
-          label: '외교',
-          icon: Icons.handshake_outlined,
-          onTap: onDiplomacy,
-        ),
-        _MapCommand(
-          label: '첩보',
-          icon: Icons.visibility_outlined,
-          onTap: onEspionage,
-        ),
-        _MapCommand(label: '정보', icon: Icons.menu_book_outlined, onTap: onInfo),
+        _MapCommand(label: '인사', iconIndex: 1, onTap: onPersonnel),
+        _MapCommand(label: '군사', iconIndex: 2, onTap: onMilitary),
+        _MapCommand(label: '외교', iconIndex: 3, onTap: onDiplomacy),
+        _MapCommand(label: '첩보', iconIndex: 4, onTap: onEspionage),
+        _MapCommand(label: '정보', iconIndex: 5, onTap: onInfo),
         _MapCommand(
           label: '턴 종료',
-          icon: Icons.hourglass_bottom,
+          iconIndex: 6,
           onTap: onEndMonth,
           accent: true,
         ),
@@ -1689,12 +1673,12 @@ class _MapCommandBar extends StatelessWidget {
 class _MapCommand extends StatelessWidget {
   const _MapCommand({
     required this.label,
-    required this.icon,
+    required this.iconIndex,
     required this.onTap,
     this.accent = false,
   });
   final String label;
-  final IconData icon;
+  final int iconIndex;
   final VoidCallback? onTap;
   final bool accent;
 
@@ -1725,12 +1709,19 @@ class _MapCommand extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 22,
-                color: onTap == null
-                    ? const Color(0xff5c5140)
-                    : const Color(0xffe0bc73),
+              ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                  onTap == null
+                      ? const Color(0xff5c5140)
+                      : const Color(0xffe0bc73),
+                  BlendMode.modulate,
+                ),
+                child: Image.asset(
+                  AssetRepository.commandIcon(iconIndex),
+                  width: 25,
+                  height: 25,
+                  fit: BoxFit.contain,
+                ),
               ),
               const SizedBox(height: 3),
               Text(
@@ -1973,80 +1964,77 @@ class _ProvinceNode extends StatelessWidget {
   final bool playerOwned;
   final bool informationRevealed;
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 88,
-    height: 92,
-    child: Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.topCenter,
-      children: [
-        if (selected)
-          const Positioned(
-            top: -7,
-            child: Icon(Icons.flag, color: Color(0xffffd46b), size: 24),
+  Widget build(BuildContext context) {
+    final (asset, markerSize) = switch (province.settlementType) {
+      'large' => (AssetRepository.fortressLarge, 56.0),
+      'small' => (AssetRepository.fortressSmall, 34.0),
+      _ => (AssetRepository.fortressMedium, 44.0),
+    };
+    return SizedBox(
+      width: 88,
+      height: 92,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          if (selected)
+            const Positioned(
+              top: -7,
+              child: Icon(Icons.flag, color: Color(0xffffd46b), size: 24),
+            ),
+          Positioned(
+            top: 7,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: selected
+                  ? BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: const [
+                        BoxShadow(blurRadius: 13, color: Color(0xffe6ae3e)),
+                      ],
+                      border: Border.all(
+                        color: const Color(0xffffd46b),
+                        width: 2,
+                      ),
+                    )
+                  : null,
+              child: Image.asset(asset, width: markerSize, height: markerSize),
+            ),
           ),
-        Positioned(
-          top: 7,
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: selected
-                ? BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: const [
-                      BoxShadow(blurRadius: 13, color: Color(0xffe6ae3e)),
-                    ],
-                    border: Border.all(
-                      color: const Color(0xffffd46b),
-                      width: 2,
-                    ),
-                  )
-                : null,
-            child: ColorFiltered(
-              colorFilter: ColorFilter.mode(
-                playerOwned ? Colors.white : const Color(0xffb9a27a),
-                BlendMode.multiply,
+          Positioned(
+            top: 52,
+            child: Text(
+              province.name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xffffefd0),
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+                shadows: [
+                  Shadow(
+                    color: Colors.black,
+                    blurRadius: 4,
+                    offset: Offset(1, 1),
+                  ),
+                ],
               ),
-              child: Image.asset(
-                AssetRepository.fortressMarker,
-                width: 42,
-                height: 42,
+            ),
+          ),
+          Positioned(
+            top: 70,
+            child: Text(
+              informationRevealed ? '${province.soldiers}명' : '????명',
+              style: const TextStyle(
+                fontSize: 10,
+                color: Color(0xffead7aa),
+                shadows: [Shadow(color: Colors.black, blurRadius: 3)],
               ),
             ),
           ),
-        ),
-        Positioned(
-          top: 52,
-          child: Text(
-            province.name,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xffffefd0),
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-              shadows: [
-                Shadow(
-                  color: Colors.black,
-                  blurRadius: 4,
-                  offset: Offset(1, 1),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          top: 70,
-          child: Text(
-            informationRevealed ? '${province.soldiers}명' : '????명',
-            style: const TextStyle(
-              fontSize: 10,
-              color: Color(0xffead7aa),
-              shadows: [Shadow(color: Colors.black, blurRadius: 3)],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _ProvinceDetailPanel extends StatelessWidget {

@@ -8,7 +8,13 @@ class AssetRepository {
   static const worldMapBackground = 'assets/images/world_map_background.png';
   static const worldMapRegions = 'assets/images/world_map_regions.png';
   static const fortressMarker = 'assets/images/fortress_marker.png';
+  static const fortressLarge = 'assets/images/fortress_large.png';
+  static const fortressMedium = 'assets/images/fortress_medium.png';
+  static const fortressSmall = 'assets/images/fortress_small.png';
   static const mapCommandIcons = 'assets/images/map_command_icons.png';
+
+  static String commandIcon(int index) =>
+      'assets/images/command_icon_${index.clamp(0, 6)}.png';
   static const battleBackground = 'assets/images/battle_background.png';
   static const panelTexture = 'assets/images/panel_texture.png';
   static const commandIconStrip = 'assets/images/command_icon_strip.png';

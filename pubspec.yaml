@@ -66,7 +66,17 @@ flutter:
     - assets/images/world_map_background.png
     - assets/images/world_map_regions.png
     - assets/images/fortress_marker.png
+    - assets/images/fortress_large.png
+    - assets/images/fortress_medium.png
+    - assets/images/fortress_small.png
     - assets/images/map_command_icons.png
+    - assets/images/command_icon_0.png
+    - assets/images/command_icon_1.png
+    - assets/images/command_icon_2.png
+    - assets/images/command_icon_3.png
+    - assets/images/command_icon_4.png
+    - assets/images/command_icon_5.png
+    - assets/images/command_icon_6.png
     - assets/images/battle_background.png
     - assets/images/officer_portrait_warrior.png
     - assets/images/officer_portrait_strategist.png

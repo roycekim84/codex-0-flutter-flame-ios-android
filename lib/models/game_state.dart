@@ -24,9 +24,11 @@ class ProvinceState {
     required this.mapY,
     required this.ownerName,
     this.governorId,
+    this.settlementType = 'medium',
   });
   final String id, name;
   String ownerForceId, ownerName;
+  final String settlementType;
   final List<String> adjacentProvinceIds, officerIds;
   String? governorId;
   final double mapX, mapY;
@@ -207,6 +209,7 @@ class GameState extends ChangeNotifier {
             'mapX': p.mapX,
             'mapY': p.mapY,
             'governorId': p.governorId,
+            'settlementType': p.settlementType,
           },
         )
         .toList(),
@@ -285,6 +288,7 @@ class GameState extends ChangeNotifier {
               mapX: (x['mapX'] as num).toDouble(),
               mapY: (x['mapY'] as num).toDouble(),
               governorId: x['governorId'],
+              settlementType: x['settlementType'] as String? ?? 'medium',
             ),
           )
           .toList(),
@@ -362,6 +366,7 @@ class GameState extends ChangeNotifier {
               mapX: (x['mapX'] as num).toDouble(),
               mapY: (x['mapY'] as num).toDouble(),
               governorId: x['governorId'],
+              settlementType: x['settlementType'] as String? ?? 'medium',
             ),
           )
           .toList(),
