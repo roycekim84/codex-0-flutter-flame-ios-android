@@ -19,8 +19,37 @@ class CodexStrategyApp extends StatelessWidget {
     title: 'Realm Ledger',
     debugShowCheckedModeBanner: false,
     theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff385b4d)),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xff9a7138),
+        brightness: Brightness.dark,
+      ),
       useMaterial3: true,
+      scaffoldBackgroundColor: const Color(0xff171612),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xff1d1a15),
+        foregroundColor: Color(0xfff1dfb4),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      cardTheme: const CardThemeData(
+        color: Color(0xff29241b),
+        surfaceTintColor: Colors.transparent,
+        margin: EdgeInsets.zero,
+      ),
+      dividerTheme: const DividerThemeData(color: Color(0xff665337)),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xff72542c),
+          foregroundColor: const Color(0xffffedc4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(4),
+            side: const BorderSide(color: Color(0xffa8844b)),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: const Color(0xffe0b96e)),
+      ),
     ),
     home: const HomeScreen(),
   );
@@ -789,7 +818,10 @@ class _ResourceBar extends StatelessWidget {
   final GameState state;
   @override
   Widget build(BuildContext context) => Container(
-    color: const Color(0xffeef3ef),
+    decoration: const BoxDecoration(
+      color: Color(0xff211e18),
+      border: Border(bottom: BorderSide(color: Color(0xff6d5431))),
+    ),
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -810,8 +842,18 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Text(label, style: Theme.of(context).textTheme.labelSmall),
-      Text('$value', style: const TextStyle(fontWeight: FontWeight.bold)),
+      Text(
+        label,
+        style: const TextStyle(color: Color(0xffbba887), fontSize: 11),
+      ),
+      Text(
+        '$value',
+        style: const TextStyle(
+          color: Color(0xfff0d08e),
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+        ),
+      ),
     ],
   );
 }
@@ -836,29 +878,41 @@ class _Map extends StatelessWidget {
       return Center(
         child: SizedBox(
           width: width,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: CustomPaint(painter: _RoadPainter(provinces)),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xff35443c), Color(0xff182522)],
               ),
-              ...provinces.map(
-                (p) => Positioned(
-                  left: p.mapX * width - 34,
-                  top: p.mapY * constraints.maxHeight - 34,
-                  child: GestureDetector(
-                    onTap: () => onSelect(p.id),
-                    child: _ProvinceNode(
-                      province: p,
-                      playerOwned: p.isOwnedBy(playerForceId),
-                      informationRevealed:
-                          p.isOwnedBy(playerForceId) ||
-                          revealedProvinceIds.contains(p.id),
-                      selected: p.id == selectedId,
+            ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(painter: _MapBackdropPainter()),
+                ),
+                Positioned.fill(
+                  child: CustomPaint(painter: _RoadPainter(provinces)),
+                ),
+                ...provinces.map(
+                  (p) => Positioned(
+                    left: p.mapX * width - 34,
+                    top: p.mapY * constraints.maxHeight - 34,
+                    child: GestureDetector(
+                      onTap: () => onSelect(p.id),
+                      child: _ProvinceNode(
+                        province: p,
+                        playerOwned: p.isOwnedBy(playerForceId),
+                        informationRevealed:
+                            p.isOwnedBy(playerForceId) ||
+                            revealedProvinceIds.contains(p.id),
+                        selected: p.id == selectedId,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -893,6 +947,45 @@ class _RoadPainter extends CustomPainter {
   bool shouldRepaint(covariant _RoadPainter oldDelegate) => false;
 }
 
+class _MapBackdropPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final contour = Paint()
+      ..color = const Color(0x225f816f)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    for (var i = 0; i < 9; i++) {
+      final rect = Rect.fromCenter(
+        center: Offset(
+          size.width * (.18 + i * .08),
+          size.height * (.54 + (i % 3) * .04),
+        ),
+        width: size.width * (.45 + (i % 4) * .1),
+        height: size.height * (.2 + (i % 3) * .08),
+      );
+      canvas.drawOval(rect, contour);
+    }
+    final river = Paint()
+      ..color = const Color(0x885f8990)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5;
+    final path = Path()
+      ..moveTo(size.width * .08, size.height * .1)
+      ..cubicTo(
+        size.width * .4,
+        size.height * .35,
+        size.width * .2,
+        size.height * .65,
+        size.width * .86,
+        size.height * .92,
+      );
+    canvas.drawPath(path, river);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MapBackdropPainter oldDelegate) => false;
+}
+
 class _ProvinceNode extends StatelessWidget {
   const _ProvinceNode({
     required this.province,
@@ -913,10 +1006,10 @@ class _ProvinceNode extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: playerOwned
-              ? const Color(0xff557c68)
-              : const Color(0xffb97b5c),
+              ? const Color(0xff3f6656)
+              : const Color(0xff754e3d),
           border: Border.all(
-            color: selected ? Colors.amber : Colors.white,
+            color: selected ? const Color(0xffffd36d) : const Color(0xffc2a66b),
             width: selected ? 4 : 2,
           ),
           boxShadow: const [BoxShadow(blurRadius: 5, color: Colors.black26)],
@@ -935,7 +1028,7 @@ class _ProvinceNode extends StatelessWidget {
       ),
       Text(
         informationRevealed ? '${province.soldiers}명' : '????명',
-        style: const TextStyle(fontSize: 11),
+        style: const TextStyle(fontSize: 11, color: Color(0xffead7aa)),
       ),
     ],
   );
@@ -955,6 +1048,13 @@ class _ProvincePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
+    decoration: const BoxDecoration(
+      color: Color(0xff29241b),
+      border: Border(
+        top: BorderSide(color: Color(0xff755b35)),
+        bottom: BorderSide(color: Color(0xff3f3425)),
+      ),
+    ),
     padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
     child: Row(
       children: [
@@ -963,12 +1063,21 @@ class _ProvincePanel extends StatelessWidget {
             informationRevealed
                 ? '${province.name} · ${province.ownerName}\n태수 $governorName · 개발 ${province.land} · 민심 ${province.publicLoyalty} · 병력 ${province.soldiers} · 장수 ${province.officerIds.length}'
                 : '${province.name} · ${province.ownerName}\n태수 ???? · 개발 ???? · 민심 ???? · 병력 ???? · 장수 ${province.officerIds.length}',
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xffe5d2a6),
+              height: 1.35,
+            ),
           ),
         ),
         Text(
           playerOwned ? '내 영지' : '타 세력',
-          style: TextStyle(color: playerOwned ? Colors.green : Colors.red),
+          style: TextStyle(
+            color: playerOwned
+                ? const Color(0xff85c49d)
+                : const Color(0xffdd9077),
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     ),
@@ -1053,139 +1162,149 @@ class _ActionBar extends StatelessWidget {
   final VoidCallback onEspionage;
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-    child: Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: WrapAlignment.center,
-      children: [
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null
-              ? () => onDispatch(
-                  GameCommand(
-                    type: GameCommandType.develop,
-                    officerId: officerId,
-                    provinceId: province.id,
-                  ),
-                )
-              : null,
-          child: const Text('개발'),
+    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xff211e18),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xff5e492d)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.center,
+          children: [
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null
+                  ? () => onDispatch(
+                      GameCommand(
+                        type: GameCommandType.develop,
+                        officerId: officerId,
+                        provinceId: province.id,
+                      ),
+                    )
+                  : null,
+              child: const Text('개발'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null
+                  ? () => onDispatch(
+                      GameCommand(
+                        type: GameCommandType.recruit,
+                        officerId: officerId,
+                        provinceId: province.id,
+                      ),
+                    )
+                  : null,
+              child: const Text('징병'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null ? onMove : null,
+              child: const Text('장수 이동'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null ? onDiplomacy : null,
+              child: const Text('외교'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null ? onEspionage : null,
+              child: const Text('첩보'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null
+                  ? () => onDispatch(
+                      GameCommand(
+                        type: GameCommandType.tax,
+                        officerId: officerId,
+                        provinceId: province.id,
+                      ),
+                    )
+                  : null,
+              child: const Text('징세'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null
+                  ? () => onDispatch(
+                      GameCommand(
+                        type: GameCommandType.relief,
+                        officerId: officerId,
+                        provinceId: province.id,
+                      ),
+                    )
+                  : null,
+              child: const Text('시혜'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null
+                  ? () => onDispatch(
+                      GameCommand(
+                        type: GameCommandType.train,
+                        officerId: officerId,
+                        provinceId: province.id,
+                      ),
+                    )
+                  : null,
+              child: const Text('훈련'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null
+                  ? () => onDispatch(
+                      GameCommand(
+                        type: GameCommandType.fortify,
+                        officerId: officerId,
+                        provinceId: province.id,
+                      ),
+                    )
+                  : null,
+              child: const Text('축성'),
+            ),
+            FilledButton(
+              onPressed: playerOwned ? null : onBattle,
+              child: const Text('출병'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null
+                  ? () => onDispatch(
+                      GameCommand(
+                        type: GameCommandType.search,
+                        officerId: officerId,
+                        provinceId: province.id,
+                      ),
+                    )
+                  : null,
+              child: const Text('탐색'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && officerId != null
+                  ? () => onDispatch(
+                      GameCommand(
+                        type: GameCommandType.appointGovernor,
+                        officerId: officerId,
+                        provinceId: province.id,
+                      ),
+                    )
+                  : null,
+              child: const Text('태수 임명'),
+            ),
+            FilledButton.tonal(
+              onPressed: playerOwned && engine.firstFreeOfficer != null
+                  ? () => onDispatch(
+                      GameCommand(
+                        type: GameCommandType.recruitOfficer,
+                        officerId: officerId,
+                        provinceId: province.id,
+                        targetOfficerId: engine.firstFreeOfficer!.id,
+                      ),
+                    )
+                  : null,
+              child: const Text('등용'),
+            ),
+            FilledButton(onPressed: onEndMonth, child: const Text('턴 종료')),
+          ],
         ),
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null
-              ? () => onDispatch(
-                  GameCommand(
-                    type: GameCommandType.recruit,
-                    officerId: officerId,
-                    provinceId: province.id,
-                  ),
-                )
-              : null,
-          child: const Text('징병'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null ? onMove : null,
-          child: const Text('장수 이동'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null ? onDiplomacy : null,
-          child: const Text('외교'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null ? onEspionage : null,
-          child: const Text('첩보'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null
-              ? () => onDispatch(
-                  GameCommand(
-                    type: GameCommandType.tax,
-                    officerId: officerId,
-                    provinceId: province.id,
-                  ),
-                )
-              : null,
-          child: const Text('징세'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null
-              ? () => onDispatch(
-                  GameCommand(
-                    type: GameCommandType.relief,
-                    officerId: officerId,
-                    provinceId: province.id,
-                  ),
-                )
-              : null,
-          child: const Text('시혜'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null
-              ? () => onDispatch(
-                  GameCommand(
-                    type: GameCommandType.train,
-                    officerId: officerId,
-                    provinceId: province.id,
-                  ),
-                )
-              : null,
-          child: const Text('훈련'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null
-              ? () => onDispatch(
-                  GameCommand(
-                    type: GameCommandType.fortify,
-                    officerId: officerId,
-                    provinceId: province.id,
-                  ),
-                )
-              : null,
-          child: const Text('축성'),
-        ),
-        FilledButton(
-          onPressed: playerOwned ? null : onBattle,
-          child: const Text('출병'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null
-              ? () => onDispatch(
-                  GameCommand(
-                    type: GameCommandType.search,
-                    officerId: officerId,
-                    provinceId: province.id,
-                  ),
-                )
-              : null,
-          child: const Text('탐색'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned && officerId != null
-              ? () => onDispatch(
-                  GameCommand(
-                    type: GameCommandType.appointGovernor,
-                    officerId: officerId,
-                    provinceId: province.id,
-                  ),
-                )
-              : null,
-          child: const Text('태수 임명'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned && engine.firstFreeOfficer != null
-              ? () => onDispatch(
-                  GameCommand(
-                    type: GameCommandType.recruitOfficer,
-                    officerId: officerId,
-                    provinceId: province.id,
-                    targetOfficerId: engine.firstFreeOfficer!.id,
-                  ),
-                )
-              : null,
-          child: const Text('등용'),
-        ),
-        FilledButton(onPressed: onEndMonth, child: const Text('턴 종료')),
-      ],
+      ),
     ),
   );
 }
