@@ -276,9 +276,17 @@ class _TitleMenuButton extends StatelessWidget {
   );
 }
 
-class ScenarioSelectScreen extends StatelessWidget {
+class ScenarioSelectScreen extends StatefulWidget {
   const ScenarioSelectScreen({super.key, required this.scenario});
   final Map<String, dynamic> scenario;
+
+  @override
+  State<ScenarioSelectScreen> createState() => _ScenarioSelectScreenState();
+}
+
+class _ScenarioSelectScreenState extends State<ScenarioSelectScreen> {
+  int selectedIndex = 1;
+
   @override
   Widget build(BuildContext context) {
     final scenarios = [
@@ -345,17 +353,31 @@ class ScenarioSelectScreen extends StatelessWidget {
                           subtitle: entry.value.$2,
                           description: entry.value.$3,
                           imageIndex: entry.key,
-                          selected: entry.key == 1,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  RulerSelectScreen(scenario: scenario),
-                            ),
-                          ),
+                          selected: entry.key == selectedIndex,
+                          onTap: () =>
+                              setState(() => selectedIndex = entry.key),
                         ),
                       ),
                     ),
                     const SizedBox(height: 4),
+                    FilledButton(
+                      onPressed: () {
+                        final selected = scenarios[selectedIndex];
+                        final selectedScenario =
+                            Map<String, dynamic>.from(widget.scenario)
+                              ..['selectedScenarioId'] =
+                                  'scenario_${selectedIndex + 1}';
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => RulerSelectScreen(
+                              scenario: selectedScenario,
+                              scenarioTitle: selected.$1,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Text('${scenarios[selectedIndex].$1} 시작'),
+                    ),
                     OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
@@ -478,8 +500,13 @@ class _ScenarioCard extends StatelessWidget {
 }
 
 class RulerSelectScreen extends StatelessWidget {
-  const RulerSelectScreen({super.key, required this.scenario});
+  const RulerSelectScreen({
+    super.key,
+    required this.scenario,
+    this.scenarioTitle,
+  });
   final Map<String, dynamic> scenario;
+  final String? scenarioTitle;
   @override
   Widget build(BuildContext context) {
     final forces = (scenario['forces'] as List).cast<Map<String, dynamic>>();
@@ -500,6 +527,13 @@ class RulerSelectScreen extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             const Text('당신이 이끌 세력과 군주를 선택하십시오.'),
+            if (scenarioTitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                scenarioTitle!,
+                style: const TextStyle(color: Color(0xffd3aa62)),
+              ),
+            ],
             const SizedBox(height: 14),
             ...forces.asMap().entries.map((entry) {
               final emblemIndex = entry.key % 3;
