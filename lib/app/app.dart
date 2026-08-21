@@ -1849,8 +1849,13 @@ class _Map extends StatelessWidget {
               children: [
                 Positioned.fill(
                   child: Image.asset(
-                    AssetRepository.worldMapRegions,
+                    AssetRepository.worldMapBackground,
                     fit: BoxFit.cover,
+                  ),
+                ),
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _TerritoryOverlayPainter(provinces),
                   ),
                 ),
                 Positioned.fill(
@@ -1880,6 +1885,95 @@ class _Map extends StatelessWidget {
       );
     },
   );
+}
+
+class _TerritoryOverlayPainter extends CustomPainter {
+  _TerritoryOverlayPainter(this.provinces);
+  final List<ProvinceState> provinces;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final points = [
+      for (final province in provinces)
+        Offset(province.mapX * size.width, province.mapY * size.height),
+    ];
+    for (var i = 0; i < provinces.length; i++) {
+      var polygon = <Offset>[
+        const Offset(0, 0),
+        Offset(size.width, 0),
+        Offset(size.width, size.height),
+        Offset(0, size.height),
+      ];
+      final site = points[i];
+      for (var j = 0; j < points.length; j++) {
+        if (i == j) continue;
+        polygon = _clipToBisector(polygon, site, points[j]);
+        if (polygon.isEmpty) break;
+      }
+      if (polygon.length < 3) continue;
+      final color = _forceColor(provinces[i].ownerForceId);
+      final path = Path()..moveTo(polygon.first.dx, polygon.first.dy);
+      for (final point in polygon.skip(1)) {
+        path.lineTo(point.dx, point.dy);
+      }
+      path.close();
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color.withValues(alpha: .38)
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color.withValues(alpha: .72)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2,
+      );
+    }
+  }
+
+  List<Offset> _clipToBisector(
+    List<Offset> polygon,
+    Offset site,
+    Offset other,
+  ) {
+    final normal = Offset(2 * (other.dx - site.dx), 2 * (other.dy - site.dy));
+    final limit =
+        other.dx * other.dx +
+        other.dy * other.dy -
+        site.dx * site.dx -
+        site.dy * site.dy;
+    final result = <Offset>[];
+    for (var i = 0; i < polygon.length; i++) {
+      final start = polygon[i];
+      final end = polygon[(i + 1) % polygon.length];
+      final startInside = _dot(normal, start) <= limit;
+      final endInside = _dot(normal, end) <= limit;
+      if (startInside) result.add(start);
+      if (startInside != endInside) {
+        final direction = end - start;
+        final denominator = _dot(normal, direction);
+        if (denominator.abs() > .0001) {
+          final t = (limit - _dot(normal, start)) / denominator;
+          result.add(start + direction * t);
+        }
+      }
+    }
+    return result;
+  }
+
+  double _dot(Offset a, Offset b) => a.dx * b.dx + a.dy * b.dy;
+
+  Color _forceColor(String forceId) => switch (forceId) {
+    'force_green' => const Color(0xff2e806c),
+    'force_red' => const Color(0xffa94c3c),
+    'force_blue' => const Color(0xff6b5b9d),
+    _ => const Color(0xff9c7a3d),
+  };
+
+  @override
+  bool shouldRepaint(covariant _TerritoryOverlayPainter oldDelegate) => true;
 }
 
 // Retained for optional adjacency-debug rendering.
