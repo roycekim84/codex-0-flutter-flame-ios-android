@@ -270,7 +270,6 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 40),
                     AssetButton(
                       primary: true,
-                      iconAsset: AssetRepository.commandIconStrip,
                       label: '새 게임',
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(
@@ -281,7 +280,6 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     AssetButton(
-                      iconAsset: AssetRepository.commandIconStrip,
                       label: '불러오기',
                       onPressed: () => _loadSavedGame(context),
                     ),
@@ -881,11 +879,11 @@ class _GameScreenState extends State<GameScreen> {
                 const Divider(height: 24),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                  child: Image.asset(
-                    AssetRepository.eventArtStrip,
-                    height: 72,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
+                  child: AssetSlice(
+                    asset: AssetRepository.eventArtStrip,
+                    index: _eventArtIndex(state.lastEvent!),
+                    segments: 4,
+                    size: 72,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1332,6 +1330,27 @@ class _OfficerSelector extends StatelessWidget {
   }
 }
 
+class _CommandLabel extends StatelessWidget {
+  const _CommandLabel(this.label, this.iconIndex);
+  final String label;
+  final int iconIndex;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      AssetSlice(
+        asset: AssetRepository.commandIconStrip,
+        index: iconIndex,
+        segments: 4,
+        size: 22,
+      ),
+      const SizedBox(width: 5),
+      Text(label),
+    ],
+  );
+}
+
 class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.engine,
@@ -1362,15 +1381,36 @@ class _ActionBar extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       child: Column(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: SizedBox(
-              height: 54,
-              width: double.infinity,
-              child: Image.asset(
-                'assets/images/command_icon_strip.png',
-                fit: BoxFit.cover,
-              ),
+          DecoratedBox(
+            decoration: const BoxDecoration(color: Color(0xff1b1915)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                AssetSlice(
+                  asset: AssetRepository.commandIconStrip,
+                  index: 0,
+                  segments: 4,
+                  size: 34,
+                ),
+                AssetSlice(
+                  asset: AssetRepository.commandIconStrip,
+                  index: 1,
+                  segments: 4,
+                  size: 34,
+                ),
+                AssetSlice(
+                  asset: AssetRepository.commandIconStrip,
+                  index: 2,
+                  segments: 4,
+                  size: 34,
+                ),
+                AssetSlice(
+                  asset: AssetRepository.commandIconStrip,
+                  index: 3,
+                  segments: 4,
+                  size: 34,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 8),
@@ -1389,7 +1429,7 @@ class _ActionBar extends StatelessWidget {
                         ),
                       )
                     : null,
-                child: const Text('개발'),
+                child: const _CommandLabel('개발', 0),
               ),
               FilledButton.tonal(
                 onPressed: playerOwned && officerId != null
@@ -1401,23 +1441,23 @@ class _ActionBar extends StatelessWidget {
                         ),
                       )
                     : null,
-                child: const Text('징병'),
+                child: const _CommandLabel('징병', 1),
               ),
               FilledButton.tonal(
                 onPressed: playerOwned && officerId != null ? onMove : null,
-                child: const Text('장수 이동'),
+                child: const _CommandLabel('장수 이동', 1),
               ),
               FilledButton.tonal(
                 onPressed: playerOwned && officerId != null
                     ? onDiplomacy
                     : null,
-                child: const Text('외교'),
+                child: const _CommandLabel('외교', 2),
               ),
               FilledButton.tonal(
                 onPressed: playerOwned && officerId != null
                     ? onEspionage
                     : null,
-                child: const Text('첩보'),
+                child: const _CommandLabel('첩보', 3),
               ),
               FilledButton.tonal(
                 onPressed: playerOwned && officerId != null
@@ -2205,6 +2245,13 @@ class _OfficerSheet extends StatelessWidget {
 
 String _portraitAsset(String seed) {
   return AssetRepository.officerPortrait(seed);
+}
+
+int _eventArtIndex(String event) {
+  if (event.contains('홍수')) return 1;
+  if (event.contains('질병')) return 2;
+  if (event.contains('상인')) return 3;
+  return 0;
 }
 
 class _GeneratedPortrait extends StatelessWidget {

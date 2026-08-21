@@ -32,12 +32,14 @@ class AssetButton extends StatelessWidget {
     super.key,
     required this.label,
     this.iconAsset,
+    this.iconIndex,
     this.onPressed,
     this.primary = false,
   });
 
   final String label;
   final String? iconAsset;
+  final int? iconIndex;
   final VoidCallback? onPressed;
   final bool primary;
 
@@ -47,7 +49,12 @@ class AssetButton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (iconAsset != null) ...[
-          Image.asset(iconAsset!, width: 22, height: 22, fit: BoxFit.cover),
+          AssetSlice(
+            asset: iconAsset!,
+            index: iconIndex ?? 0,
+            segments: 4,
+            size: 22,
+          ),
           const SizedBox(width: 6),
         ],
         Text(label),
@@ -56,5 +63,43 @@ class AssetButton extends StatelessWidget {
     return primary
         ? FilledButton(onPressed: onPressed, child: content)
         : FilledButton.tonal(onPressed: onPressed, child: content);
+  }
+}
+
+/// Displays one segment from a generated horizontal strip.
+class AssetSlice extends StatelessWidget {
+  const AssetSlice({
+    super.key,
+    required this.asset,
+    required this.index,
+    required this.segments,
+    this.size = 48,
+  });
+
+  final String asset;
+  final int index;
+  final int segments;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final alignment = -1 + (2 * index / (segments - 1));
+    return SizedBox(
+      width: size,
+      height: size,
+      child: ClipRect(
+        child: OverflowBox(
+          alignment: Alignment(alignment, 0),
+          maxWidth: size * segments,
+          maxHeight: size,
+          child: Image.asset(
+            asset,
+            width: size * segments,
+            height: size,
+            fit: BoxFit.fill,
+          ),
+        ),
+      ),
+    );
   }
 }

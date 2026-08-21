@@ -98,18 +98,26 @@ class BattleGame extends FlameGame {
         ),
       );
     }
-    add(
-      SpriteComponent.fromImage(
-        effectsImage,
-        position: Vector2(96, 166),
-        size: Vector2(170, 72),
-        paint: Paint()
-          ..colorFilter = ColorFilter.mode(
-            Colors.white.withValues(alpha: .16),
-            BlendMode.modulate,
-          ),
-      ),
-    );
+    final hasFire = [
+      ...battle.attackerUnits,
+      ...battle.defenderUnits,
+    ].any((unit) => unit.burning);
+    if (hasFire) {
+      add(
+        SpriteComponent.fromImage(
+          effectsImage,
+          srcPosition: Vector2.zero(),
+          srcSize: Vector2(341, 437),
+          position: Vector2(150, 172),
+          size: Vector2(78, 92),
+          paint: Paint()
+            ..colorFilter = ColorFilter.mode(
+              Colors.white.withValues(alpha: .88),
+              BlendMode.modulate,
+            ),
+        ),
+      );
+    }
     add(
       RectangleComponent(
         position: Vector2(20, 110),
