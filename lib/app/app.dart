@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
 
 import '../battle/battle_engine.dart';
+import '../core/game_command.dart';
 import '../core/game_engine.dart';
 import '../data/demo_scenario.dart';
 import '../flame/battle_game.dart';
@@ -105,6 +106,7 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   late final GameEngine engine;
   String? selectedProvinceId;
+  String? selectedOfficerId;
   @override
   void initState() {
     super.initState();
@@ -115,6 +117,7 @@ class _GameScreenState extends State<GameScreen> {
       ),
     );
     selectedProvinceId = engine.state.playerProvinceIds.first;
+    selectedOfficerId = engine.state.provinces.first.officerIds.first;
     engine.addListener(_refresh);
   }
 
@@ -145,6 +148,91 @@ class _GameScreenState extends State<GameScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => BattleScreen(engine: engine, battle: battle),
+      ),
+    );
+  }
+
+  void _selectProvince(String id) {
+    final province = engine.state.provinces.firstWhere((p) => p.id == id);
+    setState(() {
+      selectedProvinceId = id;
+      selectedOfficerId = province.officerIds.isEmpty
+          ? null
+          : province.officerIds.first;
+    });
+  }
+
+  Future<void> _dispatch(GameCommand command) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(_commandTitle(command.type)),
+        content: Text(
+          '${_commandDescription(command.type)}\n\n담당 장수: ${_officerName(command.officerId)}\n대상 지역: ${selectedProvinceId ?? '-'}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('실행'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final result = engine.dispatch(command);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result.message)));
+  }
+
+  String _officerName(String? id) => id == null
+      ? '없음'
+      : engine.state.officers.firstWhere((o) => o.id == id).name;
+  String _commandTitle(GameCommandType type) => switch (type) {
+    GameCommandType.develop => '개발',
+    GameCommandType.recruit => '징병',
+    GameCommandType.tax => '징세',
+    GameCommandType.relief => '시혜',
+    GameCommandType.train => '훈련',
+    GameCommandType.fortify => '축성',
+    GameCommandType.search => '탐색',
+    GameCommandType.recruitOfficer => '등용',
+    GameCommandType.endMonth => '턴 종료',
+  };
+  String _commandDescription(GameCommandType type) => switch (type) {
+    GameCommandType.develop => '토지와 군량 생산 기반을 높입니다. 금 100을 사용합니다.',
+    GameCommandType.recruit => '민심을 바탕으로 병력을 모집합니다. 금 80을 사용합니다.',
+    GameCommandType.tax => '즉시 금을 얻지만 민심이 하락합니다.',
+    GameCommandType.relief => '금 80을 사용해 민심을 높입니다.',
+    GameCommandType.train => '지역 군대의 훈련을 높입니다. 금 60을 사용합니다.',
+    GameCommandType.fortify => '지역 방어 기반을 높입니다. 금 120을 사용합니다.',
+    GameCommandType.search => '재야 인재와 아이템을 탐색합니다.',
+    GameCommandType.recruitOfficer => '발견한 재야 장수를 금 200으로 등용합니다.',
+    GameCommandType.endMonth => '모든 세력의 명령을 처리하고 다음 달로 넘어갑니다.',
+  };
+
+  void _endMonth() {
+    final beforeGold = engine.state.playerForce.gold;
+    final beforeFood = engine.state.playerForce.food;
+    engine.dispatch(const GameCommand(type: GameCommandType.endMonth));
+    final state = engine.state;
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('${state.year}년 ${state.month}월 시작'),
+        content: Text(
+          '지난달 정산\n금 $beforeGold → ${state.playerForce.gold}\n군량 $beforeFood → ${state.playerForce.food}\n영토 ${state.playerProvinceIds.length}곳',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인'),
+          ),
+        ],
       ),
     );
   }
@@ -191,18 +279,28 @@ class _GameScreenState extends State<GameScreen> {
                 provinces: state.provinces,
                 playerForceId: state.playerForceId,
                 selectedId: selectedProvinceId,
-                onSelect: (id) => setState(() => selectedProvinceId = id),
+                onSelect: _selectProvince,
               ),
             ),
             _ProvincePanel(
               province: selected,
               playerOwned: state.isPlayerProvince(selected),
             ),
+            if (state.isPlayerProvince(selected))
+              _OfficerSelector(
+                province: selected,
+                officers: state.officers,
+                selectedOfficerId: selectedOfficerId,
+                onSelect: (id) => setState(() => selectedOfficerId = id),
+              ),
             _ActionBar(
               engine: engine,
               province: selected,
               playerOwned: state.isPlayerProvince(selected),
               onBattle: _startBattle,
+              officerId: selectedOfficerId,
+              onDispatch: _dispatch,
+              onEndMonth: _endMonth,
             ),
           ],
         ),
@@ -384,17 +482,76 @@ class _ProvincePanel extends StatelessWidget {
   );
 }
 
+class _OfficerSelector extends StatelessWidget {
+  const _OfficerSelector({
+    required this.province,
+    required this.officers,
+    required this.selectedOfficerId,
+    required this.onSelect,
+  });
+  final ProvinceState province;
+  final List<OfficerState> officers;
+  final String? selectedOfficerId;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final local = officers
+        .where((o) => province.officerIds.contains(o.id))
+        .toList();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: Row(
+        children: [
+          const Icon(Icons.person_outline, size: 18),
+          const SizedBox(width: 6),
+          const Text('담당 장수'),
+          const SizedBox(width: 10),
+          Expanded(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: local.any((o) => o.id == selectedOfficerId)
+                  ? selectedOfficerId
+                  : null,
+              hint: const Text('장수를 선택하세요'),
+              items: local
+                  .map(
+                    (o) => DropdownMenuItem(
+                      value: o.id,
+                      child: Text(
+                        '${o.name} · 충성 ${o.loyalty}${o.id == selectedOfficerId && o.status == 'RULER' ? ' · 군주' : ''}',
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (id) {
+                if (id != null) onSelect(id);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.engine,
     required this.province,
     required this.playerOwned,
     required this.onBattle,
+    required this.officerId,
+    required this.onDispatch,
+    required this.onEndMonth,
   });
   final GameEngine engine;
   final ProvinceState province;
   final bool playerOwned;
   final VoidCallback onBattle;
+  final String? officerId;
+  final ValueChanged<GameCommand> onDispatch;
+  final VoidCallback onEndMonth;
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
@@ -404,40 +561,108 @@ class _ActionBar extends StatelessWidget {
       alignment: WrapAlignment.center,
       children: [
         FilledButton.tonal(
-          onPressed: playerOwned ? () => engine.develop(province.id) : null,
+          onPressed: playerOwned && officerId != null
+              ? () => onDispatch(
+                  GameCommand(
+                    type: GameCommandType.develop,
+                    officerId: officerId,
+                    provinceId: province.id,
+                  ),
+                )
+              : null,
           child: const Text('개발'),
         ),
         FilledButton.tonal(
-          onPressed: playerOwned ? () => engine.recruit(province.id) : null,
+          onPressed: playerOwned && officerId != null
+              ? () => onDispatch(
+                  GameCommand(
+                    type: GameCommandType.recruit,
+                    officerId: officerId,
+                    provinceId: province.id,
+                  ),
+                )
+              : null,
           child: const Text('징병'),
         ),
+        FilledButton.tonal(onPressed: null, child: const Text('장수 이동')),
         FilledButton.tonal(
-          onPressed: playerOwned
-              ? () => engine.moveFirstOfficerTo(province.id)
+          onPressed: playerOwned && officerId != null
+              ? () => onDispatch(
+                  GameCommand(
+                    type: GameCommandType.tax,
+                    officerId: officerId,
+                    provinceId: province.id,
+                  ),
+                )
               : null,
-          child: const Text('장수 이동'),
-        ),
-        FilledButton.tonal(
-          onPressed: playerOwned ? () => engine.tax(province.id) : null,
           child: const Text('징세'),
         ),
         FilledButton.tonal(
-          onPressed: playerOwned ? () => engine.relief(province.id) : null,
+          onPressed: playerOwned && officerId != null
+              ? () => onDispatch(
+                  GameCommand(
+                    type: GameCommandType.relief,
+                    officerId: officerId,
+                    provinceId: province.id,
+                  ),
+                )
+              : null,
           child: const Text('시혜'),
         ),
         FilledButton.tonal(
-          onPressed: playerOwned ? () => engine.train(province.id) : null,
+          onPressed: playerOwned && officerId != null
+              ? () => onDispatch(
+                  GameCommand(
+                    type: GameCommandType.train,
+                    officerId: officerId,
+                    provinceId: province.id,
+                  ),
+                )
+              : null,
           child: const Text('훈련'),
         ),
         FilledButton.tonal(
-          onPressed: playerOwned ? () => engine.fortify(province.id) : null,
+          onPressed: playerOwned && officerId != null
+              ? () => onDispatch(
+                  GameCommand(
+                    type: GameCommandType.fortify,
+                    officerId: officerId,
+                    provinceId: province.id,
+                  ),
+                )
+              : null,
           child: const Text('축성'),
         ),
         FilledButton(
           onPressed: playerOwned ? null : onBattle,
           child: const Text('출병'),
         ),
-        FilledButton(onPressed: engine.endTurn, child: const Text('턴 종료')),
+        FilledButton.tonal(
+          onPressed: playerOwned && officerId != null
+              ? () => onDispatch(
+                  GameCommand(
+                    type: GameCommandType.search,
+                    officerId: officerId,
+                    provinceId: province.id,
+                  ),
+                )
+              : null,
+          child: const Text('탐색'),
+        ),
+        FilledButton.tonal(
+          onPressed: playerOwned && engine.firstFreeOfficer != null
+              ? () => onDispatch(
+                  GameCommand(
+                    type: GameCommandType.recruitOfficer,
+                    officerId: officerId,
+                    provinceId: province.id,
+                    targetOfficerId: engine.firstFreeOfficer!.id,
+                  ),
+                )
+              : null,
+          child: const Text('등용'),
+        ),
+        FilledButton(onPressed: onEndMonth, child: const Text('턴 종료')),
       ],
     ),
   );

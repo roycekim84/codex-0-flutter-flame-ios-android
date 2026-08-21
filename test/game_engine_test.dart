@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:codex_strategy/core/game_engine.dart';
+import 'package:codex_strategy/core/game_command.dart';
 import 'package:codex_strategy/data/demo_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
 import 'package:codex_strategy/repositories/save_repository.dart';
@@ -89,5 +90,47 @@ void main() {
     expect(engine.state.playerForce.gold, greaterThan(gold));
     engine.relief(province.id);
     expect(province.publicLoyalty, 67);
+  });
+
+  test('장수는 한 달에 한 번만 명령을 수행한다', () {
+    final engine = createEngine();
+    final province = engine.state.provinces.first;
+    final officer = province.officerIds.first;
+    final first = engine.dispatch(
+      GameCommand(
+        type: GameCommandType.develop,
+        officerId: officer,
+        provinceId: province.id,
+      ),
+    );
+    final second = engine.dispatch(
+      GameCommand(
+        type: GameCommandType.tax,
+        officerId: officer,
+        provinceId: province.id,
+      ),
+    );
+    expect(first.success, isTrue);
+    expect(second.success, isFalse);
+    expect(second.message, contains('이미 명령'));
+  });
+
+  test('탐색과 등용은 재야 장수를 세력에 편입한다', () {
+    final engine = createEngine();
+    final province = engine.state.provinces.first;
+    final officer = province.officerIds.first;
+    final found = engine.dispatch(
+      GameCommand(
+        type: GameCommandType.search,
+        officerId: officer,
+        provinceId: province.id,
+      ),
+    );
+    expect(found.success, isTrue);
+    final freeId = engine.firstFreeOfficer!.id;
+    final recruit = engine.recruitOfficer(freeId, province.id);
+    expect(recruit.success, isTrue);
+    expect(engine.state.playerForce.officerIds, contains(freeId));
+    expect(province.officerIds, contains(freeId));
   });
 }

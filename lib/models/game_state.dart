@@ -51,7 +51,8 @@ class OfficerState {
     required this.loyalty,
     required this.status,
   });
-  final String id, name, forceId, status;
+  final String id, name;
+  String forceId, status;
   String provinceId;
   final int war, intelligence, charisma;
   int loyalty;
@@ -76,6 +77,7 @@ class GameState extends ChangeNotifier {
   final List<OfficerState> officers;
   final int randomSeed;
   final List<String> gameLog;
+  final Set<String> actedOfficerIds = <String>{};
   ForceState get playerForce => forces.firstWhere((f) => f.id == playerForceId);
   List<String> get playerProvinceIds => playerForce.provinceIds;
   int get playerSoldiers =>
@@ -87,6 +89,17 @@ class GameState extends ChangeNotifier {
 
   bool isPlayerProvince(ProvinceState province) =>
       province.ownerForceId == playerForceId;
+
+  bool hasActed(String officerId) => actedOfficerIds.contains(officerId);
+
+  void markActed(String officerId) {
+    actedOfficerIds.add(officerId);
+    notifyListeners();
+  }
+
+  void resetMonthlyActions() {
+    actedOfficerIds.clear();
+  }
 
   static GameState fromScenario(
     Map<String, dynamic> data, {

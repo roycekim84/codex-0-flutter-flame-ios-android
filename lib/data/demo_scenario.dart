@@ -69,6 +69,30 @@ class DemoScenario {
         'status': i % 3 == 0 ? 'RULER' : 'OFFICER',
       });
     }
+    officers.addAll([
+      {
+        'id': 'officer_free_1',
+        'name': '떠도는 책사',
+        'forceId': 'free',
+        'provinceId': 'free',
+        'war': 38,
+        'intelligence': 92,
+        'charisma': 70,
+        'loyalty': 0,
+        'status': 'FREE',
+      },
+      {
+        'id': 'officer_free_2',
+        'name': '변방의 장수',
+        'forceId': 'free',
+        'provinceId': 'free',
+        'war': 86,
+        'intelligence': 48,
+        'charisma': 55,
+        'loyalty': 0,
+        'status': 'FREE',
+      },
+    ]);
     return {
       'id': 'generic_prototype',
       'year': 193,

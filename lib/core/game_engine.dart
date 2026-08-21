@@ -1,6 +1,7 @@
 import '../models/game_state.dart';
 import '../battle/battle_engine.dart';
 import '../battle/battle_state.dart';
+import 'game_command.dart';
 
 class GameEngine {
   GameEngine(this.state);
@@ -9,6 +10,84 @@ class GameEngine {
   void removeListener(void Function() listener) =>
       state.removeListener(listener);
   void dispose() => state.dispose();
+
+  CommandResult dispatch(GameCommand command) {
+    if (command.officerId != null && state.hasActed(command.officerId!)) {
+      return const CommandResult.failure('이 장수는 이번 달에 이미 명령을 수행했습니다.');
+    }
+    switch (command.type) {
+      case GameCommandType.develop:
+        develop(command.provinceId!);
+      case GameCommandType.recruit:
+        recruit(command.provinceId!);
+      case GameCommandType.tax:
+        tax(command.provinceId!);
+      case GameCommandType.relief:
+        relief(command.provinceId!);
+      case GameCommandType.train:
+        train(command.provinceId!);
+      case GameCommandType.fortify:
+        fortify(command.provinceId!);
+      case GameCommandType.search:
+        final result = search(command.provinceId!);
+        if (!result.success) return result;
+      case GameCommandType.recruitOfficer:
+        final result = recruitOfficer(
+          command.targetOfficerId!,
+          command.provinceId!,
+        );
+        if (!result.success) return result;
+      case GameCommandType.endMonth:
+        endTurn();
+        return const CommandResult.success('월말 정산을 완료했습니다.');
+    }
+    if (command.officerId != null) state.markActed(command.officerId!);
+    return const CommandResult.success('명령을 실행했습니다.');
+  }
+
+  OfficerState? get firstFreeOfficer =>
+      state.officers.where((o) => o.status == 'FREE').firstOrNull;
+
+  CommandResult search(String provinceId) {
+    final province = _playerProvince(provinceId);
+    final candidate = firstFreeOfficer;
+    if (province == null) {
+      return const CommandResult.failure('아군 영지에서만 탐색할 수 있습니다.');
+    }
+    if (candidate == null) {
+      state.log('${province.name} 탐색 · 재야 인재를 찾지 못했습니다.');
+      return const CommandResult.success('아무것도 발견하지 못했습니다.');
+    }
+    state.log('${province.name} 탐색 · ${candidate.name}의 행방을 발견했습니다.');
+    return CommandResult.success(
+      '${candidate.name}을 발견했습니다.',
+      targetOfficerId: candidate.id,
+    );
+  }
+
+  CommandResult recruitOfficer(String officerId, String provinceId) {
+    final candidate = state.officers
+        .where((o) => o.id == officerId && o.status == 'FREE')
+        .firstOrNull;
+    final province = _playerProvince(provinceId);
+    if (candidate == null || province == null) {
+      return const CommandResult.failure('등용할 대상을 찾을 수 없습니다.');
+    }
+    const cost = 200;
+    if (state.playerForce.gold < cost) {
+      return const CommandResult.failure('등용 자금이 부족합니다.');
+    }
+    state.playerForce.gold -= cost;
+    candidate.forceId = state.playerForceId;
+    candidate.status = 'OFFICER';
+    candidate.provinceId = province.id;
+    candidate.loyalty = 60;
+    state.playerForce.officerIds.add(candidate.id);
+    province.officerIds.add(candidate.id);
+    state.log('${candidate.name} 등용 · 금 -$cost · ${province.name} 배치');
+    return CommandResult.success('${candidate.name}을 등용했습니다.');
+  }
+
   void develop(String provinceId) {
     final p = _playerProvince(provinceId);
     if (p == null || state.playerForce.gold < 100) return;
@@ -163,6 +242,7 @@ class GameEngine {
       state.month = 1;
       state.year++;
     }
+    state.resetMonthlyActions();
     state.log('월말 정산 및 AI 행동 완료');
   }
 
