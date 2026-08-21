@@ -1,4 +1,5 @@
 import '../models/game_state.dart';
+import '../ai/ai_engine.dart';
 import '../battle/battle_engine.dart';
 import '../battle/battle_state.dart';
 import '../battle/terrain.dart';
@@ -9,6 +10,7 @@ enum PrisonerAction { recruit, release, execute }
 class GameEngine {
   GameEngine(this.state);
   final GameState state;
+  final AiEngine aiEngine = AiEngine();
   void addListener(void Function() listener) => state.addListener(listener);
   void removeListener(void Function() listener) =>
       state.removeListener(listener);
@@ -611,6 +613,40 @@ class GameEngine {
         force.gold -= 80;
         final p = state.provinces.firstWhere((p) => p.ownerForceId == force.id);
         p.soldiers += 45;
+        state.log('${force.name} AI · ${p.name} 병력 +45');
+      }
+      final decision = aiEngine.choose(state, force);
+      switch (decision.type) {
+        case AiDecisionType.gift:
+          if (force.gold >= 100) {
+            force.gold -= 100;
+            final before = state.relationTo(force.id);
+            state.setRelation(force.id, before + 10);
+            state.log(
+              '${force.name} AI · 선물 외교 · 관계 $before → ${state.relationTo(force.id)}',
+            );
+          }
+        case AiDecisionType.spy:
+          final province = state.provinces
+              .where((p) => p.id == decision.targetProvinceId)
+              .firstOrNull;
+          if (province != null && force.gold >= 80) {
+            force.gold -= 80;
+            final before = province.publicLoyalty;
+            province.publicLoyalty = (before - 5).clamp(0, 100).toInt();
+            state.log(
+              '${force.name} AI · ${province.name} 첩보 · 민심 $before → ${province.publicLoyalty}',
+            );
+          }
+        case AiDecisionType.fortify:
+          if (force.gold >= 120 && force.provinceIds.isNotEmpty) {
+            force.gold -= 120;
+            final p = state.provinces.firstWhere(
+              (p) => p.ownerForceId == force.id,
+            );
+            p.land = (p.land + 2).clamp(0, 100).toInt();
+            state.log('${force.name} AI · ${p.name} 축성');
+          }
       }
     }
     state.month++;

@@ -40,7 +40,18 @@ void main() {
     expect(engine.state.month, 2);
     expect(engine.state.playerForce.gold, greaterThan(gold));
     expect(aiProvince.soldiers, aiSoldiers + 45);
+    expect(engine.state.relationTo('force_red'), 0);
     expect(engine.state.gameLog.last, contains('월말 정산'));
+  });
+
+  test('AI는 낮은 관계에서 선물 외교를 선택하고 로그를 남긴다', () {
+    final engine = createEngine();
+    engine.endTurn();
+    expect(engine.state.relationTo('force_red'), 0);
+    expect(
+      engine.state.gameLog.any((log) => log.contains('AI · 선물 외교')),
+      isTrue,
+    );
   });
 
   test('인접한 아군 영지 사이에서 장수를 이동할 수 있다', () {
