@@ -1988,46 +1988,39 @@ class _ProvinceNode extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               decoration: selected
                   ? BoxDecoration(
-                      shape: BoxShape.circle,
                       boxShadow: const [
-                        BoxShadow(blurRadius: 13, color: Color(0xffe6ae3e)),
+                        BoxShadow(
+                          blurRadius: 16,
+                          spreadRadius: 3,
+                          color: Color(0xffe6ae3e),
+                        ),
                       ],
-                      border: Border.all(
-                        color: const Color(0xffffd46b),
-                        width: 2,
-                      ),
                     )
                   : null,
               child: Image.asset(asset, width: markerSize, height: markerSize),
             ),
           ),
           Positioned(
-            top: 52,
+            top: 57,
             child: Text(
               province.name,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Color(0xffffefd0),
                 fontWeight: FontWeight.w800,
-                fontSize: 12,
+                fontSize: 13,
                 shadows: [
                   Shadow(
                     color: Colors.black,
-                    blurRadius: 4,
-                    offset: Offset(1, 1),
+                    blurRadius: 1,
+                    offset: Offset(1, 0),
+                  ),
+                  Shadow(
+                    color: Colors.black,
+                    blurRadius: 1,
+                    offset: Offset(-1, 0),
                   ),
                 ],
-              ),
-            ),
-          ),
-          Positioned(
-            top: 70,
-            child: Text(
-              informationRevealed ? '${province.soldiers}명' : '????명',
-              style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xffead7aa),
-                shadows: [Shadow(color: Colors.black, blurRadius: 3)],
               ),
             ),
           ),
