@@ -104,9 +104,11 @@ class _RealmBackdrop extends StatelessWidget {
   const _RealmBackdrop({
     required this.child,
     this.asset = 'assets/images/title_background.png',
+    this.showPainterOverlay = true,
   });
   final Widget child;
   final String asset;
+  final bool showPainterOverlay;
 
   @override
   Widget build(BuildContext context) => Stack(
@@ -114,10 +116,11 @@ class _RealmBackdrop extends StatelessWidget {
     children: [
       Image.asset(asset, fit: BoxFit.cover),
       Container(color: Colors.black.withValues(alpha: .46)),
-      Opacity(
-        opacity: .12,
-        child: CustomPaint(painter: _RealmBackdropPainter()),
-      ),
+      if (showPainterOverlay)
+        Opacity(
+          opacity: .12,
+          child: CustomPaint(painter: _RealmBackdropPainter()),
+        ),
       child,
     ],
   );
@@ -212,6 +215,7 @@ class HomeScreen extends StatelessWidget {
     final scenario = DemoScenario.create();
     return Scaffold(
       body: _RealmBackdrop(
+        showPainterOverlay: false,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
