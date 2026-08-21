@@ -9,6 +9,15 @@ class BattleGame extends FlameGame {
 
   @override
   Future<void> onLoad() async {
+    _drawBoard();
+  }
+
+  void refreshBoard() {
+    removeAll(children.toList());
+    _drawBoard();
+  }
+
+  void _drawBoard() {
     add(
       TextComponent(
         text: 'DAY ${battle.day}',
@@ -22,6 +31,42 @@ class BattleGame extends FlameGame {
         ),
       ),
     );
+    for (var row = 0; row < 5; row++) {
+      for (var column = 0; column < 6; column++) {
+        add(
+          RectangleComponent(
+            position: Vector2(12 + column * 62, 58 + row * 62),
+            size: Vector2(58, 58),
+            paint: Paint()
+              ..color = (row + column).isEven
+                  ? const Color(0xff5d765d)
+                  : const Color(0xff4c674f),
+          ),
+        );
+      }
+    }
+    for (final unit in [...battle.attackerUnits, ...battle.defenderUnits]) {
+      final color = battle.attackerUnits.contains(unit)
+          ? const Color(0xff2f6da1)
+          : const Color(0xffa84f45);
+      add(
+        CircleComponent(
+          position: Vector2(41 + unit.column * 62, 87 + unit.row * 62),
+          radius: 20,
+          anchor: Anchor.center,
+          paint: Paint()..color = color,
+        ),
+      );
+      add(
+        TextComponent(
+          text: '${unit.soldiers}',
+          position: Vector2(22 + unit.column * 62, 78 + unit.row * 62),
+          textRenderer: TextPaint(
+            style: const TextStyle(color: Color(0xffffffff), fontSize: 10),
+          ),
+        ),
+      );
+    }
     add(
       RectangleComponent(
         position: Vector2(20, 110),

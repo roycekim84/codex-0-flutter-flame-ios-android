@@ -1038,6 +1038,7 @@ class BattleScreen extends StatefulWidget {
 class _BattleScreenState extends State<BattleScreen> {
   String? selectedAttackerId;
   String? selectedDefenderId;
+  late final BattleGame battleGame;
 
   @override
   void initState() {
@@ -1046,6 +1047,7 @@ class _BattleScreenState extends State<BattleScreen> {
         widget.battle.state.attackerUnits.firstOrNull?.officerId;
     selectedDefenderId =
         widget.battle.state.defenderUnits.firstOrNull?.officerId;
+    battleGame = BattleGame(widget.battle.state);
   }
 
   void _act(BattleAction action) {
@@ -1059,7 +1061,51 @@ class _BattleScreenState extends State<BattleScreen> {
       );
     }
     setState(() {});
+    battleGame.refreshBoard();
     _finishIfNeeded();
+  }
+
+  Future<void> _moveSelected() async {
+    final unit = widget.battle.state.attackerUnits
+        .where((u) => u.officerId == selectedAttackerId)
+        .firstOrNull;
+    if (unit == null) return;
+    final cells = <List<int>>[];
+    for (final delta in const [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ]) {
+      final row = unit.row + delta[0];
+      final column = unit.column + delta[1];
+      if (row >= 0 && row < 5 && column >= 0 && column < 6) {
+        cells.add([row, column]);
+      }
+    }
+    final target = await showDialog<List<int>>(
+      context: context,
+      builder: (_) => SimpleDialog(
+        title: const Text('이동할 칸 선택'),
+        children: cells
+            .map(
+              (cell) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, cell),
+                child: Text('행 ${cell[0] + 1} · 열 ${cell[1] + 1}'),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (target == null || !mounted) return;
+    if (!widget.battle.moveUnit(unit.officerId, target[0], target[1])) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('그 칸으로 이동할 수 없습니다.')));
+      return;
+    }
+    setState(() {});
+    battleGame.refreshBoard();
   }
 
   void _finishIfNeeded() {
@@ -1085,7 +1131,7 @@ class _BattleScreenState extends State<BattleScreen> {
             Expanded(
               child: Container(
                 color: const Color(0xff263b35),
-                child: GameWidget(game: BattleGame(battle)),
+                child: GameWidget(game: battleGame),
               ),
             ),
             Padding(
@@ -1197,6 +1243,13 @@ class _BattleScreenState extends State<BattleScreen> {
                               ? null
                               : () => _act(BattleAction.wait),
                           child: const Text('대기'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: battle.finished ? null : _moveSelected,
+                          child: const Text('이동'),
                         ),
                       ),
                       const SizedBox(width: 10),

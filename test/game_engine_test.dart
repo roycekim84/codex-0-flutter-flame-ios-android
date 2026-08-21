@@ -228,4 +228,27 @@ void main() {
     expect(target.soldiers, lessThan(before));
     expect(battle.state.defenderSoldiers, lessThan(1140));
   });
+
+  test('전투 부대는 한 칸씩만 이동하고 점유 칸으로 이동할 수 없다', () {
+    final engine = createEngine();
+    final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: source.id,
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+      participantOfficerIds: source.officerIds.take(2).toList(),
+    );
+    expect(battle, isNotNull);
+    final unit = battle!.state.attackerUnits.first;
+    final originalRow = unit.row;
+    final originalColumn = unit.column;
+    expect(
+      battle.moveUnit(unit.officerId, originalRow - 1, originalColumn),
+      isTrue,
+    );
+    expect(
+      battle.moveUnit(unit.officerId, originalRow - 3, originalColumn),
+      isFalse,
+    );
+  });
 }

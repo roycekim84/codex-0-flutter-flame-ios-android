@@ -7,9 +7,12 @@ class BattleUnit {
     required this.soldiers,
     required this.war,
     required this.intelligence,
+    required this.row,
+    required this.column,
   });
   final String officerId, name;
   final int war, intelligence;
+  int row, column;
   int soldiers;
 }
 

@@ -98,6 +98,27 @@ class BattleEngine {
     }
   }
 
+  bool moveUnit(String unitId, int row, int column) {
+    if (state.finished || row < 0 || row > 4 || column < 0 || column > 5) {
+      return false;
+    }
+    final unit = state.attackerUnits
+        .where((u) => u.officerId == unitId)
+        .firstOrNull;
+    if (unit == null ||
+        (unit.row - row).abs() + (unit.column - column).abs() != 1) {
+      return false;
+    }
+    final occupied = [...state.attackerUnits, ...state.defenderUnits].any(
+      (u) => u != unit && u.row == row && u.column == column && u.soldiers > 0,
+    );
+    if (occupied) return false;
+    unit.row = row;
+    unit.column = column;
+    state.day++;
+    return true;
+  }
+
   void retreat() {
     if (state.finished) return;
     state.finished = true;

@@ -233,20 +233,32 @@ class GameEngine {
               (i == 0 ? committedSoldiers - base * participants.length : 0),
           war: officer.war,
           intelligence: officer.intelligence,
+          row: 3 + i ~/ 3,
+          column: i % 3,
         ),
       );
     }
     final commander = state.officers.firstWhere((o) => o.id == commanderId);
-    final defenders = target.officerIds.map((id) {
-      final officer = state.officers.firstWhere((o) => o.id == id);
-      return BattleUnit(
-        officerId: officer.id,
-        name: officer.name,
-        soldiers: target.soldiers ~/ target.officerIds.length,
-        war: officer.war,
-        intelligence: officer.intelligence,
-      );
-    }).toList();
+    final defenders = <BattleUnit>[];
+    if (target.officerIds.isNotEmpty) {
+      final baseDefenderSoldiers = target.soldiers ~/ target.officerIds.length;
+      for (var i = 0; i < target.officerIds.length; i++) {
+        final officer = state.officers.firstWhere(
+          (o) => o.id == target.officerIds[i],
+        );
+        defenders.add(
+          BattleUnit(
+            officerId: officer.id,
+            name: officer.name,
+            soldiers: baseDefenderSoldiers,
+            war: officer.war,
+            intelligence: officer.intelligence,
+            row: i ~/ 3,
+            column: 3 + i % 3,
+          ),
+        );
+      }
+    }
     if (defenders.isNotEmpty) {
       defenders.first.soldiers +=
           target.soldiers - defenders.fold(0, (sum, u) => sum + u.soldiers);
