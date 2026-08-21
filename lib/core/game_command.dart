@@ -7,6 +7,8 @@ enum GameCommandType {
   fortify,
   search,
   recruitOfficer,
+  appointGovernor,
+  moveOfficer,
   endMonth,
 }
 
@@ -16,11 +18,13 @@ class GameCommand {
     this.officerId,
     this.provinceId,
     this.targetOfficerId,
+    this.destinationProvinceId,
   });
   final GameCommandType type;
   final String? officerId;
   final String? provinceId;
   final String? targetOfficerId;
+  final String? destinationProvinceId;
 }
 
 class CommandResult {

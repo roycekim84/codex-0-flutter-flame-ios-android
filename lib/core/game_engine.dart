@@ -37,6 +37,14 @@ class GameEngine {
           command.provinceId!,
         );
         if (!result.success) return result;
+      case GameCommandType.appointGovernor:
+        final result = appointGovernor(command.officerId!, command.provinceId!);
+        if (!result.success) return result;
+      case GameCommandType.moveOfficer:
+        if (command.destinationProvinceId == null ||
+            !moveOfficer(command.officerId!, command.destinationProvinceId!)) {
+          return const CommandResult.failure('인접한 아군 지역으로만 장수를 이동할 수 있습니다.');
+        }
       case GameCommandType.endMonth:
         endTurn();
         return const CommandResult.success('월말 정산을 완료했습니다.');
@@ -86,6 +94,26 @@ class GameEngine {
     province.officerIds.add(candidate.id);
     state.log('${candidate.name} 등용 · 금 -$cost · ${province.name} 배치');
     return CommandResult.success('${candidate.name}을 등용했습니다.');
+  }
+
+  CommandResult appointGovernor(String officerId, String provinceId) {
+    final province = _playerProvince(provinceId);
+    final officer = state.officers
+        .where(
+          (o) =>
+              o.id == officerId &&
+              o.forceId == state.playerForceId &&
+              o.provinceId == provinceId,
+        )
+        .firstOrNull;
+    if (province == null || officer == null) {
+      return const CommandResult.failure('이 지역에 있는 아군 장수만 태수로 임명할 수 있습니다.');
+    }
+    province.governorId = officer.id;
+    state.log('${province.name} 태수 임명 · ${officer.name}');
+    return CommandResult.success(
+      '${officer.name}을 ${province.name} 태수로 임명했습니다.',
+    );
   }
 
   void develop(String provinceId) {

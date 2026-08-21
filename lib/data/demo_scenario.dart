@@ -45,6 +45,7 @@ class DemoScenario {
         'soldiers': 900 + i * 120,
         'gold': 0,
         'food': 0,
+        'governorId': 'officer_${i * 3 + 1}',
         'officerIds': [
           'officer_${i * 3 + 1}',
           'officer_${i * 3 + 2}',

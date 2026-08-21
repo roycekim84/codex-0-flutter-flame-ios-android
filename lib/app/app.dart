@@ -201,6 +201,8 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.fortify => '축성',
     GameCommandType.search => '탐색',
     GameCommandType.recruitOfficer => '등용',
+    GameCommandType.appointGovernor => '태수 임명',
+    GameCommandType.moveOfficer => '장수 이동',
     GameCommandType.endMonth => '턴 종료',
   };
   String _commandDescription(GameCommandType type) => switch (type) {
@@ -212,8 +214,53 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.fortify => '지역 방어 기반을 높입니다. 금 120을 사용합니다.',
     GameCommandType.search => '재야 인재와 아이템을 탐색합니다.',
     GameCommandType.recruitOfficer => '발견한 재야 장수를 금 200으로 등용합니다.',
+    GameCommandType.appointGovernor => '선택한 장수를 이 지역의 태수로 임명합니다.',
+    GameCommandType.moveOfficer => '인접한 아군 지역으로 장수를 이동합니다.',
     GameCommandType.endMonth => '모든 세력의 명령을 처리하고 다음 달로 넘어갑니다.',
   };
+
+  Future<void> _showMoveDialog() async {
+    final selected = engine.state.provinces.firstWhere(
+      (p) => p.id == selectedProvinceId,
+    );
+    final destinations = engine.state.provinces
+        .where(
+          (p) =>
+              engine.state.isPlayerProvince(p) &&
+              selected.adjacentProvinceIds.contains(p.id),
+        )
+        .toList();
+    if (destinations.isEmpty || selectedOfficerId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이 장수가 이동할 수 있는 인접 아군 지역이 없습니다.')),
+      );
+      return;
+    }
+    final destination = await showDialog<String>(
+      context: context,
+      builder: (_) => SimpleDialog(
+        title: const Text('이동할 지역 선택'),
+        children: destinations
+            .map(
+              (p) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, p.id),
+                child: Text('${p.name} · 장수 ${p.officerIds.length}명'),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (destination != null && mounted) {
+      await _dispatch(
+        GameCommand(
+          type: GameCommandType.moveOfficer,
+          officerId: selectedOfficerId,
+          provinceId: selected.id,
+          destinationProvinceId: destination,
+        ),
+      );
+    }
+  }
 
   void _endMonth() {
     final beforeGold = engine.state.playerForce.gold;
@@ -285,6 +332,11 @@ class _GameScreenState extends State<GameScreen> {
             _ProvincePanel(
               province: selected,
               playerOwned: state.isPlayerProvince(selected),
+              governorName: selected.governorId == null
+                  ? '미임명'
+                  : state.officers
+                        .firstWhere((o) => o.id == selected.governorId)
+                        .name,
             ),
             if (state.isPlayerProvince(selected))
               _OfficerSelector(
@@ -301,6 +353,7 @@ class _GameScreenState extends State<GameScreen> {
               officerId: selectedOfficerId,
               onDispatch: _dispatch,
               onEndMonth: _endMonth,
+              onMove: _showMoveDialog,
             ),
           ],
         ),
@@ -458,9 +511,14 @@ class _ProvinceNode extends StatelessWidget {
 }
 
 class _ProvincePanel extends StatelessWidget {
-  const _ProvincePanel({required this.province, required this.playerOwned});
+  const _ProvincePanel({
+    required this.province,
+    required this.playerOwned,
+    required this.governorName,
+  });
   final ProvinceState province;
   final bool playerOwned;
+  final String governorName;
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
@@ -469,7 +527,7 @@ class _ProvincePanel extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            '${province.name} · ${province.ownerName}\n개발 ${province.land}  민심 ${province.publicLoyalty}  장수 ${province.officerIds.length}',
+            '${province.name} · ${province.ownerName}\n태수 $governorName · 개발 ${province.land} · 민심 ${province.publicLoyalty} · 병력 ${province.soldiers} · 장수 ${province.officerIds.length}',
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
@@ -544,6 +602,7 @@ class _ActionBar extends StatelessWidget {
     required this.officerId,
     required this.onDispatch,
     required this.onEndMonth,
+    required this.onMove,
   });
   final GameEngine engine;
   final ProvinceState province;
@@ -552,6 +611,7 @@ class _ActionBar extends StatelessWidget {
   final String? officerId;
   final ValueChanged<GameCommand> onDispatch;
   final VoidCallback onEndMonth;
+  final VoidCallback onMove;
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
@@ -584,7 +644,10 @@ class _ActionBar extends StatelessWidget {
               : null,
           child: const Text('징병'),
         ),
-        FilledButton.tonal(onPressed: null, child: const Text('장수 이동')),
+        FilledButton.tonal(
+          onPressed: playerOwned && officerId != null ? onMove : null,
+          child: const Text('장수 이동'),
+        ),
         FilledButton.tonal(
           onPressed: playerOwned && officerId != null
               ? () => onDispatch(
@@ -648,6 +711,18 @@ class _ActionBar extends StatelessWidget {
                 )
               : null,
           child: const Text('탐색'),
+        ),
+        FilledButton.tonal(
+          onPressed: playerOwned && officerId != null
+              ? () => onDispatch(
+                  GameCommand(
+                    type: GameCommandType.appointGovernor,
+                    officerId: officerId,
+                    provinceId: province.id,
+                  ),
+                )
+              : null,
+          child: const Text('태수 임명'),
         ),
         FilledButton.tonal(
           onPressed: playerOwned && engine.firstFreeOfficer != null
@@ -787,6 +862,10 @@ class _OfficerSheet extends StatelessWidget {
                   '무력 ${o.war} · 지력 ${o.intelligence} · 매력 ${o.charisma}',
                 ),
                 trailing: Text('충성 ${o.loyalty}'),
+                onTap: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => _OfficerDetailDialog(officer: o),
+                ),
               ),
             ),
           ],
@@ -794,6 +873,34 @@ class _OfficerSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+class _OfficerDetailDialog extends StatelessWidget {
+  const _OfficerDetailDialog({required this.officer});
+  final OfficerState officer;
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(officer.name),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('상태: ${officer.status}'),
+        Text('소속 지역: ${officer.provinceId}'),
+        const Divider(),
+        Text('WAR  ${officer.war}'),
+        Text('INT  ${officer.intelligence}'),
+        Text('CHA  ${officer.charisma}'),
+        Text('충성도  ${officer.loyalty}'),
+      ],
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('닫기'),
+      ),
+    ],
+  );
 }
 
 class _LogSheet extends StatelessWidget {

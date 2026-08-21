@@ -133,4 +133,39 @@ void main() {
     expect(engine.state.playerForce.officerIds, contains(freeId));
     expect(province.officerIds, contains(freeId));
   });
+
+  test('장수를 태수로 임명하면 지역에 태수 정보가 기록된다', () {
+    final engine = createEngine();
+    final province = engine.state.provinces.first;
+    final officer = province.officerIds.first;
+    final result = engine.dispatch(
+      GameCommand(
+        type: GameCommandType.appointGovernor,
+        officerId: officer,
+        provinceId: province.id,
+      ),
+    );
+    expect(result.success, isTrue);
+    expect(province.governorId, officer);
+  });
+
+  test('이동 명령은 인접 아군 지역으로 장수와 소속 지역을 함께 옮긴다', () {
+    final engine = createEngine();
+    final source = engine.state.provinces.first;
+    final officer = source.officerIds.first;
+    final result = engine.dispatch(
+      GameCommand(
+        type: GameCommandType.moveOfficer,
+        officerId: officer,
+        provinceId: source.id,
+        destinationProvinceId: 'p_briar',
+      ),
+    );
+    expect(result.success, isTrue);
+    expect(source.officerIds, isNot(contains(officer)));
+    expect(
+      engine.state.officers.firstWhere((o) => o.id == officer).provinceId,
+      'p_briar',
+    );
+  });
 }

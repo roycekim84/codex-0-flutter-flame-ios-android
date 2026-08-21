@@ -15,10 +15,12 @@ class ProvinceState {
     required this.mapX,
     required this.mapY,
     required this.ownerName,
+    this.governorId,
   });
   final String id, name;
   String ownerForceId, ownerName;
   final List<String> adjacentProvinceIds, officerIds;
+  String? governorId;
   final double mapX, mapY;
   int land, publicLoyalty, soldiers, gold, food;
   bool isOwnedBy(String forceId) => ownerForceId == forceId;
@@ -142,6 +144,7 @@ class GameState extends ChangeNotifier {
               food: x['food'],
               mapX: (x['mapX'] as num).toDouble(),
               mapY: (x['mapY'] as num).toDouble(),
+              governorId: x['governorId'],
             ),
           )
           .toList(),
