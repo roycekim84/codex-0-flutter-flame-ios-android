@@ -383,7 +383,9 @@ class RulerSelectScreen extends StatelessWidget {
             const SizedBox(height: 6),
             const Text('당신이 이끌 세력과 군주를 선택하십시오.'),
             const SizedBox(height: 14),
-            ...forces.map((force) {
+            ...forces.asMap().entries.map((entry) {
+              final emblemIndex = entry.key % 3;
+              final force = entry.value;
               final ruler = officers.firstWhere(
                 (o) => o['id'] == force['rulerId'],
               );
@@ -395,7 +397,20 @@ class RulerSelectScreen extends StatelessWidget {
                     seed: ruler['id'] as String,
                     size: 58,
                   ),
-                  title: Text('${force['name']} · ${ruler['name']}'),
+                  title: Row(
+                    children: [
+                      AssetSlice(
+                        asset: AssetRepository.factionEmblemStrip,
+                        index: emblemIndex,
+                        segments: 3,
+                        size: 34,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('${force['name']} · ${ruler['name']}'),
+                      ),
+                    ],
+                  ),
                   subtitle: Text(
                     '무력 ${ruler['war']} · 지력 ${ruler['intelligence']} · 매력 ${ruler['charisma']}\n영토 ${force['provinceIds'].length}곳 · 장수 ${force['officerIds'].length}명',
                   ),
