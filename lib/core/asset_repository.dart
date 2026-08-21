@@ -7,6 +7,8 @@ class AssetRepository {
       'assets/images/scenario_thumbnail_strip.png';
   static const worldMapBackground = 'assets/images/world_map_background.png';
   static const worldMapRegions = 'assets/images/world_map_regions.png';
+  static const fortressMarker = 'assets/images/fortress_marker.png';
+  static const mapCommandIcons = 'assets/images/map_command_icons.png';
   static const battleBackground = 'assets/images/battle_background.png';
   static const panelTexture = 'assets/images/panel_texture.png';
   static const commandIconStrip = 'assets/images/command_icon_strip.png';

@@ -65,6 +65,8 @@ flutter:
     - assets/images/scenario_thumbnail_strip.png
     - assets/images/world_map_background.png
     - assets/images/world_map_regions.png
+    - assets/images/fortress_marker.png
+    - assets/images/map_command_icons.png
     - assets/images/battle_background.png
     - assets/images/officer_portrait_warrior.png
     - assets/images/officer_portrait_strategist.png

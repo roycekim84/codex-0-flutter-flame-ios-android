@@ -7,6 +7,12 @@ class DemoScenario {
       'p_dale',
       'p_elm',
       'p_ford',
+      'p_han',
+      'p_jade',
+      'p_west',
+      'p_south',
+      'p_north',
+      'p_east',
     ];
     final owner = [
       'force_green',
@@ -15,8 +21,27 @@ class DemoScenario {
       'force_red',
       'force_blue',
       'force_blue',
+      'force_green',
+      'force_green',
+      'force_red',
+      'force_red',
+      'force_blue',
+      'force_blue',
     ];
-    final names = ['재의 들', '가시 숲', '왕관 언덕', '해 질녘 골짜기', '느릅 강', '여울 요새'];
+    final names = [
+      '재의 들',
+      '가시 숲',
+      '왕관 언덕',
+      '해 질녘 골짜기',
+      '느릅 강',
+      '여울 요새',
+      '한중',
+      '옥문',
+      '서릉',
+      '남령',
+      '북원',
+      '동해',
+    ];
     final positions = [
       [.18, .25],
       [.42, .16],
@@ -24,6 +49,12 @@ class DemoScenario {
       [.76, .62],
       [.45, .78],
       [.17, .66],
+      [.30, .43],
+      [.54, .38],
+      [.87, .40],
+      [.66, .82],
+      [.26, .83],
+      [.86, .17],
     ];
     final adj = [
       ['p_briar', 'p_ford'],
@@ -31,7 +62,13 @@ class DemoScenario {
       ['p_briar', 'p_dale'],
       ['p_crown', 'p_elm'],
       ['p_briar', 'p_dale', 'p_ford'],
-      ['p_ash', 'p_elm'],
+      ['p_ash', 'p_elm', 'p_han'],
+      ['p_ash', 'p_crown', 'p_west'],
+      ['p_crown', 'p_dale', 'p_north'],
+      ['p_dale', 'p_elm', 'p_south'],
+      ['p_elm', 'p_ford', 'p_han'],
+      ['p_crown', 'p_briar', 'p_east'],
+      ['p_briar', 'p_jade', 'p_north'],
     ];
     final provinces = <Map<String, dynamic>>[];
     for (var i = 0; i < provinceIds.length; i++) {
@@ -45,12 +82,14 @@ class DemoScenario {
         'soldiers': 900 + i * 120,
         'gold': 0,
         'food': 0,
-        'governorId': 'officer_${i * 3 + 1}',
-        'officerIds': [
-          'officer_${i * 3 + 1}',
-          'officer_${i * 3 + 2}',
-          'officer_${i * 3 + 3}',
-        ],
+        'governorId': i < 6 ? 'officer_${i * 3 + 1}' : null,
+        'officerIds': i < 6
+            ? [
+                'officer_${i * 3 + 1}',
+                'officer_${i * 3 + 2}',
+                'officer_${i * 3 + 3}',
+              ]
+            : <String>[],
         'mapX': positions[i][0],
         'mapY': positions[i][1],
       });
@@ -107,7 +146,7 @@ class DemoScenario {
           'rulerId': 'officer_1',
           'gold': 800,
           'food': 1200,
-          'provinceIds': ['p_ash', 'p_briar'],
+          'provinceIds': ['p_ash', 'p_briar', 'p_han', 'p_jade'],
           'officerIds': [
             'officer_1',
             'officer_2',
@@ -123,7 +162,7 @@ class DemoScenario {
           'rulerId': 'officer_7',
           'gold': 700,
           'food': 1000,
-          'provinceIds': ['p_crown', 'p_dale'],
+          'provinceIds': ['p_crown', 'p_dale', 'p_west', 'p_south'],
           'officerIds': [
             'officer_7',
             'officer_8',
@@ -140,7 +179,7 @@ class DemoScenario {
           'rulerId': 'officer_13',
           'gold': 650,
           'food': 950,
-          'provinceIds': ['p_elm', 'p_ford'],
+          'provinceIds': ['p_elm', 'p_ford', 'p_north', 'p_east'],
           'officerIds': [
             'officer_13',
             'officer_14',

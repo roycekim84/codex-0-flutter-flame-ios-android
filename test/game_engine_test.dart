@@ -126,7 +126,7 @@ void main() {
     expect(decoded['revealedProvinceIds'], isEmpty);
     final restored = GameState.fromSaveMap(decoded);
     expect(restored.playerForce.gold, 1234);
-    expect(restored.provinces.length, 6);
+    expect(restored.provinces.length, 12);
     expect(restored.officers.length, 20);
   });
 
@@ -178,8 +178,8 @@ void main() {
       selectedForceId: 'force_red',
     );
     expect(state.playerForce.name, '붉은 왕좌');
-    expect(state.playerProvinceIds, ['p_crown', 'p_dale']);
-    expect(state.playerSoldiers, 2400);
+    expect(state.playerProvinceIds, ['p_crown', 'p_dale', 'p_west', 'p_south']);
+    expect(state.playerSoldiers, 6240);
   });
 
   test('출병과 전투 승리는 영토 소유권을 바꾼다', () {
