@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:codex_strategy/core/game_engine.dart';
 import 'package:codex_strategy/core/game_command.dart';
+import 'package:codex_strategy/battle/battle_engine.dart';
 import 'package:codex_strategy/data/demo_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
 import 'package:codex_strategy/repositories/save_repository.dart';
@@ -205,5 +206,26 @@ void main() {
       battle.state.commanderName,
       engine.state.officers.firstWhere((o) => o.id == participants[1]).name,
     );
+  });
+
+  test('전투 행동은 선택한 부대에 따라 피해와 병력을 갱신한다', () {
+    final engine = createEngine();
+    final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: source.id,
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+      participantOfficerIds: source.officerIds.take(2).toList(),
+    );
+    expect(battle, isNotNull);
+    final target = battle!.state.defenderUnits.first;
+    final before = target.soldiers;
+    battle.act(
+      attackerId: battle.state.attackerUnits.first.officerId,
+      defenderId: target.officerId,
+      action: BattleAction.fire,
+    );
+    expect(target.soldiers, lessThan(before));
+    expect(battle.state.defenderSoldiers, lessThan(1140));
   });
 }

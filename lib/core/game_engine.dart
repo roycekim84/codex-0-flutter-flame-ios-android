@@ -1,6 +1,7 @@
 import '../models/game_state.dart';
 import '../battle/battle_engine.dart';
 import '../battle/battle_state.dart';
+import '../battle/terrain.dart';
 import 'game_command.dart';
 
 class GameEngine {
@@ -231,10 +232,25 @@ class GameEngine {
               base +
               (i == 0 ? committedSoldiers - base * participants.length : 0),
           war: officer.war,
+          intelligence: officer.intelligence,
         ),
       );
     }
     final commander = state.officers.firstWhere((o) => o.id == commanderId);
+    final defenders = target.officerIds.map((id) {
+      final officer = state.officers.firstWhere((o) => o.id == id);
+      return BattleUnit(
+        officerId: officer.id,
+        name: officer.name,
+        soldiers: target.soldiers ~/ target.officerIds.length,
+        war: officer.war,
+        intelligence: officer.intelligence,
+      );
+    }).toList();
+    if (defenders.isNotEmpty) {
+      defenders.first.soldiers +=
+          target.soldiers - defenders.fold(0, (sum, u) => sum + u.soldiers);
+    }
     source.soldiers -= committedSoldiers;
     state.playerForce.food -= 150;
     state.log(
@@ -248,8 +264,10 @@ class GameEngine {
         attackerSoldiers: committedSoldiers,
         defenderSoldiers: target.soldiers,
         attackerUnits: units,
+        defenderUnits: defenders,
         commanderName: commander.name,
         commanderWar: commander.war,
+        terrain: target.id == 'p_dale' ? TerrainType.fort : TerrainType.plain,
       ),
     );
   }

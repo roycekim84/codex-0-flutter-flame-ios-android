@@ -1036,6 +1036,32 @@ class BattleScreen extends StatefulWidget {
 }
 
 class _BattleScreenState extends State<BattleScreen> {
+  String? selectedAttackerId;
+  String? selectedDefenderId;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedAttackerId =
+        widget.battle.state.attackerUnits.firstOrNull?.officerId;
+    selectedDefenderId =
+        widget.battle.state.defenderUnits.firstOrNull?.officerId;
+  }
+
+  void _act(BattleAction action) {
+    if (selectedAttackerId == null || selectedDefenderId == null) {
+      widget.battle.attack();
+    } else {
+      widget.battle.act(
+        attackerId: selectedAttackerId!,
+        defenderId: selectedDefenderId!,
+        action: action,
+      );
+    }
+    setState(() {});
+    _finishIfNeeded();
+  }
+
   void _finishIfNeeded() {
     if (!widget.battle.state.finished) return;
     widget.engine.resolveBattle(widget.battle);
@@ -1088,6 +1114,52 @@ class _BattleScreenState extends State<BattleScreen> {
                         style: const TextStyle(fontSize: 12),
                       ),
                     ),
+                  if (battle.attackerUnits.isNotEmpty &&
+                      battle.defenderUnits.isNotEmpty)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            value: selectedAttackerId,
+                            items: battle.attackerUnits
+                                .map(
+                                  (u) => DropdownMenuItem(
+                                    value: u.officerId,
+                                    child: Text('${u.name} ${u.soldiers}'),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: battle.finished
+                                ? null
+                                : (id) =>
+                                      setState(() => selectedAttackerId = id),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 6),
+                          child: Text('→'),
+                        ),
+                        Expanded(
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            value: selectedDefenderId,
+                            items: battle.defenderUnits
+                                .map(
+                                  (u) => DropdownMenuItem(
+                                    value: u.officerId,
+                                    child: Text('${u.name} ${u.soldiers}'),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: battle.finished
+                                ? null
+                                : (id) =>
+                                      setState(() => selectedDefenderId = id),
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 14),
                   Row(
                     children: [
@@ -1095,12 +1167,36 @@ class _BattleScreenState extends State<BattleScreen> {
                         child: FilledButton.icon(
                           onPressed: battle.finished
                               ? null
-                              : () {
-                                  setState(widget.battle.attack);
-                                  _finishIfNeeded();
-                                },
+                              : () => _act(BattleAction.attack),
                           icon: const Icon(Icons.gavel),
                           label: const Text('공격'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton.tonal(
+                          onPressed: battle.finished
+                              ? null
+                              : () => _act(BattleAction.fire),
+                          child: const Text('화공'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton.tonal(
+                          onPressed: battle.finished
+                              ? null
+                              : () => _act(BattleAction.charge),
+                          child: const Text('돌격'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: battle.finished
+                              ? null
+                              : () => _act(BattleAction.wait),
+                          child: const Text('대기'),
                         ),
                       ),
                       const SizedBox(width: 10),
