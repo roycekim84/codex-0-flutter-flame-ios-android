@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
@@ -6,9 +8,11 @@ import '../battle/battle_state.dart';
 class BattleGame extends FlameGame {
   BattleGame(this.battle);
   final BattleState battle;
+  late ui.Image unitImage;
 
   @override
   Future<void> onLoad() async {
+    unitImage = await images.load('battle_unit_token.png');
     _drawBoard();
   }
 
@@ -46,16 +50,21 @@ class BattleGame extends FlameGame {
       }
     }
     for (final unit in [...battle.attackerUnits, ...battle.defenderUnits]) {
-      final baseColor = battle.attackerUnits.contains(unit)
-          ? const Color(0xff2f6da1)
-          : const Color(0xffa84f45);
-      final color = unit.burning ? const Color(0xffd87928) : baseColor;
       add(
-        CircleComponent(
+        SpriteComponent.fromImage(
+          unitImage,
           position: Vector2(41 + unit.column * 62, 87 + unit.row * 62),
-          radius: 20,
+          size: Vector2.all(48),
           anchor: Anchor.center,
-          paint: Paint()..color = color,
+          paint: Paint()
+            ..colorFilter = ColorFilter.mode(
+              unit.burning
+                  ? const Color(0xffd87928)
+                  : battle.attackerUnits.contains(unit)
+                  ? Colors.white
+                  : const Color(0xffa84f45),
+              BlendMode.modulate,
+            ),
         ),
       );
       add(

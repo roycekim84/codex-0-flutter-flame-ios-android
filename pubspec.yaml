@@ -63,6 +63,12 @@ flutter:
     - assets/images/title_background.png
     - assets/images/world_map_background.png
     - assets/images/battle_background.png
+    - assets/images/officer_portrait_warrior.png
+    - assets/images/officer_portrait_strategist.png
+    - assets/images/officer_portrait_governor.png
+    - assets/images/command_icon_strip.png
+    - assets/images/panel_texture.png
+    - assets/images/battle_unit_token.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
