@@ -48,7 +48,7 @@ class GameEngine {
     final source = state.provinces
         .where(
           (p) =>
-              p.isPlayerOwned &&
+              state.isPlayerProvince(p) &&
               p.id != target.id &&
               p.adjacentProvinceIds.contains(target.id) &&
               p.officerIds.isNotEmpty,
@@ -58,7 +58,7 @@ class GameEngine {
   }
 
   void endTurn() {
-    for (final p in state.provinces.where((p) => p.isPlayerOwned)) {
+    for (final p in state.provinces.where(state.isPlayerProvince)) {
       state.playerForce.gold += 15 + p.land ~/ 5;
       state.playerForce.food += 20 + p.land ~/ 3;
     }
@@ -79,6 +79,7 @@ class GameEngine {
     state.log('월말 정산 및 AI 행동 완료');
   }
 
-  ProvinceState? _playerProvince(String id) =>
-      state.provinces.where((p) => p.id == id && p.isPlayerOwned).firstOrNull;
+  ProvinceState? _playerProvince(String id) => state.provinces
+      .where((p) => p.id == id && state.isPlayerProvince(p))
+      .firstOrNull;
 }

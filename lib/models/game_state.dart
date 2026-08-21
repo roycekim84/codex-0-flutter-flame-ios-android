@@ -20,7 +20,7 @@ class ProvinceState {
   final List<String> adjacentProvinceIds, officerIds;
   final double mapX, mapY;
   int land, publicLoyalty, soldiers, gold, food;
-  bool get isPlayerOwned => ownerForceId == 'force_green';
+  bool isOwnedBy(String forceId) => ownerForceId == forceId;
 }
 
 class ForceState {
@@ -77,15 +77,20 @@ class GameState extends ChangeNotifier {
   final List<String> gameLog;
   ForceState get playerForce => forces.firstWhere((f) => f.id == playerForceId);
   List<String> get playerProvinceIds => playerForce.provinceIds;
-  int get playerSoldiers => provinces
-      .where((p) => p.isPlayerOwned)
-      .fold(0, (sum, p) => sum + p.soldiers);
+  int get playerSoldiers =>
+      provinces.where(isPlayerProvince).fold(0, (sum, p) => sum + p.soldiers);
   void log(String message) {
     gameLog.add('[$year-${month.toString().padLeft(2, '0')}] $message');
     notifyListeners();
   }
 
-  static GameState fromScenario(Map<String, dynamic> data) {
+  bool isPlayerProvince(ProvinceState province) =>
+      province.ownerForceId == playerForceId;
+
+  static GameState fromScenario(
+    Map<String, dynamic> data, {
+    String? selectedForceId,
+  }) {
     final forces = (data['forces'] as List)
         .map(
           (x) => ForceState(
@@ -104,7 +109,7 @@ class GameState extends ChangeNotifier {
       scenarioId: data['id'],
       year: data['year'],
       month: data['month'],
-      playerForceId: data['playerForceId'],
+      playerForceId: selectedForceId ?? data['playerForceId'],
       randomSeed: data['randomSeed'],
       forces: forces,
       provinces: (data['provinces'] as List)

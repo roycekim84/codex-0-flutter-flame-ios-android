@@ -54,4 +54,14 @@ void main() {
     expect(decoded['saveVersion'], 1);
     expect(decoded['randomSeed'], 42);
   });
+
+  test('선택한 세력에 따라 내 영지가 바뀐다', () {
+    final state = GameState.fromScenario(
+      DemoScenario.create(),
+      selectedForceId: 'force_red',
+    );
+    expect(state.playerForce.name, '붉은 왕좌');
+    expect(state.playerProvinceIds, ['p_crown', 'p_dale']);
+    expect(state.playerSoldiers, 2400);
+  });
 }

@@ -14,12 +14,87 @@ class CodexStrategyApp extends StatelessWidget {
       colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff385b4d)),
       useMaterial3: true,
     ),
-    home: const GameScreen(),
+    home: const HomeScreen(),
   );
 }
 
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final scenario = DemoScenario.create();
+    final forces = (scenario['forces'] as List).cast<Map<String, dynamic>>();
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(Icons.castle, size: 72, color: Color(0xff385b4d)),
+                  const SizedBox(height: 16),
+                  Text(
+                    'REALM LEDGER',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '한 달의 명령으로 왕국의 운명을 바꾸십시오.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 40),
+                  Text(
+                    '새 게임 · 가상 군웅 시나리오',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  ...forces.map(
+                    (force) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => GameScreen(
+                              playerForceId: force['id'] as String,
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.shield_outlined),
+                        label: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Text(force['name'] as String),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    '프로토타입 · 193년 1월 · 6지역',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+  const GameScreen({super.key, required this.playerForceId});
+  final String playerForceId;
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
@@ -30,12 +105,32 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    engine = GameEngine(GameState.fromScenario(DemoScenario.create()));
+    engine = GameEngine(
+      GameState.fromScenario(
+        DemoScenario.create(),
+        selectedForceId: widget.playerForceId,
+      ),
+    );
     selectedProvinceId = engine.state.playerProvinceIds.first;
     engine.addListener(_refresh);
   }
 
   void _refresh() => setState(() {});
+  void _showOfficers() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _OfficerSheet(state: engine.state),
+    );
+  }
+
+  void _showLog() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => _LogSheet(state: engine.state),
+    );
+  }
+
   @override
   void dispose() {
     engine.removeListener(_refresh);
@@ -53,6 +148,16 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: Text('${state.year}년 ${state.month}월'),
         actions: [
+          IconButton(
+            onPressed: _showOfficers,
+            tooltip: '장수',
+            icon: const Icon(Icons.people_alt_outlined),
+          ),
+          IconButton(
+            onPressed: _showLog,
+            tooltip: '기록',
+            icon: const Icon(Icons.menu_book_outlined),
+          ),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Center(child: Text(state.playerForce.name)),
@@ -66,12 +171,20 @@ class _GameScreenState extends State<GameScreen> {
             Expanded(
               child: _Map(
                 provinces: state.provinces,
+                playerForceId: state.playerForceId,
                 selectedId: selectedProvinceId,
                 onSelect: (id) => setState(() => selectedProvinceId = id),
               ),
             ),
-            _ProvincePanel(province: selected),
-            _ActionBar(engine: engine, province: selected),
+            _ProvincePanel(
+              province: selected,
+              playerOwned: state.isPlayerProvince(selected),
+            ),
+            _ActionBar(
+              engine: engine,
+              province: selected,
+              playerOwned: state.isPlayerProvince(selected),
+            ),
           ],
         ),
       ),
@@ -115,10 +228,12 @@ class _Metric extends StatelessWidget {
 class _Map extends StatelessWidget {
   const _Map({
     required this.provinces,
+    required this.playerForceId,
     required this.selectedId,
     required this.onSelect,
   });
   final List<ProvinceState> provinces;
+  final String playerForceId;
   final String? selectedId;
   final ValueChanged<String> onSelect;
   @override
@@ -141,6 +256,7 @@ class _Map extends StatelessWidget {
                     onTap: () => onSelect(p.id),
                     child: _ProvinceNode(
                       province: p,
+                      playerOwned: p.isOwnedBy(playerForceId),
                       selected: p.id == selectedId,
                     ),
                   ),
@@ -182,9 +298,14 @@ class _RoadPainter extends CustomPainter {
 }
 
 class _ProvinceNode extends StatelessWidget {
-  const _ProvinceNode({required this.province, required this.selected});
+  const _ProvinceNode({
+    required this.province,
+    required this.selected,
+    required this.playerOwned,
+  });
   final ProvinceState province;
   final bool selected;
+  final bool playerOwned;
   @override
   Widget build(BuildContext context) => Column(
     children: [
@@ -193,7 +314,7 @@ class _ProvinceNode extends StatelessWidget {
         height: 68,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: province.isPlayerOwned
+          color: playerOwned
               ? const Color(0xff557c68)
               : const Color(0xffb97b5c),
           border: Border.all(
@@ -220,8 +341,9 @@ class _ProvinceNode extends StatelessWidget {
 }
 
 class _ProvincePanel extends StatelessWidget {
-  const _ProvincePanel({required this.province});
+  const _ProvincePanel({required this.province, required this.playerOwned});
   final ProvinceState province;
+  final bool playerOwned;
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
@@ -235,10 +357,8 @@ class _ProvincePanel extends StatelessWidget {
           ),
         ),
         Text(
-          province.isPlayerOwned ? '내 영지' : '타 세력',
-          style: TextStyle(
-            color: province.isPlayerOwned ? Colors.green : Colors.red,
-          ),
+          playerOwned ? '내 영지' : '타 세력',
+          style: TextStyle(color: playerOwned ? Colors.green : Colors.red),
         ),
       ],
     ),
@@ -246,9 +366,14 @@ class _ProvincePanel extends StatelessWidget {
 }
 
 class _ActionBar extends StatelessWidget {
-  const _ActionBar({required this.engine, required this.province});
+  const _ActionBar({
+    required this.engine,
+    required this.province,
+    required this.playerOwned,
+  });
   final GameEngine engine;
   final ProvinceState province;
+  final bool playerOwned;
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
@@ -258,25 +383,90 @@ class _ActionBar extends StatelessWidget {
       alignment: WrapAlignment.center,
       children: [
         FilledButton.tonal(
-          onPressed: province.isPlayerOwned
-              ? () => engine.develop(province.id)
-              : null,
+          onPressed: playerOwned ? () => engine.develop(province.id) : null,
           child: const Text('개발'),
         ),
         FilledButton.tonal(
-          onPressed: province.isPlayerOwned
-              ? () => engine.recruit(province.id)
-              : null,
+          onPressed: playerOwned ? () => engine.recruit(province.id) : null,
           child: const Text('징병'),
         ),
         FilledButton.tonal(
-          onPressed: province.isPlayerOwned
+          onPressed: playerOwned
               ? () => engine.moveFirstOfficerTo(province.id)
               : null,
           child: const Text('장수 이동'),
         ),
         FilledButton(onPressed: engine.endTurn, child: const Text('턴 종료')),
       ],
+    ),
+  );
+}
+
+class _OfficerSheet extends StatelessWidget {
+  const _OfficerSheet({required this.state});
+  final GameState state;
+  @override
+  Widget build(BuildContext context) {
+    final officers = state.officers
+        .where((o) => o.forceId == state.playerForceId)
+        .toList();
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('우리 세력 장수', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            ...officers.map(
+              (o) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(child: Text('${o.war}')),
+                title: Text(o.name),
+                subtitle: Text(
+                  '무력 ${o.war} · 지력 ${o.intelligence} · 매력 ${o.charisma}',
+                ),
+                trailing: Text('충성 ${o.loyalty}'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LogSheet extends StatelessWidget {
+  const _LogSheet({required this.state});
+  final GameState state;
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: SizedBox(
+      height: 360,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('월별 기록', style: Theme.of(context).textTheme.titleLarge),
+            const Divider(),
+            Expanded(
+              child: ListView.builder(
+                reverse: true,
+                itemCount: state.gameLog.length,
+                itemBuilder: (_, i) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    state.gameLog[state.gameLog.length - 1 - i],
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     ),
   );
 }
