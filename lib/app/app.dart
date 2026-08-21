@@ -283,6 +283,9 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.giftForce => '외교 · 선물',
     GameCommandType.formAlliance => '외교 · 동맹',
     GameCommandType.threatenForce => '외교 · 협박',
+    GameCommandType.infiltrate => '첩보 · 잠입',
+    GameCommandType.inciteOfficer => '첩보 · 이간',
+    GameCommandType.spreadRumor => '첩보 · 유언비어',
     GameCommandType.endMonth => '턴 종료',
   };
   String _commandDescription(GameCommandType type) => switch (type) {
@@ -299,6 +302,9 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.giftForce => '금 100으로 관계를 개선합니다.',
     GameCommandType.formAlliance => '관계 20 이상인 세력과 동맹을 맺습니다.',
     GameCommandType.threatenForce => '관계를 악화시키고 동맹을 파기합니다.',
+    GameCommandType.infiltrate => '적 영지 정보를 공개합니다. 금 80을 사용합니다.',
+    GameCommandType.inciteOfficer => '적 장수의 충성도를 낮춥니다. 금 100을 사용합니다.',
+    GameCommandType.spreadRumor => '적 영지의 민심을 낮춥니다. 금 80을 사용합니다.',
     GameCommandType.endMonth => '모든 세력의 명령을 처리하고 다음 달로 넘어갑니다.',
   };
 
@@ -427,6 +433,114 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  Future<void> _showEspionageDialog() async {
+    final targets = engine.state.provinces
+        .where((p) => !engine.state.isPlayerProvince(p))
+        .toList();
+    if (targets.isEmpty || selectedOfficerId == null) return;
+    var provinceId = targets.first.id;
+    var action = 'infiltrate';
+    String? officerId;
+    final choice = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final province = engine.state.provinces.firstWhere(
+            (p) => p.id == provinceId,
+          );
+          final enemyOfficers = engine.state.officers
+              .where((o) => province.officerIds.contains(o.id))
+              .toList();
+          officerId ??= enemyOfficers.firstOrNull?.id;
+          return AlertDialog(
+            title: const Text('첩보'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButton<String>(
+                  isExpanded: true,
+                  value: provinceId,
+                  items: targets
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p.id,
+                          child: Text('${p.name} · 민심 ${p.publicLoyalty}'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (id) {
+                    if (id != null) {
+                      setDialogState(() {
+                        provinceId = id;
+                        officerId = null;
+                      });
+                    }
+                  },
+                ),
+                DropdownButton<String>(
+                  isExpanded: true,
+                  value: action,
+                  items: const [
+                    DropdownMenuItem(value: 'infiltrate', child: Text('잠입')),
+                    DropdownMenuItem(value: 'incite', child: Text('이간')),
+                    DropdownMenuItem(value: 'rumor', child: Text('유언비어')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) setDialogState(() => action = value);
+                  },
+                ),
+                if (action == 'incite' && enemyOfficers.isNotEmpty)
+                  DropdownButton<String>(
+                    isExpanded: true,
+                    value: officerId,
+                    items: enemyOfficers
+                        .map(
+                          (o) => DropdownMenuItem(
+                            value: o.id,
+                            child: Text('${o.name} · 충성 ${o.loyalty}'),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (id) {
+                      if (id != null) setDialogState(() => officerId = id);
+                    },
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('취소'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, {
+                  'provinceId': provinceId,
+                  'action': action,
+                  if (officerId != null) 'officerId': officerId!,
+                }),
+                child: const Text('실행'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (choice == null || !mounted) return;
+    final type = switch (choice['action']) {
+      'incite' => GameCommandType.inciteOfficer,
+      'rumor' => GameCommandType.spreadRumor,
+      _ => GameCommandType.infiltrate,
+    };
+    await _dispatch(
+      GameCommand(
+        type: type,
+        officerId: selectedOfficerId,
+        provinceId: choice['provinceId'],
+        targetOfficerId: choice['officerId'],
+      ),
+    );
+  }
+
   void _endMonth() {
     final beforeGold = engine.state.playerForce.gold;
     final beforeFood = engine.state.playerForce.food;
@@ -520,6 +634,7 @@ class _GameScreenState extends State<GameScreen> {
               onEndMonth: _endMonth,
               onMove: _showMoveDialog,
               onDiplomacy: _showDiplomacyDialog,
+              onEspionage: _showEspionageDialog,
             ),
           ],
         ),
@@ -770,6 +885,7 @@ class _ActionBar extends StatelessWidget {
     required this.onEndMonth,
     required this.onMove,
     required this.onDiplomacy,
+    required this.onEspionage,
   });
   final GameEngine engine;
   final ProvinceState province;
@@ -780,6 +896,7 @@ class _ActionBar extends StatelessWidget {
   final VoidCallback onEndMonth;
   final VoidCallback onMove;
   final VoidCallback onDiplomacy;
+  final VoidCallback onEspionage;
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
@@ -819,6 +936,10 @@ class _ActionBar extends StatelessWidget {
         FilledButton.tonal(
           onPressed: playerOwned && officerId != null ? onDiplomacy : null,
           child: const Text('외교'),
+        ),
+        FilledButton.tonal(
+          onPressed: playerOwned && officerId != null ? onEspionage : null,
+          child: const Text('첩보'),
         ),
         FilledButton.tonal(
           onPressed: playerOwned && officerId != null

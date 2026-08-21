@@ -60,6 +60,18 @@ class GameEngine {
           command.officerId!,
         );
         if (!result.success) return result;
+      case GameCommandType.infiltrate:
+        final result = infiltrate(command.provinceId!, command.officerId!);
+        if (!result.success) return result;
+      case GameCommandType.inciteOfficer:
+        final result = inciteOfficer(
+          command.targetOfficerId!,
+          command.officerId!,
+        );
+        if (!result.success) return result;
+      case GameCommandType.spreadRumor:
+        final result = spreadRumor(command.provinceId!, command.officerId!);
+        if (!result.success) return result;
       case GameCommandType.endMonth:
         endTurn();
         return const CommandResult.success('월말 정산을 완료했습니다.');
@@ -176,6 +188,68 @@ class GameEngine {
       '${target.name} 협박 · 관계 $before → ${state.relationTo(target.id)}',
     );
     return CommandResult.success('${target.name}을 협박했습니다. 관계가 악화되었습니다.');
+  }
+
+  CommandResult infiltrate(String provinceId, String officerId) {
+    final province = _enemyProvince(provinceId);
+    final officer = _playerOfficer(officerId);
+    if (province == null || officer == null) {
+      return const CommandResult.failure('적 영지와 수행 장수를 확인할 수 없습니다.');
+    }
+    if (state.playerForce.gold < 80) {
+      return const CommandResult.failure('잠입 자금이 부족합니다.');
+    }
+    state.playerForce.gold -= 80;
+    state.revealedProvinceIds.add(province.id);
+    state.log(
+      '${province.name} 잠입 · 병력 ${province.soldiers} · 군량 ${province.food} · 금 -80',
+    );
+    return CommandResult.success('${province.name}의 정보가 공개되었습니다.');
+  }
+
+  CommandResult inciteOfficer(String targetOfficerId, String officerId) {
+    final target = state.officers
+        .where(
+          (o) =>
+              o.id == targetOfficerId &&
+              o.forceId != state.playerForceId &&
+              o.status != 'DEAD',
+        )
+        .firstOrNull;
+    final officer = _playerOfficer(officerId);
+    if (target == null || officer == null) {
+      return const CommandResult.failure('이간할 적 장수와 수행 장수를 확인할 수 없습니다.');
+    }
+    if (state.playerForce.gold < 100) {
+      return const CommandResult.failure('이간 공작 자금이 부족합니다.');
+    }
+    state.playerForce.gold -= 100;
+    final before = target.loyalty;
+    target.loyalty = (target.loyalty - 10 - officer.intelligence ~/ 25)
+        .clamp(0, 100)
+        .toInt();
+    state.log('${target.name} 이간 · 충성 $before → ${target.loyalty} · 금 -100');
+    return CommandResult.success('${target.name}의 충성도가 낮아졌습니다.');
+  }
+
+  CommandResult spreadRumor(String provinceId, String officerId) {
+    final province = _enemyProvince(provinceId);
+    final officer = _playerOfficer(officerId);
+    if (province == null || officer == null) {
+      return const CommandResult.failure('유언비어 대상과 수행 장수를 확인할 수 없습니다.');
+    }
+    if (state.playerForce.gold < 80) {
+      return const CommandResult.failure('유언비어 자금이 부족합니다.');
+    }
+    state.playerForce.gold -= 80;
+    final before = province.publicLoyalty;
+    province.publicLoyalty = (before - 8 - officer.intelligence ~/ 40)
+        .clamp(0, 100)
+        .toInt();
+    state.log(
+      '${province.name} 유언비어 · 민심 $before → ${province.publicLoyalty} · 금 -80',
+    );
+    return CommandResult.success('${province.name}의 민심이 흔들렸습니다.');
   }
 
   void develop(String provinceId) {
@@ -558,5 +632,9 @@ class GameEngine {
 
   OfficerState? _playerOfficer(String id) => state.officers
       .where((o) => o.id == id && o.forceId == state.playerForceId)
+      .firstOrNull;
+
+  ProvinceState? _enemyProvince(String id) => state.provinces
+      .where((p) => p.id == id && !state.isPlayerProvince(p))
       .firstOrNull;
 }

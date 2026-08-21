@@ -12,6 +12,9 @@ enum GameCommandType {
   giftForce,
   formAlliance,
   threatenForce,
+  infiltrate,
+  inciteOfficer,
+  spreadRumor,
   endMonth,
 }
 

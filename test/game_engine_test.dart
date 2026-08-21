@@ -57,6 +57,27 @@ void main() {
     expect(decoded['saveVersion'], 1);
     expect(decoded['randomSeed'], 42);
     expect(decoded['relations']['force_red'], -10);
+    expect(decoded['revealedProvinceIds'], isEmpty);
+  });
+
+  test('첩보는 적 영지 정보를 공개하고 장수 충성도와 민심을 낮춘다', () {
+    final engine = createEngine();
+    final actor = engine.state.playerForce.officerIds.first;
+    final target = engine.state.provinces.firstWhere((p) => p.id == 'p_crown');
+    final enemyOfficer = target.officerIds.first;
+    final loyaltyBefore =
+        engine.state.officers.firstWhere((o) => o.id == enemyOfficer).loyalty;
+    final publicLoyaltyBefore = target.publicLoyalty;
+
+    expect(engine.infiltrate(target.id, actor).success, isTrue);
+    expect(engine.state.revealedProvinceIds, contains(target.id));
+    expect(engine.inciteOfficer(enemyOfficer, actor).success, isTrue);
+    expect(
+      engine.state.officers.firstWhere((o) => o.id == enemyOfficer).loyalty,
+      lessThan(loyaltyBefore),
+    );
+    expect(engine.spreadRumor(target.id, actor).success, isTrue);
+    expect(target.publicLoyalty, lessThan(publicLoyaltyBefore));
   });
 
   test('외교는 선물로 관계를 높이고 동맹을 맺을 수 있다', () {

@@ -13,6 +13,7 @@ class SaveRepository {
     'randomSeed': state.randomSeed,
     'relations': state.relations,
     'alliedForceIds': state.alliedForceIds.toList(),
+    'revealedProvinceIds': state.revealedProvinceIds.toList(),
     'gameLog': state.gameLog,
   });
 

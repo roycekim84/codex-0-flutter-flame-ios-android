@@ -72,9 +72,11 @@ class GameState extends ChangeNotifier {
     required this.randomSeed,
     Map<String, int>? relations,
     Set<String>? alliedForceIds,
+    Set<String>? revealedProvinceIds,
     List<String>? gameLog,
   }) : relations = relations ?? {},
        alliedForceIds = alliedForceIds ?? {},
+       revealedProvinceIds = revealedProvinceIds ?? {},
        gameLog = gameLog ?? [];
   final String scenarioId, playerForceId;
   int year, month;
@@ -84,6 +86,7 @@ class GameState extends ChangeNotifier {
   final int randomSeed;
   final Map<String, int> relations;
   final Set<String> alliedForceIds;
+  final Set<String> revealedProvinceIds;
   final List<String> gameLog;
   final Set<String> actedOfficerIds = <String>{};
   ForceState get playerForce => forces.firstWhere((f) => f.id == playerForceId);
