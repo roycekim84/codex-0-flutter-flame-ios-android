@@ -183,4 +183,27 @@ void main() {
     expect(source.soldiers, soldiers - 500);
     expect(engine.state.playerForce.food, food - 150);
   });
+
+  test('출병 준비는 여러 장수의 부대와 총대장을 전투 상태에 기록한다', () {
+    final engine = createEngine();
+    final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
+    final participants = source.officerIds.take(2).toList();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: source.id,
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+      participantOfficerIds: participants,
+      commanderOfficerId: participants[1],
+    );
+    expect(battle, isNotNull);
+    expect(battle!.state.attackerUnits.length, 2);
+    expect(
+      battle.state.attackerUnits.fold(0, (sum, unit) => sum + unit.soldiers),
+      600,
+    );
+    expect(
+      battle.state.commanderName,
+      engine.state.officers.firstWhere((o) => o.id == participants[1]).name,
+    );
+  });
 }

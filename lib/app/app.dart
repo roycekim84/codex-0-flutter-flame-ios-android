@@ -834,6 +834,8 @@ class WarPreparationScreen extends StatefulWidget {
 class _WarPreparationScreenState extends State<WarPreparationScreen> {
   late List<ProvinceState> sources;
   String? sourceId;
+  String? commanderId;
+  final Set<String> selectedOfficerIds = <String>{};
   double committed = 100;
   @override
   void initState() {
@@ -852,6 +854,8 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
     sourceId = sources.isEmpty ? null : sources.first.id;
     if (sources.isNotEmpty) {
       committed = (sources.first.soldiers * .65).roundToDouble();
+      selectedOfficerIds.addAll(sources.first.officerIds);
+      commanderId = sources.first.officerIds.firstOrNull;
     }
   }
 
@@ -864,6 +868,8 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
             sourceProvinceId: sourceId!,
             targetProvinceId: widget.targetProvinceId,
             committedSoldiers: committed.round(),
+            participantOfficerIds: selectedOfficerIds.toList(),
+            commanderOfficerId: commanderId,
           );
     if (battle == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -914,11 +920,66 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
                   setState(() {
                     sourceId = id;
                     committed = (source!.soldiers * .65).roundToDouble();
+                    selectedOfficerIds
+                      ..clear()
+                      ..addAll(source!.officerIds);
+                    commanderId = source!.officerIds.firstOrNull;
                   });
                 }
               },
             ),
             const SizedBox(height: 12),
+            const Text('출전 장수', style: TextStyle(fontWeight: FontWeight.bold)),
+            if (current != null)
+              ...current.officerIds.map((id) {
+                final officer = widget.engine.state.officers.firstWhere(
+                  (o) => o.id == id,
+                );
+                return CheckboxListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  value: selectedOfficerIds.contains(id),
+                  title: Text('${officer.name} · WAR ${officer.war}'),
+                  subtitle: Text(
+                    selectedOfficerIds.contains(id) && commanderId == id
+                        ? '총대장'
+                        : '출전 가능',
+                  ),
+                  onChanged: (value) {
+                    if (value == false && selectedOfficerIds.length == 1) {
+                      return;
+                    }
+                    setState(() {
+                      if (value == true) {
+                        selectedOfficerIds.add(id);
+                        commanderId ??= id;
+                      } else {
+                        selectedOfficerIds.remove(id);
+                        if (commanderId == id) {
+                          commanderId = selectedOfficerIds.firstOrNull;
+                        }
+                      }
+                    });
+                  },
+                );
+              }),
+            if (selectedOfficerIds.isNotEmpty)
+              DropdownButton<String>(
+                isExpanded: true,
+                value: commanderId,
+                items: selectedOfficerIds.map((id) {
+                  final o = widget.engine.state.officers.firstWhere(
+                    (x) => x.id == id,
+                  );
+                  return DropdownMenuItem(
+                    value: id,
+                    child: Text('총대장: ${o.name} · WAR ${o.war}'),
+                  );
+                }).toList(),
+                onChanged: (id) {
+                  if (id != null) setState(() => commanderId = id);
+                },
+              ),
             const Text(
               '총대장 및 출전 병력',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -1019,6 +1080,14 @@ class _BattleScreenState extends State<BattleScreen> {
                       ),
                     ],
                   ),
+                  if (battle.attackerUnits.isNotEmpty)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '출전 부대 · 총대장 ${battle.commanderName} (WAR ${battle.commanderWar})\n${battle.attackerUnits.map((u) => '${u.name} ${u.soldiers}명').join('  ·  ')}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
                   const SizedBox(height: 14),
                   Row(
                     children: [

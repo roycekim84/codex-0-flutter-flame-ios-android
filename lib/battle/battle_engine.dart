@@ -6,7 +6,8 @@ class BattleEngine {
 
   void attack() {
     if (state.finished) return;
-    final attackerDamage = (state.attackerSoldiers * 0.16)
+    final commanderModifier = 0.12 + state.commanderWar / 1000;
+    final attackerDamage = (state.attackerSoldiers * commanderModifier)
         .round()
         .clamp(1, state.defenderSoldiers)
         .toInt();

@@ -192,6 +192,8 @@ class GameEngine {
     required String sourceProvinceId,
     required String targetProvinceId,
     required int committedSoldiers,
+    List<String>? participantOfficerIds,
+    String? commanderOfficerId,
   }) {
     final source = _playerProvince(sourceProvinceId);
     final target = state.provinces
@@ -208,6 +210,31 @@ class GameEngine {
         state.playerForce.food < 150) {
       return null;
     }
+    final participants =
+        participantOfficerIds == null || participantOfficerIds.isEmpty
+        ? [source.officerIds.first]
+        : participantOfficerIds.where(source.officerIds.contains).toList();
+    if (participants.isEmpty) return null;
+    final commanderId =
+        commanderOfficerId != null && participants.contains(commanderOfficerId)
+        ? commanderOfficerId
+        : participants.first;
+    final base = committedSoldiers ~/ participants.length;
+    final units = <BattleUnit>[];
+    for (var i = 0; i < participants.length; i++) {
+      final officer = state.officers.firstWhere((o) => o.id == participants[i]);
+      units.add(
+        BattleUnit(
+          officerId: officer.id,
+          name: officer.name,
+          soldiers:
+              base +
+              (i == 0 ? committedSoldiers - base * participants.length : 0),
+          war: officer.war,
+        ),
+      );
+    }
+    final commander = state.officers.firstWhere((o) => o.id == commanderId);
     source.soldiers -= committedSoldiers;
     state.playerForce.food -= 150;
     state.log(
@@ -220,6 +247,9 @@ class GameEngine {
         defenderName: target.ownerName,
         attackerSoldiers: committedSoldiers,
         defenderSoldiers: target.soldiers,
+        attackerUnits: units,
+        commanderName: commander.name,
+        commanderWar: commander.war,
       ),
     );
   }
