@@ -64,4 +64,30 @@ void main() {
     expect(state.playerProvinceIds, ['p_crown', 'p_dale']);
     expect(state.playerSoldiers, 2400);
   });
+
+  test('출병과 전투 승리는 영토 소유권을 바꾼다', () {
+    final engine = createEngine();
+    engine.state.provinces.firstWhere((p) => p.id == 'p_crown').soldiers = 100;
+    final battle = engine.beginBattle('p_crown');
+    expect(battle, isNotNull);
+    while (!battle!.state.finished) {
+      battle.attack();
+    }
+    engine.resolveBattle(battle);
+    expect(engine.state.playerProvinceIds, contains('p_crown'));
+    expect(
+      engine.state.provinces.firstWhere((p) => p.id == 'p_crown').ownerForceId,
+      'force_green',
+    );
+  });
+
+  test('내정 명령은 금과 민심을 서로 다른 방향으로 바꾼다', () {
+    final engine = createEngine();
+    final province = engine.state.provinces.first;
+    final gold = engine.state.playerForce.gold;
+    engine.tax(province.id);
+    expect(engine.state.playerForce.gold, greaterThan(gold));
+    engine.relief(province.id);
+    expect(province.publicLoyalty, 67);
+  });
 }

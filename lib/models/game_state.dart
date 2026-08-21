@@ -16,7 +16,8 @@ class ProvinceState {
     required this.mapY,
     required this.ownerName,
   });
-  final String id, name, ownerForceId, ownerName;
+  final String id, name;
+  String ownerForceId, ownerName;
   final List<String> adjacentProvinceIds, officerIds;
   final double mapX, mapY;
   int land, publicLoyalty, soldiers, gold, food;

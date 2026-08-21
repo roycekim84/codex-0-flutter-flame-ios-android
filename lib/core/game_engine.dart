@@ -1,4 +1,6 @@
 import '../models/game_state.dart';
+import '../battle/battle_engine.dart';
+import '../battle/battle_state.dart';
 
 class GameEngine {
   GameEngine(this.state);
@@ -24,6 +26,91 @@ class GameEngine {
     p.soldiers += gain;
     p.publicLoyalty = (p.publicLoyalty - 1).clamp(0, 100).toInt();
     state.log('${p.name} 징병 · 병력 +$gain · 금 -80');
+  }
+
+  void tax(String provinceId) {
+    final p = _playerProvince(provinceId);
+    if (p == null) return;
+    state.playerForce.gold += 90 + p.land;
+    p.publicLoyalty = (p.publicLoyalty - 4).clamp(0, 100).toInt();
+    state.log('${p.name} 징세 · 금 +${90 + p.land} · 민심 -4');
+  }
+
+  void relief(String provinceId) {
+    final p = _playerProvince(provinceId);
+    if (p == null || state.playerForce.gold < 80) return;
+    state.playerForce.gold -= 80;
+    p.publicLoyalty = (p.publicLoyalty + 6).clamp(0, 100).toInt();
+    state.log('${p.name} 시혜 · 금 -80 · 민심 +6');
+  }
+
+  void train(String provinceId) {
+    final p = _playerProvince(provinceId);
+    if (p == null || state.playerForce.gold < 60) return;
+    state.playerForce.gold -= 60;
+    state.log('${p.name} 훈련 · 군사 훈련도 상승 · 금 -60');
+  }
+
+  void fortify(String provinceId) {
+    final p = _playerProvince(provinceId);
+    if (p == null || state.playerForce.gold < 120) return;
+    state.playerForce.gold -= 120;
+    p.land = (p.land + 2).clamp(0, 100).toInt();
+    state.log('${p.name} 축성 · 방어 기반 +2 · 금 -120');
+  }
+
+  BattleEngine? beginBattle(String targetProvinceId) {
+    final target = state.provinces
+        .where((p) => p.id == targetProvinceId)
+        .firstOrNull;
+    if (target == null || state.isPlayerProvince(target)) return null;
+    final source = state.provinces
+        .where(
+          (p) =>
+              state.isPlayerProvince(p) &&
+              p.adjacentProvinceIds.contains(target.id) &&
+              p.soldiers > 300,
+        )
+        .firstOrNull;
+    if (source == null || state.playerForce.food < 150) return null;
+    final committed = (source.soldiers * 0.65).round();
+    source.soldiers -= committed;
+    state.playerForce.food -= 150;
+    state.log(
+      '${source.name}에서 ${target.name}(으)로 출병 · 병력 $committed · 군량 -150',
+    );
+    return BattleEngine(
+      BattleState(
+        targetProvinceId: target.id,
+        attackerName: state.playerForce.name,
+        defenderName: target.ownerName,
+        attackerSoldiers: committed,
+        defenderSoldiers: target.soldiers,
+      ),
+    );
+  }
+
+  void resolveBattle(BattleEngine battle) {
+    final target = state.provinces.firstWhere(
+      (p) => p.id == battle.state.targetProvinceId,
+    );
+    if (battle.state.attackerWon) {
+      final oldForce = state.forces.firstWhere(
+        (f) => f.id == target.ownerForceId,
+      );
+      oldForce.provinceIds.remove(target.id);
+      final player = state.playerForce;
+      if (!player.provinceIds.contains(target.id)) {
+        player.provinceIds.add(target.id);
+      }
+      target.ownerForceId = player.id;
+      target.ownerName = player.name;
+      target.soldiers = battle.state.attackerSoldiers;
+      state.log('${target.name} 점령 · 남은 병력 ${target.soldiers}');
+    } else {
+      target.soldiers = battle.state.defenderSoldiers;
+      state.log('${target.name} 공격 실패 · 방어군이 지켜냄');
+    }
   }
 
   bool moveOfficer(String officerId, String targetProvinceId) {

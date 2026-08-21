@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flame/game.dart';
 
+import '../battle/battle_engine.dart';
 import '../core/game_engine.dart';
 import '../data/demo_scenario.dart';
+import '../flame/battle_game.dart';
 import '../models/game_state.dart';
 
 class CodexStrategyApp extends StatelessWidget {
@@ -131,6 +134,21 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  void _startBattle() {
+    final battle = engine.beginBattle(selectedProvinceId!);
+    if (battle == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('인접한 아군 영지에 출병 가능한 병력이 없거나 군량이 부족합니다.')),
+      );
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BattleScreen(engine: engine, battle: battle),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     engine.removeListener(_refresh);
@@ -184,6 +202,7 @@ class _GameScreenState extends State<GameScreen> {
               engine: engine,
               province: selected,
               playerOwned: state.isPlayerProvince(selected),
+              onBattle: _startBattle,
             ),
           ],
         ),
@@ -370,10 +389,12 @@ class _ActionBar extends StatelessWidget {
     required this.engine,
     required this.province,
     required this.playerOwned,
+    required this.onBattle,
   });
   final GameEngine engine;
   final ProvinceState province;
   final bool playerOwned;
+  final VoidCallback onBattle;
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
@@ -396,10 +417,123 @@ class _ActionBar extends StatelessWidget {
               : null,
           child: const Text('장수 이동'),
         ),
+        FilledButton.tonal(
+          onPressed: playerOwned ? () => engine.tax(province.id) : null,
+          child: const Text('징세'),
+        ),
+        FilledButton.tonal(
+          onPressed: playerOwned ? () => engine.relief(province.id) : null,
+          child: const Text('시혜'),
+        ),
+        FilledButton.tonal(
+          onPressed: playerOwned ? () => engine.train(province.id) : null,
+          child: const Text('훈련'),
+        ),
+        FilledButton.tonal(
+          onPressed: playerOwned ? () => engine.fortify(province.id) : null,
+          child: const Text('축성'),
+        ),
+        FilledButton(
+          onPressed: playerOwned ? null : onBattle,
+          child: const Text('출병'),
+        ),
         FilledButton(onPressed: engine.endTurn, child: const Text('턴 종료')),
       ],
     ),
   );
+}
+
+class BattleScreen extends StatefulWidget {
+  const BattleScreen({super.key, required this.engine, required this.battle});
+  final GameEngine engine;
+  final BattleEngine battle;
+  @override
+  State<BattleScreen> createState() => _BattleScreenState();
+}
+
+class _BattleScreenState extends State<BattleScreen> {
+  void _finishIfNeeded() {
+    if (!widget.battle.state.finished) return;
+    widget.engine.resolveBattle(widget.battle);
+    final message = widget.battle.state.attackerWon
+        ? '전투 승리! 목표 지역을 점령했습니다.'
+        : '전투 패배. 병력이 후퇴했습니다.';
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final battle = widget.battle.state;
+    return Scaffold(
+      appBar: AppBar(title: Text('전투 · ${battle.day}일째')),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                color: const Color(0xff263b35),
+                child: GameWidget(game: BattleGame(battle)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Text(
+                        '${battle.attackerName}\n${battle.attackerSoldiers}명',
+                        textAlign: TextAlign.center,
+                      ),
+                      const Text('VS'),
+                      Text(
+                        '${battle.defenderName}\n${battle.defenderSoldiers}명',
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: battle.finished
+                              ? null
+                              : () {
+                                  setState(widget.battle.attack);
+                                  _finishIfNeeded();
+                                },
+                          icon: const Icon(Icons.gavel),
+                          label: const Text('공격'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: battle.finished
+                              ? null
+                              : () {
+                                  widget.battle.retreat();
+                                  _finishIfNeeded();
+                                },
+                          icon: const Icon(Icons.undo),
+                          label: const Text('퇴각'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _OfficerSheet extends StatelessWidget {
