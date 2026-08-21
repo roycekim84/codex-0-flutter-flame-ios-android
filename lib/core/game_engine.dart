@@ -648,7 +648,7 @@ class GameEngine {
             state.log('${force.name} AI · ${p.name} 축성');
           }
         case AiDecisionType.attack:
-          _applyAiAttack(force, decision);
+          _runAiBattle(force, decision);
       }
     }
     state.month++;
@@ -660,7 +660,7 @@ class GameEngine {
     state.log('월말 정산 및 AI 행동 완료');
   }
 
-  void _applyAiAttack(ForceState force, AiDecision decision) {
+  void _runAiBattle(ForceState force, AiDecision decision) {
     final source = state.provinces
         .where((p) => p.id == decision.sourceProvinceId)
         .firstOrNull;
@@ -670,18 +670,41 @@ class GameEngine {
     if (source == null ||
         target == null ||
         target.ownerForceId != state.playerForceId ||
-        source.soldiers <= 300) {
+        source.soldiers <= 300 ||
+        force.food < 150 ||
+        source.officerIds.isEmpty) {
       return;
     }
     final committed = (source.soldiers * .6).round();
-    if (committed > target.soldiers) {
-      source.soldiers -= committed;
+    final attackerOfficer = state.officers.firstWhere(
+      (o) => o.id == source.officerIds.first,
+    );
+    final battle = BattleEngine(
+      BattleState(
+        sourceProvinceId: source.id,
+        targetProvinceId: target.id,
+        attackerName: force.name,
+        defenderName: target.ownerName,
+        attackerSoldiers: committed,
+        defenderSoldiers: target.soldiers,
+        commanderName: attackerOfficer.name,
+        commanderWar: attackerOfficer.war,
+        attackerFood: force.food - 150,
+        dailySupplyCost: (committed ~/ 20).clamp(50, 500),
+      ),
+    );
+    source.soldiers -= committed;
+    force.food -= 150;
+    while (!battle.state.finished) {
+      battle.attack();
+    }
+    if (battle.state.attackerWon) {
       final oldOwner = state.playerForce;
       oldOwner.provinceIds.remove(target.id);
       force.provinceIds.add(target.id);
       target.ownerForceId = force.id;
       target.ownerName = force.name;
-      target.soldiers = (committed - target.soldiers).clamp(100, committed);
+      target.soldiers = battle.state.attackerSoldiers;
       for (final officerId in target.officerIds) {
         final officer = state.officers.firstWhere((o) => o.id == officerId);
         oldOwner.officerIds.remove(officer.id);
@@ -690,13 +713,15 @@ class GameEngine {
         officer.provinceId = 'free';
       }
       target.officerIds.clear();
-      state.log('${force.name} AI · ${target.name} 출병 성공 · 영토 상실');
+      state.log(
+        '${force.name} AI · ${target.name} 전술 전투 승리 · 영토 점령 · ${battle.state.day}일',
+      );
     } else {
-      source.soldiers -= (committed * .5).round();
-      target.soldiers = (target.soldiers - (committed * .25).round())
-          .clamp(0, target.soldiers)
-          .toInt();
-      state.log('${force.name} AI · ${target.name} 공격 실패 · 양측 병력 손실');
+      source.soldiers += battle.state.attackerSoldiers;
+      target.soldiers = battle.state.defenderSoldiers;
+      state.log(
+        '${force.name} AI · ${target.name} 전술 전투 패배 · 병력 귀환 · ${battle.state.day}일',
+      );
     }
   }
 

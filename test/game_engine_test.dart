@@ -62,7 +62,7 @@ void main() {
     engine.endTurn();
     expect(target.ownerForceId, 'force_red');
     expect(
-      engine.state.gameLog.any((log) => log.contains('AI · 가시 숲 출병 성공')),
+      engine.state.gameLog.any((log) => log.contains('AI · 가시 숲 전술 전투 승리')),
       isTrue,
     );
   });
