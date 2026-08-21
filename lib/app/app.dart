@@ -1912,11 +1912,7 @@ class _TerritoryOverlayPainter extends CustomPainter {
       }
       if (polygon.length < 3) continue;
       final color = _forceColor(provinces[i].ownerForceId);
-      final path = Path()..moveTo(polygon.first.dx, polygon.first.dy);
-      for (final point in polygon.skip(1)) {
-        path.lineTo(point.dx, point.dy);
-      }
-      path.close();
+      final path = _smoothTerritoryPath(polygon);
       canvas.drawPath(
         path,
         Paint()
@@ -1928,9 +1924,28 @@ class _TerritoryOverlayPainter extends CustomPainter {
         Paint()
           ..color = color.withValues(alpha: .72)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2,
+          ..strokeWidth = 1.0,
       );
     }
+  }
+
+  Path _smoothTerritoryPath(List<Offset> polygon) {
+    final path = Path();
+    final midpoint = (polygon.last + polygon.first) / 2;
+    path.moveTo(midpoint.dx, midpoint.dy);
+    for (var i = 0; i < polygon.length; i++) {
+      final vertex = polygon[i];
+      final next = polygon[(i + 1) % polygon.length];
+      final nextMidpoint = (vertex + next) / 2;
+      path.quadraticBezierTo(
+        vertex.dx,
+        vertex.dy,
+        nextMidpoint.dx,
+        nextMidpoint.dy,
+      );
+    }
+    path.close();
+    return path;
   }
 
   List<Offset> _clipToBisector(
