@@ -151,21 +151,36 @@ void main() {
 
   test('이동 명령은 인접 아군 지역으로 장수와 소속 지역을 함께 옮긴다', () {
     final engine = createEngine();
-    final source = engine.state.provinces.first;
+    final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
     final officer = source.officerIds.first;
     final result = engine.dispatch(
       GameCommand(
         type: GameCommandType.moveOfficer,
         officerId: officer,
         provinceId: source.id,
-        destinationProvinceId: 'p_briar',
+        destinationProvinceId: 'p_ash',
       ),
     );
     expect(result.success, isTrue);
     expect(source.officerIds, isNot(contains(officer)));
     expect(
       engine.state.officers.firstWhere((o) => o.id == officer).provinceId,
-      'p_briar',
+      'p_ash',
     );
+  });
+
+  test('출병 준비는 선택한 출발지 병력과 군량을 실제로 차감한다', () {
+    final engine = createEngine();
+    final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
+    final soldiers = source.soldiers;
+    final food = engine.state.playerForce.food;
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: source.id,
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 500,
+    );
+    expect(battle, isNotNull);
+    expect(source.soldiers, soldiers - 500);
+    expect(engine.state.playerForce.food, food - 150);
   });
 }

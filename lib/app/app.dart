@@ -27,7 +27,6 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scenario = DemoScenario.create();
-    final forces = (scenario['forces'] as List).cast<Map<String, dynamic>>();
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -56,28 +55,17 @@ class HomeScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 40),
-                  Text(
-                    '새 게임 · 가상 군웅 시나리오',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  ...forces.map(
-                    (force) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => GameScreen(
-                              playerForceId: force['id'] as String,
-                            ),
-                          ),
-                        ),
-                        icon: const Icon(Icons.shield_outlined),
-                        label: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Text(force['name'] as String),
-                        ),
+                  FilledButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ScenarioSelectScreen(scenario: scenario),
                       ),
+                    ),
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: Text('새 게임'),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -91,6 +79,77 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class ScenarioSelectScreen extends StatelessWidget {
+  const ScenarioSelectScreen({super.key, required this.scenario});
+  final Map<String, dynamic> scenario;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('시나리오 선택')),
+    body: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('가상 군웅 시나리오', style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          const Text('6개 지역과 3개 세력이 패권을 다투는 기본 시나리오입니다.'),
+          const SizedBox(height: 20),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.map_outlined),
+              title: const Text('193년 · 군웅할거'),
+              subtitle: const Text('난이도 보통 · 6지역 · 3세력 · 20장수'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => RulerSelectScreen(scenario: scenario),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class RulerSelectScreen extends StatelessWidget {
+  const RulerSelectScreen({super.key, required this.scenario});
+  final Map<String, dynamic> scenario;
+  @override
+  Widget build(BuildContext context) {
+    final forces = (scenario['forces'] as List).cast<Map<String, dynamic>>();
+    final officers = (scenario['officers'] as List)
+        .cast<Map<String, dynamic>>();
+    return Scaffold(
+      appBar: AppBar(title: const Text('군주 선택')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: forces.map((force) {
+          final ruler = officers.firstWhere((o) => o['id'] == force['rulerId']);
+          return Card(
+            child: ListTile(
+              isThreeLine: true,
+              leading: CircleAvatar(child: Text('${ruler['war']}')),
+              title: Text('${force['name']} · ${ruler['name']}'),
+              subtitle: Text(
+                '무력 ${ruler['war']} · 지력 ${ruler['intelligence']} · 매력 ${ruler['charisma']}\n영토 ${force['provinceIds'].length}곳 · 장수 ${force['officerIds'].length}명',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      GameScreen(playerForceId: force['id'] as String),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -119,6 +178,27 @@ class _GameScreenState extends State<GameScreen> {
     selectedProvinceId = engine.state.playerProvinceIds.first;
     selectedOfficerId = engine.state.provinces.first.officerIds.first;
     engine.addListener(_refresh);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showStartReport());
+  }
+
+  void _showStartReport() {
+    if (!mounted) return;
+    final state = engine.state;
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('${state.year}년 ${state.month}월'),
+        content: Text(
+          '${state.playerForce.name}의 명령을 시작합니다.\n\n영토 ${state.playerProvinceIds.length}곳\n금 ${state.playerForce.gold}\n군량 ${state.playerForce.food}\n병력 ${state.playerSoldiers}\n\n장수를 선택해 이번 달 명령을 내리십시오.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('명령 시작'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _refresh() => setState(() {});
@@ -138,16 +218,12 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _startBattle() {
-    final battle = engine.beginBattle(selectedProvinceId!);
-    if (battle == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('인접한 아군 영지에 출병 가능한 병력이 없거나 군량이 부족합니다.')),
-      );
-      return;
-    }
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => BattleScreen(engine: engine, battle: battle),
+        builder: (_) => WarPreparationScreen(
+          engine: engine,
+          targetProvinceId: selectedProvinceId!,
+        ),
       ),
     );
   }
@@ -741,6 +817,153 @@ class _ActionBar extends StatelessWidget {
       ],
     ),
   );
+}
+
+class WarPreparationScreen extends StatefulWidget {
+  const WarPreparationScreen({
+    super.key,
+    required this.engine,
+    required this.targetProvinceId,
+  });
+  final GameEngine engine;
+  final String targetProvinceId;
+  @override
+  State<WarPreparationScreen> createState() => _WarPreparationScreenState();
+}
+
+class _WarPreparationScreenState extends State<WarPreparationScreen> {
+  late List<ProvinceState> sources;
+  String? sourceId;
+  double committed = 100;
+  @override
+  void initState() {
+    super.initState();
+    final target = widget.engine.state.provinces.firstWhere(
+      (p) => p.id == widget.targetProvinceId,
+    );
+    sources = widget.engine.state.provinces
+        .where(
+          (p) =>
+              widget.engine.state.isPlayerProvince(p) &&
+              p.adjacentProvinceIds.contains(target.id) &&
+              p.soldiers >= 100,
+        )
+        .toList();
+    sourceId = sources.isEmpty ? null : sources.first.id;
+    if (sources.isNotEmpty) {
+      committed = (sources.first.soldiers * .65).roundToDouble();
+    }
+  }
+
+  ProvinceState? get source =>
+      sourceId == null ? null : sources.firstWhere((p) => p.id == sourceId);
+  void _launch() {
+    final battle = sourceId == null
+        ? null
+        : widget.engine.beginBattlePrepared(
+            sourceProvinceId: sourceId!,
+            targetProvinceId: widget.targetProvinceId,
+            committedSoldiers: committed.round(),
+          );
+    if (battle == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('출병 조건을 만족하지 못했습니다. 군량과 병력을 확인하세요.')),
+      );
+      return;
+    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => BattleScreen(engine: widget.engine, battle: battle),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final target = widget.engine.state.provinces.firstWhere(
+      (p) => p.id == widget.targetProvinceId,
+    );
+    final current = source;
+    final max = current?.soldiers.toDouble() ?? 100;
+    return Scaffold(
+      appBar: AppBar(title: const Text('출병 준비')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              '목표 지역  ${target.name}',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            Text('방어 병력 ${target.soldiers} · 소유 ${target.ownerName}'),
+            const SizedBox(height: 18),
+            const Text('출발지', style: TextStyle(fontWeight: FontWeight.bold)),
+            DropdownButton<String>(
+              isExpanded: true,
+              value: sourceId,
+              items: sources
+                  .map(
+                    (p) => DropdownMenuItem(
+                      value: p.id,
+                      child: Text('${p.name} · 병력 ${p.soldiers}'),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (id) {
+                if (id != null) {
+                  setState(() {
+                    sourceId = id;
+                    committed = (source!.soldiers * .65).roundToDouble();
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '총대장 및 출전 병력',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              current == null || current.officerIds.isEmpty
+                  ? '총대장 없음'
+                  : '${widget.engine.state.officers.firstWhere((o) => o.id == current.officerIds.first).name} · ${committed.round()}명',
+            ),
+            Slider(
+              min: 100,
+              max: max < 100 ? 100 : max,
+              divisions: max <= 100 ? 1 : (max - 100).round(),
+              value: committed.clamp(100, max < 100 ? 100 : max),
+              label: '${committed.round()}',
+              onChanged: current == null
+                  ? null
+                  : (value) => setState(() => committed = value),
+            ),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Text(
+                  '출병 비용\n군량 -150\n출전 병력 ${committed.round()}\n예상 잔여 병력 ${(current?.soldiers ?? 0) - committed.round()}',
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: current == null ? null : _launch,
+              icon: const Icon(Icons.flag),
+              label: const Padding(
+                padding: EdgeInsets.all(12),
+                child: Text('출병 확정'),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class BattleScreen extends StatefulWidget {

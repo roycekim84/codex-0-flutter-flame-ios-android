@@ -181,17 +181,44 @@ class GameEngine {
         .firstOrNull;
     if (source == null || state.playerForce.food < 150) return null;
     final committed = (source.soldiers * 0.65).round();
-    source.soldiers -= committed;
+    return beginBattlePrepared(
+      sourceProvinceId: source.id,
+      targetProvinceId: target.id,
+      committedSoldiers: committed,
+    );
+  }
+
+  BattleEngine? beginBattlePrepared({
+    required String sourceProvinceId,
+    required String targetProvinceId,
+    required int committedSoldiers,
+  }) {
+    final source = _playerProvince(sourceProvinceId);
+    final target = state.provinces
+        .where((p) => p.id == targetProvinceId)
+        .firstOrNull;
+    if (source == null ||
+        target == null ||
+        state.isPlayerProvince(target) ||
+        !source.adjacentProvinceIds.contains(target.id)) {
+      return null;
+    }
+    if (committedSoldiers < 100 ||
+        committedSoldiers > source.soldiers ||
+        state.playerForce.food < 150) {
+      return null;
+    }
+    source.soldiers -= committedSoldiers;
     state.playerForce.food -= 150;
     state.log(
-      '${source.name}에서 ${target.name}(으)로 출병 · 병력 $committed · 군량 -150',
+      '${source.name}에서 ${target.name}(으)로 출병 · 병력 $committedSoldiers · 군량 -150',
     );
     return BattleEngine(
       BattleState(
         targetProvinceId: target.id,
         attackerName: state.playerForce.name,
         defenderName: target.ownerName,
-        attackerSoldiers: committed,
+        attackerSoldiers: committedSoldiers,
         defenderSoldiers: target.soldiers,
       ),
     );
