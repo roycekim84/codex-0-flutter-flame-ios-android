@@ -54,6 +54,19 @@ void main() {
     );
   });
 
+  test('적대적인 AI는 약한 인접 영지를 공격한다', () {
+    final engine = createEngine();
+    final target = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
+    target.soldiers = 100;
+    engine.state.setRelation('force_red', -30);
+    engine.endTurn();
+    expect(target.ownerForceId, 'force_red');
+    expect(
+      engine.state.gameLog.any((log) => log.contains('AI · 가시 숲 출병 성공')),
+      isTrue,
+    );
+  });
+
   test('인접한 아군 영지 사이에서 장수를 이동할 수 있다', () {
     final engine = createEngine();
     final officer = engine.state.provinces.first.officerIds.first;

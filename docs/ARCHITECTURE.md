@@ -6,7 +6,7 @@
 Flutter UI → GameCommand → CommandEngine → GameState → GameEvent/Report → Flutter UI
 Battle UI / Flame → BattleCommand → BattleEngine → BattleState → BattleResult
 
-AI는 `AiEngine`에서 행동을 선택하고 `GameEngine`이 선택 결과를 GameState와 로그에 적용한다. AI 판단과 상태 변경을 분리해 이후 성격별 우선순위를 확장한다.
+AI는 `AiEngine`에서 행동을 선택하고 `GameEngine`이 선택 결과를 GameState와 로그에 적용한다. AI 판단과 상태 변경을 분리해 이후 성격별 우선순위를 확장한다. 현재 군사 행동은 전략 레벨의 간이 출병이며, 이후 BattleEngine 수직 슬라이스로 교체한다.
 ```
 
 Flame은 전술 전투의 렌더러/입력 계층으로만 사용한다. 지역·세력·장수·밸런스·이벤트 데이터는 JSON repository로 교체한다. 피해·이동·화공·포로 상태를 Flame Component가 직접 결정하지 않는다.

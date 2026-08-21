@@ -647,6 +647,8 @@ class GameEngine {
             p.land = (p.land + 2).clamp(0, 100).toInt();
             state.log('${force.name} AI · ${p.name} 축성');
           }
+        case AiDecisionType.attack:
+          _applyAiAttack(force, decision);
       }
     }
     state.month++;
@@ -656,6 +658,46 @@ class GameEngine {
     }
     state.resetMonthlyActions();
     state.log('월말 정산 및 AI 행동 완료');
+  }
+
+  void _applyAiAttack(ForceState force, AiDecision decision) {
+    final source = state.provinces
+        .where((p) => p.id == decision.sourceProvinceId)
+        .firstOrNull;
+    final target = state.provinces
+        .where((p) => p.id == decision.targetProvinceId)
+        .firstOrNull;
+    if (source == null ||
+        target == null ||
+        target.ownerForceId != state.playerForceId ||
+        source.soldiers <= 300) {
+      return;
+    }
+    final committed = (source.soldiers * .6).round();
+    if (committed > target.soldiers) {
+      source.soldiers -= committed;
+      final oldOwner = state.playerForce;
+      oldOwner.provinceIds.remove(target.id);
+      force.provinceIds.add(target.id);
+      target.ownerForceId = force.id;
+      target.ownerName = force.name;
+      target.soldiers = (committed - target.soldiers).clamp(100, committed);
+      for (final officerId in target.officerIds) {
+        final officer = state.officers.firstWhere((o) => o.id == officerId);
+        oldOwner.officerIds.remove(officer.id);
+        officer.forceId = 'free';
+        officer.status = 'FREE';
+        officer.provinceId = 'free';
+      }
+      target.officerIds.clear();
+      state.log('${force.name} AI · ${target.name} 출병 성공 · 영토 상실');
+    } else {
+      source.soldiers -= (committed * .5).round();
+      target.soldiers = (target.soldiers - (committed * .25).round())
+          .clamp(0, target.soldiers)
+          .toInt();
+      state.log('${force.name} AI · ${target.name} 공격 실패 · 양측 병력 손실');
+    }
   }
 
   ProvinceState? _playerProvince(String id) => state.provinces
