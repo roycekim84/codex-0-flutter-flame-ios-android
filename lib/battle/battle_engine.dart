@@ -21,6 +21,8 @@ class BattleEngine {
         .toInt();
     state.defenderSoldiers -= attackerDamage;
     state.attackerSoldiers -= defenderDamage;
+    _syncUnits(state.attackerUnits, state.attackerSoldiers);
+    _syncUnits(state.defenderUnits, state.defenderSoldiers);
     state.day++;
     if (state.defenderSoldiers <= 0 ||
         state.attackerSoldiers <= 0 ||
@@ -117,6 +119,20 @@ class BattleEngine {
     unit.column = column;
     state.day++;
     return true;
+  }
+
+  void _syncUnits(List<BattleUnit> units, int total) {
+    if (units.isEmpty) return;
+    final before = units.fold(0, (sum, unit) => sum + unit.soldiers);
+    if (before <= 0) return;
+    var remaining = total;
+    for (var i = 0; i < units.length; i++) {
+      final soldiers = i == units.length - 1
+          ? remaining
+          : (units[i].soldiers * total / before).round();
+      units[i].soldiers = soldiers.clamp(0, remaining).toInt();
+      remaining -= units[i].soldiers;
+    }
   }
 
   void retreat() {

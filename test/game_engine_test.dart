@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:codex_strategy/core/game_engine.dart';
 import 'package:codex_strategy/core/game_command.dart';
 import 'package:codex_strategy/battle/battle_engine.dart';
+import 'package:codex_strategy/battle/battle_state.dart';
 import 'package:codex_strategy/data/demo_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
 import 'package:codex_strategy/repositories/save_repository.dart';
@@ -80,6 +81,41 @@ void main() {
     expect(
       engine.state.provinces.firstWhere((p) => p.id == 'p_crown').ownerForceId,
       'force_green',
+    );
+    expect(battle.state.outcomes, isNotEmpty);
+  });
+
+  test('전투 결과는 포로를 기록하고 석방 처리할 수 있다', () {
+    final engine = createEngine();
+    final target = engine.state.provinces.firstWhere((p) => p.id == 'p_crown');
+    target.soldiers = 100;
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: target.id,
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    while (!battle!.state.finished) {
+      battle.attack();
+    }
+    final outcomes = engine.resolveBattle(battle);
+    final prisoner = outcomes
+        .where((o) => o.result == BattleOfficerResult.captured)
+        .firstOrNull;
+    expect(prisoner, isNotNull);
+    expect(
+      engine.handlePrisoner(
+        prisoner!.officerId,
+        PrisonerAction.release,
+        target.id,
+      ),
+      isTrue,
+    );
+    expect(
+      engine.state.officers
+          .firstWhere((o) => o.id == prisoner.officerId)
+          .status,
+      'FREE',
     );
   });
 

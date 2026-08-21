@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
 
 import '../battle/battle_engine.dart';
+import '../battle/battle_state.dart';
 import '../core/game_command.dart';
 import '../core/game_engine.dart';
 import '../data/demo_scenario.dart';
@@ -1108,9 +1109,134 @@ class _BattleScreenState extends State<BattleScreen> {
     battleGame.refreshBoard();
   }
 
-  void _finishIfNeeded() {
+  Future<void> _finishIfNeeded() async {
     if (!widget.battle.state.finished) return;
-    widget.engine.resolveBattle(widget.battle);
+    final outcomes = widget.engine.resolveBattle(widget.battle);
+    final remainingPrisoners = outcomes
+        .where((o) => o.result == BattleOfficerResult.captured)
+        .toList();
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text(
+              widget.battle.state.attackerWon ? '전투 결과 · 승리' : '전투 결과 · 패배',
+            ),
+            content: SizedBox(
+              width: 360,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.battle.state.attackerWon
+                          ? '목표 지역을 점령했습니다.'
+                          : '공격군이 후퇴했습니다.',
+                    ),
+                    const SizedBox(height: 12),
+                    ...outcomes.map(
+                      (outcome) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Text(
+                          '${outcome.name} · ${_battleResultLabel(outcome.result)} · ${outcome.soldiers}명',
+                        ),
+                      ),
+                    ),
+                    if (remainingPrisoners.isNotEmpty) ...[
+                      const Divider(height: 24),
+                      const Text(
+                        '포로 처리',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      ...remainingPrisoners.map(
+                        (prisoner) => Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(prisoner.name),
+                              const SizedBox(height: 4),
+                              Wrap(
+                                spacing: 6,
+                                children: [
+                                  TextButton(
+                                    onPressed: () {
+                                      final handled = widget.engine
+                                          .handlePrisoner(
+                                            prisoner.officerId,
+                                            PrisonerAction.recruit,
+                                            widget
+                                                .battle
+                                                .state
+                                                .targetProvinceId,
+                                          );
+                                      if (handled) {
+                                        setDialogState(
+                                          () => remainingPrisoners.remove(
+                                            prisoner,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: const Text('등용 500금'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      widget.engine.handlePrisoner(
+                                        prisoner.officerId,
+                                        PrisonerAction.release,
+                                        widget.battle.state.targetProvinceId,
+                                      );
+                                      setDialogState(
+                                        () =>
+                                            remainingPrisoners.remove(prisoner),
+                                      );
+                                    },
+                                    child: const Text('석방'),
+                                  ),
+                                  TextButton(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                    ),
+                                    onPressed: () {
+                                      widget.engine.handlePrisoner(
+                                        prisoner.officerId,
+                                        PrisonerAction.execute,
+                                        widget.battle.state.targetProvinceId,
+                                      );
+                                      setDialogState(
+                                        () =>
+                                            remainingPrisoners.remove(prisoner),
+                                      );
+                                    },
+                                    child: const Text('처형'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              FilledButton(
+                onPressed: remainingPrisoners.isEmpty
+                    ? () => Navigator.pop(dialogContext)
+                    : null,
+                child: const Text('확인'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (!mounted) return;
     final message = widget.battle.state.attackerWon
         ? '전투 승리! 목표 지역을 점령했습니다.'
         : '전투 패배. 병력이 후퇴했습니다.';
@@ -1119,6 +1245,12 @@ class _BattleScreenState extends State<BattleScreen> {
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
+
+  String _battleResultLabel(BattleOfficerResult result) => switch (result) {
+    BattleOfficerResult.escaped => '퇴각',
+    BattleOfficerResult.captured => '포로',
+    BattleOfficerResult.dead => '전사',
+  };
 
   @override
   Widget build(BuildContext context) {

@@ -4,6 +4,8 @@ import '../battle/battle_state.dart';
 import '../battle/terrain.dart';
 import 'game_command.dart';
 
+enum PrisonerAction { recruit, release, execute }
+
 class GameEngine {
   GameEngine(this.state);
   final GameState state;
@@ -270,6 +272,7 @@ class GameEngine {
     );
     return BattleEngine(
       BattleState(
+        sourceProvinceId: source.id,
         targetProvinceId: target.id,
         attackerName: state.playerForce.name,
         defenderName: target.ownerName,
@@ -284,14 +287,74 @@ class GameEngine {
     );
   }
 
-  void resolveBattle(BattleEngine battle) {
+  List<BattleOfficerOutcome> resolveBattle(BattleEngine battle) {
+    if (battle.state.outcomes.isNotEmpty) return battle.state.outcomes;
     final target = state.provinces.firstWhere(
       (p) => p.id == battle.state.targetProvinceId,
     );
-    if (battle.state.attackerWon) {
-      final oldForce = state.forces.firstWhere(
-        (f) => f.id == target.ownerForceId,
+    final source = state.provinces.firstWhere(
+      (p) => p.id == battle.state.sourceProvinceId,
+    );
+    final oldForce = state.forces.firstWhere(
+      (f) => f.id == target.ownerForceId,
+    );
+    final attackerWon = battle.state.attackerWon;
+
+    for (final unit in battle.state.attackerUnits) {
+      final result = unit.soldiers <= 0
+          ? (attackerWon
+                ? BattleOfficerResult.dead
+                : BattleOfficerResult.captured)
+          : BattleOfficerResult.escaped;
+      final officer = state.officers.firstWhere((o) => o.id == unit.officerId);
+      battle.state.outcomes.add(
+        BattleOfficerOutcome(
+          officerId: officer.id,
+          name: officer.name,
+          result: result,
+          soldiers: unit.soldiers,
+        ),
       );
+      if (result == BattleOfficerResult.captured) {
+        source.officerIds.remove(officer.id);
+        officer.status = 'CAPTIVE';
+        officer.provinceId = target.id;
+      } else if (result == BattleOfficerResult.dead) {
+        source.officerIds.remove(officer.id);
+        officer.status = 'DEAD';
+        officer.provinceId = 'dead';
+      } else if (attackerWon) {
+        source.officerIds.remove(officer.id);
+        target.officerIds.add(officer.id);
+        officer.provinceId = target.id;
+      }
+    }
+    for (final unit in battle.state.defenderUnits) {
+      final result = unit.soldiers <= 0
+          ? (attackerWon
+                ? BattleOfficerResult.captured
+                : BattleOfficerResult.dead)
+          : BattleOfficerResult.escaped;
+      final officer = state.officers.firstWhere((o) => o.id == unit.officerId);
+      battle.state.outcomes.add(
+        BattleOfficerOutcome(
+          officerId: officer.id,
+          name: officer.name,
+          result: result,
+          soldiers: unit.soldiers,
+        ),
+      );
+      if (result == BattleOfficerResult.captured) {
+        target.officerIds.remove(officer.id);
+        officer.status = 'CAPTIVE';
+        officer.provinceId = target.id;
+      } else if (result == BattleOfficerResult.dead) {
+        target.officerIds.remove(officer.id);
+        officer.status = 'DEAD';
+        officer.provinceId = 'dead';
+      }
+    }
+    if (battle.state.attackerWon) {
       oldForce.provinceIds.remove(target.id);
       final player = state.playerForce;
       if (!player.provinceIds.contains(target.id)) {
@@ -305,6 +368,58 @@ class GameEngine {
       target.soldiers = battle.state.defenderSoldiers;
       state.log('${target.name} 공격 실패 · 방어군이 지켜냄');
     }
+    state.log(
+      '전투 장수 결과 · 포로 ${battle.state.outcomes.where((o) => o.result == BattleOfficerResult.captured).length}명 · 전사 ${battle.state.outcomes.where((o) => o.result == BattleOfficerResult.dead).length}명',
+    );
+    return battle.state.outcomes;
+  }
+
+  bool handlePrisoner(
+    String officerId,
+    PrisonerAction action,
+    String provinceId,
+  ) {
+    final officer = state.officers
+        .where((o) => o.id == officerId && o.status == 'CAPTIVE')
+        .firstOrNull;
+    final province = state.provinces
+        .where((p) => p.id == provinceId)
+        .firstOrNull;
+    if (officer == null ||
+        province == null ||
+        !state.isPlayerProvince(province)) {
+      return false;
+    }
+    final oldForce = state.forces
+        .where((f) => f.id == officer.forceId)
+        .firstOrNull;
+    province.officerIds.remove(officer.id);
+    switch (action) {
+      case PrisonerAction.recruit:
+        if (state.playerForce.gold < 500) {
+          province.officerIds.add(officer.id);
+          return false;
+        }
+        state.playerForce.gold -= 500;
+        oldForce?.officerIds.remove(officer.id);
+        state.playerForce.officerIds.add(officer.id);
+        officer.forceId = state.playerForceId;
+        officer.status = 'OFFICER';
+        officer.provinceId = province.id;
+        officer.loyalty = 45;
+        province.officerIds.add(officer.id);
+        state.log('${officer.name} 포로 등용 · 금 -500');
+      case PrisonerAction.release:
+        officer.status = 'FREE';
+        officer.provinceId = 'free';
+        state.log('${officer.name} 포로 석방');
+      case PrisonerAction.execute:
+        oldForce?.officerIds.remove(officer.id);
+        officer.status = 'DEAD';
+        officer.provinceId = 'dead';
+        state.log('${officer.name} 포로 처형');
+    }
+    return true;
   }
 
   bool moveOfficer(String officerId, String targetProvinceId) {

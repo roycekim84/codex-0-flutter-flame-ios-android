@@ -1,5 +1,19 @@
 import 'terrain.dart';
 
+enum BattleOfficerResult { escaped, captured, dead }
+
+class BattleOfficerOutcome {
+  BattleOfficerOutcome({
+    required this.officerId,
+    required this.name,
+    required this.result,
+    required this.soldiers,
+  });
+  final String officerId, name;
+  final BattleOfficerResult result;
+  final int soldiers;
+}
+
 class BattleUnit {
   BattleUnit({
     required this.officerId,
@@ -18,6 +32,7 @@ class BattleUnit {
 
 class BattleState {
   BattleState({
+    required this.sourceProvinceId,
     required this.targetProvinceId,
     required this.attackerName,
     required this.defenderName,
@@ -29,12 +44,13 @@ class BattleState {
     this.commanderWar = 50,
     this.terrain = TerrainType.plain,
   }) : day = 1;
-  final String targetProvinceId, attackerName, defenderName;
+  final String sourceProvinceId, targetProvinceId, attackerName, defenderName;
   int attackerSoldiers, defenderSoldiers, day;
   final List<BattleUnit> attackerUnits, defenderUnits;
   final String commanderName;
   final int commanderWar;
   final TerrainType terrain;
+  final List<BattleOfficerOutcome> outcomes = [];
   bool finished = false;
   String? winner;
   bool get attackerWon => winner == 'attacker';
