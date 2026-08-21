@@ -44,6 +44,45 @@ void main() {
     expect(engine.state.gameLog.last, contains('월말 정산'));
   });
 
+  test('월말 이벤트는 결정적인 seed로 발생하고 기록된다', () {
+    final engine = createEngine();
+    for (var i = 0; i < 6 && engine.state.lastEvent == null; i++) {
+      engine.endTurn();
+    }
+    expect(engine.state.lastEvent, isNotNull);
+    expect(engine.state.gameLog.any((log) => log.contains('이벤트 ·')), isTrue);
+  });
+
+  test('모든 지역 점령과 전 영토 상실은 게임 종료 상태를 만든다', () {
+    final victoryEngine = createEngine();
+    final player = victoryEngine.state.playerForce;
+    player.provinceIds
+      ..clear()
+      ..addAll(victoryEngine.state.provinces.map((p) => p.id));
+    for (final province in victoryEngine.state.provinces) {
+      province.ownerForceId = player.id;
+      province.ownerName = player.name;
+    }
+    for (final force in victoryEngine.state.forces.where((f) => f != player)) {
+      force.provinceIds.clear();
+    }
+    victoryEngine.endTurn();
+    expect(victoryEngine.state.outcome, 'VICTORY');
+
+    final defeatEngine = createEngine();
+    final enemy = defeatEngine.state.forces[1];
+    defeatEngine.state.playerForce.provinceIds.clear();
+    enemy.provinceIds
+      ..clear()
+      ..addAll(defeatEngine.state.provinces.map((p) => p.id));
+    for (final province in defeatEngine.state.provinces) {
+      province.ownerForceId = enemy.id;
+      province.ownerName = enemy.name;
+    }
+    defeatEngine.endTurn();
+    expect(defeatEngine.state.outcome, 'DEFEAT');
+  });
+
   test('AI는 낮은 관계에서 선물 외교를 선택하고 로그를 남긴다', () {
     final engine = createEngine();
     engine.endTurn();
@@ -374,6 +413,65 @@ void main() {
     );
     expect(target.soldiers, lessThan(before));
     expect(battle.state.defenderSoldiers, lessThan(1140));
+  });
+
+  test('협공과 정보전은 전투 상태를 갱신한다', () {
+    final engine = createEngine();
+    final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: source.id,
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+      participantOfficerIds: source.officerIds.take(2).toList(),
+    );
+    expect(battle, isNotNull);
+    final target = battle!.state.defenderUnits.first;
+    battle.act(
+      attackerId: battle.state.attackerUnits.first.officerId,
+      defenderId: target.officerId,
+      action: BattleAction.information,
+    );
+    expect(battle.state.informationRevealed, isTrue);
+    battle.act(
+      attackerId: battle.state.attackerUnits.first.officerId,
+      defenderId: target.officerId,
+      action: BattleAction.cooperate,
+    );
+    expect(battle.state.defenderSoldiers, lessThan(1140));
+  });
+
+  test('화공은 화재와 사기 저하를 남긴다', () {
+    final engine = createEngine();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    final target = battle!.state.defenderUnits.first;
+    final moraleBefore = battle.state.defenderMorale;
+    battle.act(
+      attackerId: battle.state.attackerUnits.first.officerId,
+      defenderId: target.officerId,
+      action: BattleAction.fire,
+    );
+    expect(target.burning, isTrue);
+    expect(battle.state.defenderMorale, lessThan(moraleBefore));
+  });
+
+  test('AI 월별 시뮬레이션은 장기 진행 중 음수 자원을 만들지 않는다', () {
+    final engine = createEngine();
+    for (var i = 0; i < 1000 && !engine.state.gameOver; i++) {
+      engine.endTurn();
+      for (final force in engine.state.forces) {
+        expect(force.gold, greaterThanOrEqualTo(0));
+        expect(force.food, greaterThanOrEqualTo(0));
+      }
+      for (final province in engine.state.provinces) {
+        expect(province.soldiers, greaterThanOrEqualTo(0));
+        expect(province.publicLoyalty, inInclusiveRange(0, 100));
+      }
+    }
   });
 
   test('전투는 매일 군량을 소모하고 보급 부족 시 사기를 낮춘다', () {

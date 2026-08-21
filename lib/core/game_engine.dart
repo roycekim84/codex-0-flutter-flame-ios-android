@@ -602,6 +602,7 @@ class GameEngine {
   }
 
   void endTurn() {
+    if (state.gameOver) return;
     state.lastTurnReports.clear();
     for (final p in state.provinces.where(state.isPlayerProvince)) {
       state.playerForce.gold += 15 + p.land ~/ 5;
@@ -610,9 +611,12 @@ class GameEngine {
     for (final force in state.forces.where(
       (f) => f.id != state.playerForceId,
     )) {
-      if (force.gold >= 80 && force.provinceIds.isNotEmpty) {
+      final ownedProvinces = state.provinces
+          .where((p) => p.ownerForceId == force.id)
+          .toList();
+      if (force.gold >= 80 && ownedProvinces.isNotEmpty) {
         force.gold -= 80;
-        final p = state.provinces.firstWhere((p) => p.ownerForceId == force.id);
+        final p = ownedProvinces.first;
         p.soldiers += 45;
         state.log('${force.name} AI · ${p.name} 병력 +45');
       }
@@ -640,11 +644,9 @@ class GameEngine {
             );
           }
         case AiDecisionType.fortify:
-          if (force.gold >= 120 && force.provinceIds.isNotEmpty) {
+          if (force.gold >= 120 && ownedProvinces.isNotEmpty) {
             force.gold -= 120;
-            final p = state.provinces.firstWhere(
-              (p) => p.ownerForceId == force.id,
-            );
+            final p = ownedProvinces.first;
             p.land = (p.land + 2).clamp(0, 100).toInt();
             state.log('${force.name} AI · ${p.name} 축성');
           }
@@ -657,8 +659,48 @@ class GameEngine {
       state.month = 1;
       state.year++;
     }
+    _resolveMonthlyEvent();
+    _checkGameOutcome();
     state.resetMonthlyActions();
     state.log('월말 정산 및 AI 행동 완료');
+  }
+
+  void _resolveMonthlyEvent() {
+    state.lastEvent = null;
+    if ((state.year + state.month + state.randomSeed) % 4 != 0) return;
+    final province = state.provinces.where(state.isPlayerProvince).firstOrNull;
+    if (province == null) return;
+    switch ((state.year + state.month) % 4) {
+      case 0:
+        state.playerForce.food += 180;
+        state.lastEvent = '${province.name}에 풍년이 들어 군량이 180 늘었습니다.';
+      case 1:
+        province.publicLoyalty = (province.publicLoyalty - 8)
+            .clamp(0, 100)
+            .toInt();
+        state.lastEvent = '${province.name}에 홍수가 발생해 민심이 하락했습니다.';
+      case 2:
+        state.playerForce.gold += 150;
+        state.lastEvent = '상인이 방문해 금 150을 얻었습니다.';
+      case 3:
+        province.publicLoyalty = (province.publicLoyalty - 5)
+            .clamp(0, 100)
+            .toInt();
+        state.lastEvent = '${province.name}에 질병이 퍼져 민심이 하락했습니다.';
+    }
+    if (state.lastEvent != null) state.log('이벤트 · ${state.lastEvent}');
+  }
+
+  void _checkGameOutcome() {
+    if (state.playerProvinceIds.length == state.provinces.length) {
+      state.gameOver = true;
+      state.outcome = 'VICTORY';
+      state.lastEvent = '모든 지역을 통일했습니다.';
+    } else if (state.playerProvinceIds.isEmpty) {
+      state.gameOver = true;
+      state.outcome = 'DEFEAT';
+      state.lastEvent = '모든 영토를 잃었습니다.';
+    }
   }
 
   void _runAiBattle(ForceState force, AiDecision decision) {

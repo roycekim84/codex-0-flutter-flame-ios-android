@@ -11,7 +11,14 @@ class AiDecision {
 /// AI chooses a small, inspectable action. GameEngine applies the result.
 class AiEngine {
   AiDecision choose(GameState state, ForceState force) {
-    if (state.relationTo(force.id) <= -30) {
+    final attackThreshold = switch (force.aiPersonality) {
+      AiPersonality.aggressive => -20,
+      AiPersonality.opportunist => -30,
+      AiPersonality.cautious => -60,
+      AiPersonality.diplomatic => -100,
+      AiPersonality.development => -100,
+    };
+    if (state.relationTo(force.id) <= attackThreshold) {
       for (final source in state.provinces.where(
         (p) => p.ownerForceId == force.id && p.soldiers > 300,
       )) {
@@ -32,8 +39,14 @@ class AiEngine {
         }
       }
     }
-    if (state.relationTo(force.id) <= -10 && force.gold >= 100) {
+    final giftThreshold = force.aiPersonality == AiPersonality.diplomatic
+        ? 30
+        : -10;
+    if (state.relationTo(force.id) <= giftThreshold && force.gold >= 100) {
       return const AiDecision(AiDecisionType.gift);
+    }
+    if (force.aiPersonality == AiPersonality.development) {
+      return const AiDecision(AiDecisionType.fortify);
     }
     final target =
         state.provinces.where((p) => state.isPlayerProvince(p)).toList()

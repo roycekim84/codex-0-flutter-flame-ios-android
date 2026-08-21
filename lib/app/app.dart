@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
 
@@ -628,29 +630,67 @@ class _GameScreenState extends State<GameScreen> {
     await _saveAuto();
     if (!mounted) return;
     final state = engine.state;
-    final battleReports = state.lastTurnReports
-        .map(
-          (report) =>
-              '${report.attackerName} → ${report.targetProvinceName} · '
-              '${report.attackerWon ? 'AI 승리' : 'AI 패배'} · ${report.day}일 · '
-              '공격 ${report.attackerSoldiers} / 방어 ${report.defenderSoldiers}',
-        )
-        .join('\n');
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text('${state.year}년 ${state.month}월 시작'),
-        content: Text(
-          '지난달 정산\n금 $beforeGold → ${state.playerForce.gold}\n군량 $beforeFood → ${state.playerForce.food}\n영토 ${state.playerProvinceIds.length}곳'
-          '${battleReports.isEmpty ? '' : '\n\n전쟁 보고\n$battleReports'}',
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '지난달 정산\n금 $beforeGold → ${state.playerForce.gold}\n군량 $beforeFood → ${state.playerForce.food}\n영토 ${state.playerProvinceIds.length}곳',
+              ),
+              if (state.lastTurnReports.isNotEmpty) ...[
+                const Divider(height: 24),
+                const Text(
+                  '전쟁 보고',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                ...state.lastTurnReports.map(
+                  (report) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(
+                      '${report.attackerName} → ${report.targetProvinceName}',
+                    ),
+                    subtitle: Text(
+                      '${report.attackerWon ? 'AI 승리' : 'AI 패배'} · ${report.day}일 · 공격 ${report.attackerSoldiers} / 방어 ${report.defenderSoldiers}',
+                    ),
+                    trailing: TextButton(
+                      onPressed: () => _watchAiReport(report),
+                      child: const Text('관전'),
+                    ),
+                  ),
+                ),
+              ],
+              if (state.lastEvent != null) ...[
+                const Divider(height: 24),
+                Text(state.lastEvent!),
+              ],
+            ],
+          ),
         ),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('확인'),
           ),
+          if (state.gameOver)
+            FilledButton(
+              onPressed: () =>
+                  Navigator.popUntil(context, (route) => route.isFirst),
+              child: const Text('메인 메뉴'),
+            ),
         ],
       ),
+    );
+  }
+
+  void _watchAiReport(AiBattleReport report) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => AiBattleReplayScreen(report: report)),
     );
   }
 
@@ -1624,6 +1664,8 @@ class _BattleScreenState extends State<BattleScreen> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       '전투 군량 ${battle.attackerFood} · 일일 소모 ${battle.dailySupplyCost} · 사기 ${battle.attackerMorale}'
+                      ' / ${battle.defenderMorale}'
+                      '${battle.informationRevealed ? ' · 정보 확보' : ''}'
                       '${battle.supplyShortageDays > 0 ? ' · 보급 부족 ${battle.supplyShortageDays}일' : ''}',
                       style: TextStyle(
                         fontSize: 12,
@@ -1748,6 +1790,29 @@ class _BattleScreenState extends State<BattleScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.tonal(
+                          onPressed: battle.finished
+                              ? null
+                              : () => _act(BattleAction.cooperate),
+                          child: const Text('협공'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: battle.finished
+                              ? null
+                              : () => _act(BattleAction.information),
+                          child: const Text('정보'),
+                        ),
+                      ),
+                      const Spacer(flex: 2),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -1857,4 +1922,113 @@ class _LogSheet extends StatelessWidget {
       ),
     ),
   );
+}
+
+class AiBattleReplayScreen extends StatefulWidget {
+  const AiBattleReplayScreen({super.key, required this.report});
+  final AiBattleReport report;
+
+  @override
+  State<AiBattleReplayScreen> createState() => _AiBattleReplayScreenState();
+}
+
+class _AiBattleReplayScreenState extends State<AiBattleReplayScreen> {
+  late final BattleEngine battle;
+  late final BattleGame battleGame;
+  Timer? timer;
+
+  @override
+  void initState() {
+    super.initState();
+    final attacker = widget.report.attackerSoldiers.clamp(1, 999999).toInt();
+    final defender = widget.report.defenderSoldiers.clamp(1, 999999).toInt();
+    final state = BattleState(
+      sourceProvinceId: 'replay_source',
+      targetProvinceId: 'replay_target',
+      attackerName: widget.report.attackerName,
+      defenderName: widget.report.defenderName,
+      attackerSoldiers: attacker,
+      defenderSoldiers: defender,
+      attackerFood: 99999,
+      dailySupplyCost: 1,
+      attackerUnits: [
+        BattleUnit(
+          officerId: 'replay_attacker',
+          name: widget.report.attackerName,
+          soldiers: attacker,
+          war: 75,
+          intelligence: 65,
+          row: 3,
+          column: 1,
+        ),
+      ],
+      defenderUnits: [
+        BattleUnit(
+          officerId: 'replay_defender',
+          name: widget.report.defenderName,
+          soldiers: defender,
+          war: 70,
+          intelligence: 60,
+          row: 1,
+          column: 4,
+        ),
+      ],
+    );
+    battle = BattleEngine(state);
+    battleGame = BattleGame(state);
+    timer = Timer.periodic(const Duration(milliseconds: 850), (_) {
+      if (!mounted || battle.state.finished) {
+        timer?.cancel();
+        return;
+      }
+      battle.attack();
+      setState(() {});
+      battleGame.refreshBoard();
+    });
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = battle.state;
+    return Scaffold(
+      appBar: AppBar(title: Text('AI 전투 관전 · ${state.day}일째')),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                color: const Color(0xff263b35),
+                child: GameWidget(game: battleGame),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Text(
+                    '${state.attackerName} ${state.attackerSoldiers} · ${state.defenderName} ${state.defenderSoldiers}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    state.finished
+                        ? (state.attackerWon
+                              ? '관전 결과 · 공격군 승리'
+                              : '관전 결과 · 방어군 승리')
+                        : '월말 보고의 전투 결과를 재현하고 있습니다.',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

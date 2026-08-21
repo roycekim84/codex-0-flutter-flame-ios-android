@@ -1,5 +1,13 @@
 import 'package:flutter/foundation.dart';
 
+enum AiPersonality {
+  aggressive,
+  cautious,
+  diplomatic,
+  development,
+  opportunist,
+}
+
 class ProvinceState {
   ProvinceState({
     required this.id,
@@ -35,8 +43,10 @@ class ForceState {
     required this.rulerId,
     required this.provinceIds,
     required this.officerIds,
+    this.aiPersonality = AiPersonality.opportunist,
   });
   final String id, name, rulerId;
+  final AiPersonality aiPersonality;
   final List<String> provinceIds, officerIds;
   int gold, food;
 }
@@ -106,6 +116,9 @@ class GameState extends ChangeNotifier {
   final Set<String> revealedProvinceIds;
   final List<AiBattleReport> lastTurnReports;
   final List<String> gameLog;
+  String? lastEvent;
+  bool gameOver = false;
+  String? outcome;
   final Set<String> actedOfficerIds = <String>{};
   ForceState get playerForce => forces.firstWhere((f) => f.id == playerForceId);
   List<String> get playerProvinceIds => playerForce.provinceIds;
@@ -147,6 +160,9 @@ class GameState extends ChangeNotifier {
     'alliedForceIds': alliedForceIds.toList(),
     'revealedProvinceIds': revealedProvinceIds.toList(),
     'gameLog': gameLog,
+    'lastEvent': lastEvent,
+    'gameOver': gameOver,
+    'outcome': outcome,
     'lastTurnReports': lastTurnReports
         .map(
           (r) => {
@@ -170,6 +186,7 @@ class GameState extends ChangeNotifier {
             'rulerId': f.rulerId,
             'provinceIds': f.provinceIds,
             'officerIds': f.officerIds,
+            'aiPersonality': f.aiPersonality.name,
           },
         )
         .toList(),
@@ -221,10 +238,13 @@ class GameState extends ChangeNotifier {
             food: x['food'],
             provinceIds: List<String>.from(x['provinceIds']),
             officerIds: List<String>.from(x['officerIds']),
+            aiPersonality: AiPersonality.values.byName(
+              x['aiPersonality'] as String? ?? 'opportunist',
+            ),
           ),
         )
         .toList();
-    return GameState(
+    final state = GameState(
       scenarioId: data['scenarioId'],
       year: data['year'],
       month: data['month'],
@@ -284,6 +304,10 @@ class GameState extends ChangeNotifier {
           )
           .toList(),
     );
+    state.lastEvent = data['lastEvent'] as String?;
+    state.gameOver = data['gameOver'] as bool? ?? false;
+    state.outcome = data['outcome'] as String?;
+    return state;
   }
 
   static GameState fromScenario(
@@ -300,6 +324,9 @@ class GameState extends ChangeNotifier {
             food: x['food'],
             provinceIds: List<String>.from(x['provinceIds']),
             officerIds: List<String>.from(x['officerIds']),
+            aiPersonality: AiPersonality.values.byName(
+              x['aiPersonality'] as String? ?? 'opportunist',
+            ),
           ),
         )
         .toList();

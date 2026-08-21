@@ -1,7 +1,7 @@
 import 'battle_state.dart';
 import 'terrain.dart';
 
-enum BattleAction { attack, fire, charge, wait }
+enum BattleAction { attack, fire, charge, cooperate, information, wait }
 
 class BattleEngine {
   BattleEngine(this.state);
@@ -57,17 +57,30 @@ class BattleEngine {
             .22 *
             (attacker.war / 70) *
             state.terrain.attackModifier,
+      BattleAction.cooperate =>
+        attacker.soldiers *
+            .14 *
+            state.terrain.attackModifier *
+            (_hasAdjacentSupport(attacker, defender) ? 1.35 : 1.0),
+      BattleAction.information => 0,
       BattleAction.wait => 0,
     };
     final damage = base.round().clamp(0, defender.soldiers).toInt();
     defender.soldiers -= damage;
+    if (action == BattleAction.fire) {
+      defender.burning = true;
+      state.defenderMorale = (state.defenderMorale - 8).clamp(0, 100);
+    }
+    if (action == BattleAction.information) {
+      state.informationRevealed = true;
+    }
     if (action == BattleAction.charge) {
       attacker.soldiers =
           (attacker.soldiers - (attacker.soldiers * .05).round())
               .clamp(0, attacker.soldiers)
               .toInt();
     }
-    if (action != BattleAction.wait) {
+    if (action != BattleAction.wait && action != BattleAction.information) {
       attacker.soldiers =
           (attacker.soldiers - (defender.soldiers * .03).round())
               .clamp(0, attacker.soldiers)
@@ -121,6 +134,15 @@ class BattleEngine {
 
   void _advanceDay() {
     state.day++;
+    for (final unit in state.defenderUnits.where((u) => u.burning)) {
+      final fireDamage = (unit.soldiers * .03).round().clamp(1, unit.soldiers);
+      unit.soldiers -= fireDamage;
+      unit.morale = (unit.morale - 5).clamp(0, 100);
+    }
+    state.defenderSoldiers = state.defenderUnits.fold(
+      0,
+      (sum, unit) => sum + unit.soldiers,
+    );
     if (state.attackerFood >= state.dailySupplyCost) {
       state.attackerFood -= state.dailySupplyCost;
       state.supplyShortageDays = 0;
@@ -145,6 +167,16 @@ class BattleEngine {
           : 'defender';
     }
   }
+
+  bool _hasAdjacentSupport(BattleUnit attacker, BattleUnit defender) =>
+      state.attackerUnits.any(
+        (unit) =>
+            unit != attacker &&
+            unit.soldiers > 0 &&
+            (unit.row - defender.row).abs() +
+                    (unit.column - defender.column).abs() <=
+                1,
+      );
 
   void retreat() {
     if (state.finished) return;

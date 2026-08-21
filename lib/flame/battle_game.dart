@@ -46,9 +46,10 @@ class BattleGame extends FlameGame {
       }
     }
     for (final unit in [...battle.attackerUnits, ...battle.defenderUnits]) {
-      final color = battle.attackerUnits.contains(unit)
+      final baseColor = battle.attackerUnits.contains(unit)
           ? const Color(0xff2f6da1)
           : const Color(0xffa84f45);
+      final color = unit.burning ? const Color(0xffd87928) : baseColor;
       add(
         CircleComponent(
           position: Vector2(41 + unit.column * 62, 87 + unit.row * 62),
@@ -59,7 +60,7 @@ class BattleGame extends FlameGame {
       );
       add(
         TextComponent(
-          text: '${unit.soldiers}',
+          text: '${unit.soldiers}${unit.burning ? ' 🔥' : ''}',
           position: Vector2(22 + unit.column * 62, 78 + unit.row * 62),
           textRenderer: TextPaint(
             style: const TextStyle(color: Color(0xffffffff), fontSize: 10),

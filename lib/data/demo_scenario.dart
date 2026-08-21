@@ -132,6 +132,7 @@ class DemoScenario {
             'officer_11',
             'officer_12',
           ],
+          'aiPersonality': 'aggressive',
         },
         {
           'id': 'force_blue',
@@ -148,6 +149,7 @@ class DemoScenario {
             'officer_17',
             'officer_18',
           ],
+          'aiPersonality': 'diplomatic',
         },
       ],
       'provinces': provinces,

@@ -23,11 +23,14 @@ class BattleUnit {
     required this.intelligence,
     required this.row,
     required this.column,
+    this.morale = 100,
   });
   final String officerId, name;
   final int war, intelligence;
   int row, column;
   int soldiers;
+  int morale;
+  bool burning = false;
 }
 
 class BattleState {
@@ -46,6 +49,7 @@ class BattleState {
     this.attackerFood = 0,
     this.dailySupplyCost = 50,
     this.attackerMorale = 100,
+    this.defenderMorale = 100,
   }) : day = 1;
   final String sourceProvinceId, targetProvinceId, attackerName, defenderName;
   int attackerSoldiers, defenderSoldiers, day;
@@ -56,6 +60,8 @@ class BattleState {
   int attackerFood;
   final int dailySupplyCost;
   int attackerMorale;
+  int defenderMorale;
+  bool informationRevealed = false;
   int supplyShortageDays = 0;
   int returnedSoldiers = 0;
   String? returnProvinceId;
