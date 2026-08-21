@@ -3,16 +3,25 @@ import 'dart:ui' as ui;
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import '../core/asset_repository.dart';
 import '../battle/battle_state.dart';
 
 class BattleGame extends FlameGame {
   BattleGame(this.battle);
   final BattleState battle;
   late ui.Image unitImage;
+  late ui.Image terrainImage;
+  late ui.Image effectsImage;
 
   @override
   Future<void> onLoad() async {
     unitImage = await images.load('battle_unit_token.png');
+    terrainImage = await images.load(
+      AssetRepository.battleTerrainOverlay.replaceFirst('assets/images/', ''),
+    );
+    effectsImage = await images.load(
+      AssetRepository.battleEffectsStrip.replaceFirst('assets/images/', ''),
+    );
     _drawBoard();
   }
 
@@ -22,6 +31,18 @@ class BattleGame extends FlameGame {
   }
 
   void _drawBoard() {
+    add(
+      SpriteComponent.fromImage(
+        terrainImage,
+        position: Vector2(8, 48),
+        size: Vector2(356, 310),
+        paint: Paint()
+          ..colorFilter = ColorFilter.mode(
+            Colors.white.withValues(alpha: .32),
+            BlendMode.modulate,
+          ),
+      ),
+    );
     add(
       TextComponent(
         text: 'DAY ${battle.day}',
@@ -77,6 +98,18 @@ class BattleGame extends FlameGame {
         ),
       );
     }
+    add(
+      SpriteComponent.fromImage(
+        effectsImage,
+        position: Vector2(96, 166),
+        size: Vector2(170, 72),
+        paint: Paint()
+          ..colorFilter = ColorFilter.mode(
+            Colors.white.withValues(alpha: .16),
+            BlendMode.modulate,
+          ),
+      ),
+    );
     add(
       RectangleComponent(
         position: Vector2(20, 110),

@@ -11,6 +11,9 @@ import '../data/demo_scenario.dart';
 import '../flame/battle_game.dart';
 import '../models/game_state.dart';
 import '../repositories/save_repository.dart';
+import '../core/asset_repository.dart';
+import '../core/asset_precache.dart';
+import '../ui/widgets/asset_widgets.dart';
 
 class CodexStrategyApp extends StatelessWidget {
   const CodexStrategyApp({super.key});
@@ -18,6 +21,10 @@ class CodexStrategyApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'Realm Ledger',
     debugShowCheckedModeBanner: false,
+    builder: (context, child) {
+      AssetPrecache.schedule(context);
+      return child ?? const SizedBox.shrink();
+    },
     theme: ThemeData(
       colorScheme: ColorScheme.fromSeed(
         seedColor: const Color(0xff9a7138),
@@ -261,27 +268,22 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    FilledButton.icon(
+                    AssetButton(
+                      primary: true,
+                      iconAsset: AssetRepository.commandIconStrip,
+                      label: '새 게임',
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) =>
                               ScenarioSelectScreen(scenario: scenario),
                         ),
                       ),
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Padding(
-                        padding: EdgeInsets.all(14),
-                        child: Text('새 게임'),
-                      ),
                     ),
                     const SizedBox(height: 14),
-                    OutlinedButton.icon(
+                    AssetButton(
+                      iconAsset: AssetRepository.commandIconStrip,
+                      label: '불러오기',
                       onPressed: () => _loadSavedGame(context),
-                      icon: const Icon(Icons.folder_open),
-                      label: const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Text('불러오기'),
-                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -324,6 +326,16 @@ class ScenarioSelectScreen extends StatelessWidget {
             const SizedBox(height: 8),
             const Text('가상의 군웅들이 여섯 지역의 패권을 다투고 있습니다.'),
             const SizedBox(height: 20),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                AssetRepository.factionEmblemStrip,
+                height: 78,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 14),
             Card(
               child: ListTile(
                 contentPadding: const EdgeInsets.all(14),
@@ -867,6 +879,16 @@ class _GameScreenState extends State<GameScreen> {
               ],
               if (state.lastEvent != null) ...[
                 const Divider(height: 24),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.asset(
+                    AssetRepository.eventArtStrip,
+                    height: 72,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Text(state.lastEvent!),
               ],
             ],
@@ -988,7 +1010,7 @@ class _ResourceBar extends StatelessWidget {
   final ForceState force;
   final GameState state;
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => AssetPanel(
     decoration: const BoxDecoration(
       color: Color(0xff211e18),
       border: Border(bottom: BorderSide(color: Color(0xff6d5431))),
@@ -1226,20 +1248,8 @@ class _ProvincePanel extends StatelessWidget {
   final String governorName;
   final bool informationRevealed;
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => AssetPanel(
     width: double.infinity,
-    decoration: const BoxDecoration(
-      color: Color(0xff29241b),
-      border: Border(
-        top: BorderSide(color: Color(0xff755b35)),
-        bottom: BorderSide(color: Color(0xff3f3425)),
-      ),
-      image: DecorationImage(
-        image: AssetImage('assets/images/panel_texture.png'),
-        fit: BoxFit.cover,
-        opacity: .16,
-      ),
-    ),
     padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
     child: Row(
       children: [
@@ -1348,172 +1358,160 @@ class _ActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xff211e18),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xff5e492d)),
-        image: const DecorationImage(
-          image: AssetImage('assets/images/panel_texture.png'),
-          fit: BoxFit.cover,
-          opacity: .22,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: SizedBox(
-                height: 54,
-                width: double.infinity,
-                child: Image.asset(
-                  'assets/images/command_icon_strip.png',
-                  fit: BoxFit.cover,
-                ),
+    child: AssetPanel(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: SizedBox(
+              height: 54,
+              width: double.infinity,
+              child: Image.asset(
+                'assets/images/command_icon_strip.png',
+                fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null
-                      ? () => onDispatch(
-                          GameCommand(
-                            type: GameCommandType.develop,
-                            officerId: officerId,
-                            provinceId: province.id,
-                          ),
-                        )
-                      : null,
-                  child: const Text('개발'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null
-                      ? () => onDispatch(
-                          GameCommand(
-                            type: GameCommandType.recruit,
-                            officerId: officerId,
-                            provinceId: province.id,
-                          ),
-                        )
-                      : null,
-                  child: const Text('징병'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null ? onMove : null,
-                  child: const Text('장수 이동'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null
-                      ? onDiplomacy
-                      : null,
-                  child: const Text('외교'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null
-                      ? onEspionage
-                      : null,
-                  child: const Text('첩보'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null
-                      ? () => onDispatch(
-                          GameCommand(
-                            type: GameCommandType.tax,
-                            officerId: officerId,
-                            provinceId: province.id,
-                          ),
-                        )
-                      : null,
-                  child: const Text('징세'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null
-                      ? () => onDispatch(
-                          GameCommand(
-                            type: GameCommandType.relief,
-                            officerId: officerId,
-                            provinceId: province.id,
-                          ),
-                        )
-                      : null,
-                  child: const Text('시혜'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null
-                      ? () => onDispatch(
-                          GameCommand(
-                            type: GameCommandType.train,
-                            officerId: officerId,
-                            provinceId: province.id,
-                          ),
-                        )
-                      : null,
-                  child: const Text('훈련'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null
-                      ? () => onDispatch(
-                          GameCommand(
-                            type: GameCommandType.fortify,
-                            officerId: officerId,
-                            provinceId: province.id,
-                          ),
-                        )
-                      : null,
-                  child: const Text('축성'),
-                ),
-                FilledButton(
-                  onPressed: playerOwned ? null : onBattle,
-                  child: const Text('출병'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null
-                      ? () => onDispatch(
-                          GameCommand(
-                            type: GameCommandType.search,
-                            officerId: officerId,
-                            provinceId: province.id,
-                          ),
-                        )
-                      : null,
-                  child: const Text('탐색'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && officerId != null
-                      ? () => onDispatch(
-                          GameCommand(
-                            type: GameCommandType.appointGovernor,
-                            officerId: officerId,
-                            provinceId: province.id,
-                          ),
-                        )
-                      : null,
-                  child: const Text('태수 임명'),
-                ),
-                FilledButton.tonal(
-                  onPressed: playerOwned && engine.firstFreeOfficer != null
-                      ? () => onDispatch(
-                          GameCommand(
-                            type: GameCommandType.recruitOfficer,
-                            officerId: officerId,
-                            provinceId: province.id,
-                            targetOfficerId: engine.firstFreeOfficer!.id,
-                          ),
-                        )
-                      : null,
-                  child: const Text('등용'),
-                ),
-                FilledButton(onPressed: onEndMonth, child: const Text('턴 종료')),
-              ],
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null
+                    ? () => onDispatch(
+                        GameCommand(
+                          type: GameCommandType.develop,
+                          officerId: officerId,
+                          provinceId: province.id,
+                        ),
+                      )
+                    : null,
+                child: const Text('개발'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null
+                    ? () => onDispatch(
+                        GameCommand(
+                          type: GameCommandType.recruit,
+                          officerId: officerId,
+                          provinceId: province.id,
+                        ),
+                      )
+                    : null,
+                child: const Text('징병'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null ? onMove : null,
+                child: const Text('장수 이동'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null
+                    ? onDiplomacy
+                    : null,
+                child: const Text('외교'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null
+                    ? onEspionage
+                    : null,
+                child: const Text('첩보'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null
+                    ? () => onDispatch(
+                        GameCommand(
+                          type: GameCommandType.tax,
+                          officerId: officerId,
+                          provinceId: province.id,
+                        ),
+                      )
+                    : null,
+                child: const Text('징세'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null
+                    ? () => onDispatch(
+                        GameCommand(
+                          type: GameCommandType.relief,
+                          officerId: officerId,
+                          provinceId: province.id,
+                        ),
+                      )
+                    : null,
+                child: const Text('시혜'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null
+                    ? () => onDispatch(
+                        GameCommand(
+                          type: GameCommandType.train,
+                          officerId: officerId,
+                          provinceId: province.id,
+                        ),
+                      )
+                    : null,
+                child: const Text('훈련'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null
+                    ? () => onDispatch(
+                        GameCommand(
+                          type: GameCommandType.fortify,
+                          officerId: officerId,
+                          provinceId: province.id,
+                        ),
+                      )
+                    : null,
+                child: const Text('축성'),
+              ),
+              FilledButton(
+                onPressed: playerOwned ? null : onBattle,
+                child: const Text('출병'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null
+                    ? () => onDispatch(
+                        GameCommand(
+                          type: GameCommandType.search,
+                          officerId: officerId,
+                          provinceId: province.id,
+                        ),
+                      )
+                    : null,
+                child: const Text('탐색'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && officerId != null
+                    ? () => onDispatch(
+                        GameCommand(
+                          type: GameCommandType.appointGovernor,
+                          officerId: officerId,
+                          provinceId: province.id,
+                        ),
+                      )
+                    : null,
+                child: const Text('태수 임명'),
+              ),
+              FilledButton.tonal(
+                onPressed: playerOwned && engine.firstFreeOfficer != null
+                    ? () => onDispatch(
+                        GameCommand(
+                          type: GameCommandType.recruitOfficer,
+                          officerId: officerId,
+                          provinceId: province.id,
+                          targetOfficerId: engine.firstFreeOfficer!.id,
+                        ),
+                      )
+                    : null,
+                child: const Text('등용'),
+              ),
+              FilledButton(onPressed: onEndMonth, child: const Text('턴 종료')),
+            ],
+          ),
+        ],
       ),
     ),
   );
@@ -2206,12 +2204,7 @@ class _OfficerSheet extends StatelessWidget {
 }
 
 String _portraitAsset(String seed) {
-  final value = seed.codeUnits.fold<int>(0, (sum, code) => sum + code);
-  return switch (value % 3) {
-    0 => 'assets/images/officer_portrait_warrior.png',
-    1 => 'assets/images/officer_portrait_strategist.png',
-    _ => 'assets/images/officer_portrait_governor.png',
-  };
+  return AssetRepository.officerPortrait(seed);
 }
 
 class _GeneratedPortrait extends StatelessWidget {
@@ -2225,7 +2218,14 @@ class _GeneratedPortrait extends StatelessWidget {
     child: SizedBox(
       width: size,
       height: size,
-      child: Image.asset(_portraitAsset(seed), fit: BoxFit.cover),
+      child: Image.asset(
+        _portraitAsset(seed),
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const ColoredBox(
+          color: Color(0xff40372a),
+          child: Icon(Icons.person, color: Color(0xffd3b477)),
+        ),
+      ),
     ),
   );
 }
