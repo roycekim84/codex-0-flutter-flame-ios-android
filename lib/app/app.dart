@@ -1288,6 +1288,95 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  void _showDomesticMenu() {
+    if (selectedOfficerId == null) return;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xff211d18),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                '내정',
+                style: TextStyle(
+                  color: Color(0xffffdfa4),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                '선택한 지역의 발전과 민심을 관리합니다.',
+                style: TextStyle(color: Color(0xffbca981), fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              _SheetCommand(
+                title: '개발',
+                detail: '토지와 군량 생산 기반을 높입니다 · 금 100',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _dispatch(
+                    GameCommand(
+                      type: GameCommandType.develop,
+                      officerId: selectedOfficerId,
+                      provinceId: selectedProvinceId,
+                    ),
+                  );
+                },
+              ),
+              _SheetCommand(
+                title: '징세',
+                detail: '금 100을 얻고 민심이 하락합니다',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _dispatch(
+                    GameCommand(
+                      type: GameCommandType.tax,
+                      officerId: selectedOfficerId,
+                      provinceId: selectedProvinceId,
+                    ),
+                  );
+                },
+              ),
+              _SheetCommand(
+                title: '시혜',
+                detail: '금 80을 사용해 민심을 높입니다',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _dispatch(
+                    GameCommand(
+                      type: GameCommandType.relief,
+                      officerId: selectedOfficerId,
+                      provinceId: selectedProvinceId,
+                    ),
+                  );
+                },
+              ),
+              _SheetCommand(
+                title: '훈련 · 축성',
+                detail: '군대의 준비도 또는 지역 방어를 높입니다',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _dispatch(
+                    GameCommand(
+                      type: GameCommandType.train,
+                      officerId: selectedOfficerId,
+                      provinceId: selectedProvinceId,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     engine.removeListener(_refresh);
@@ -1302,34 +1391,16 @@ class _GameScreenState extends State<GameScreen> {
       (p) => p.id == selectedProvinceId,
     );
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${state.year}년 ${state.month}월'),
-        actions: [
-          IconButton(
-            onPressed: _showOfficers,
-            tooltip: '장수',
-            icon: const Icon(Icons.people_alt_outlined),
-          ),
-          IconButton(
-            onPressed: _showLog,
-            tooltip: '기록',
-            icon: const Icon(Icons.menu_book_outlined),
-          ),
-          IconButton(
-            onPressed: _showSaveDialog,
-            tooltip: '저장',
-            icon: const Icon(Icons.save_outlined),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Center(child: Text(state.playerForce.name)),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Column(
           children: [
-            _ResourceBar(force: state.playerForce, state: state),
+            _WorldMapHeader(
+              force: state.playerForce,
+              state: state,
+              onOfficers: _showOfficers,
+              onLog: _showLog,
+              onSave: _showSaveDialog,
+            ),
             Expanded(
               child: _Map(
                 provinces: state.provinces,
@@ -1358,17 +1429,20 @@ class _GameScreenState extends State<GameScreen> {
                 selectedOfficerId: selectedOfficerId,
                 onSelect: (id) => setState(() => selectedOfficerId = id),
               ),
-            _ActionBar(
-              engine: engine,
-              province: selected,
+            _MapCommandBar(
               playerOwned: state.isPlayerProvince(selected),
-              onBattle: _startBattle,
-              officerId: selectedOfficerId,
-              onDispatch: _dispatch,
-              onEndMonth: _endMonth,
-              onMove: _showMoveDialog,
+              onDomestic: _showDomesticMenu,
+              onPersonnel: _showOfficers,
+              onMilitary: () {
+                if (state.isPlayerProvince(selected)) {
+                  _showMoveDialog();
+                } else {
+                  _startBattle();
+                }
+              },
               onDiplomacy: _showDiplomacyDialog,
               onEspionage: _showEspionageDialog,
+              onEndMonth: _endMonth,
             ),
           ],
         ),
@@ -1377,6 +1451,266 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
+class _WorldMapHeader extends StatelessWidget {
+  const _WorldMapHeader({
+    required this.force,
+    required this.state,
+    required this.onOfficers,
+    required this.onLog,
+    required this.onSave,
+  });
+  final ForceState force;
+  final GameState state;
+  final VoidCallback onOfficers;
+  final VoidCallback onLog;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: const BoxDecoration(
+      color: Color(0xff1c1a16),
+      border: Border(bottom: BorderSide(color: Color(0xff715631))),
+    ),
+    padding: const EdgeInsets.fromLTRB(12, 7, 8, 8),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '${state.year}년 ${state.month}월',
+                style: const TextStyle(
+                  color: Color(0xffffdfa1),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            Text(
+              force.name,
+              style: const TextStyle(color: Color(0xffd6bd8b), fontSize: 12),
+            ),
+            IconButton(
+              onPressed: onSave,
+              icon: const Icon(Icons.save_outlined, size: 19),
+              color: const Color(0xffcdb17d),
+              tooltip: '저장',
+              visualDensity: VisualDensity.compact,
+            ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_horiz, size: 21),
+              color: const Color(0xff2a241c),
+              onSelected: (value) {
+                if (value == 'officers') onOfficers();
+                if (value == 'log') onLog();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'officers', child: Text('장수 목록')),
+                PopupMenuItem(value: 'log', child: Text('게임 기록')),
+              ],
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            Expanded(child: _HeaderMetric('금', force.gold)),
+            Expanded(child: _HeaderMetric('군량', force.food)),
+            Expanded(child: _HeaderMetric('병력', state.playerSoldiers)),
+            Expanded(
+              child: _HeaderMetric('영토', state.playerProvinceIds.length),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class _HeaderMetric extends StatelessWidget {
+  const _HeaderMetric(this.label, this.value);
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(color: Color(0xffa99575), fontSize: 10),
+      ),
+      const SizedBox(width: 4),
+      Text(
+        '$value',
+        style: const TextStyle(
+          color: Color(0xfff0d08e),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ],
+  );
+}
+
+class _MapCommandBar extends StatelessWidget {
+  const _MapCommandBar({
+    required this.playerOwned,
+    required this.onDomestic,
+    required this.onPersonnel,
+    required this.onMilitary,
+    required this.onDiplomacy,
+    required this.onEspionage,
+    required this.onEndMonth,
+  });
+  final bool playerOwned;
+  final VoidCallback onDomestic;
+  final VoidCallback onPersonnel;
+  final VoidCallback onMilitary;
+  final VoidCallback onDiplomacy;
+  final VoidCallback onEspionage;
+  final VoidCallback onEndMonth;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: const BoxDecoration(
+      color: Color(0xff1c1a16),
+      border: Border(
+        top: BorderSide(color: Color(0xff715631)),
+        bottom: BorderSide(color: Color(0xff3b3021)),
+      ),
+    ),
+    padding: const EdgeInsets.fromLTRB(7, 6, 7, 7),
+    child: Row(
+      children: [
+        _MapCommand(
+          label: '내정',
+          icon: Icons.account_balance,
+          onTap: playerOwned ? onDomestic : null,
+        ),
+        _MapCommand(
+          label: '인사',
+          icon: Icons.people_alt_outlined,
+          onTap: onPersonnel,
+        ),
+        _MapCommand(
+          label: '군사',
+          icon: Icons.shield_outlined,
+          onTap: onMilitary,
+        ),
+        _MapCommand(
+          label: '외교',
+          icon: Icons.handshake_outlined,
+          onTap: onDiplomacy,
+        ),
+        _MapCommand(
+          label: '첩보',
+          icon: Icons.visibility_outlined,
+          onTap: onEspionage,
+        ),
+        _MapCommand(
+          label: '턴 종료',
+          icon: Icons.fast_forward,
+          onTap: onEndMonth,
+          accent: true,
+        ),
+      ],
+    ),
+  );
+}
+
+class _MapCommand extends StatelessWidget {
+  const _MapCommand({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.accent = false,
+  });
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          height: 54,
+          decoration: BoxDecoration(
+            color: onTap == null
+                ? const Color(0xff28241e)
+                : accent
+                ? const Color(0xff614927)
+                : const Color(0xff29261f),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: onTap == null
+                  ? const Color(0xff41382d)
+                  : accent
+                  ? const Color(0xffb98c4e)
+                  : const Color(0xff665238),
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 19,
+                color: onTap == null
+                    ? const Color(0xff685b49)
+                    : const Color(0xffd8b878),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: onTap == null
+                      ? const Color(0xff796d5a)
+                      : const Color(0xffe2cea3),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _SheetCommand extends StatelessWidget {
+  const _SheetCommand({
+    required this.title,
+    required this.detail,
+    required this.onTap,
+  });
+  final String title;
+  final String detail;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 2),
+    leading: const Icon(Icons.menu_book_outlined, color: Color(0xffd4ab68)),
+    title: Text(title, style: const TextStyle(color: Color(0xffffe0a3))),
+    subtitle: Text(
+      detail,
+      style: const TextStyle(color: Color(0xffad9874), fontSize: 11),
+    ),
+    trailing: const Icon(Icons.chevron_right, color: Color(0xffa78a5e)),
+    onTap: onTap,
+  );
+}
+
+// Legacy compact resource row retained for alternate layouts.
+// ignore: unused_element
 class _ResourceBar extends StatelessWidget {
   const _ResourceBar({required this.force, required this.state});
   final ForceState force;
@@ -1725,6 +2059,8 @@ class _CommandLabel extends StatelessWidget {
   );
 }
 
+// Kept as a full command palette for later desktop/debug layouts.
+// ignore: unused_element
 class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.engine,
