@@ -94,14 +94,23 @@ Future<void> _loadSavedGame(BuildContext context) async {
 }
 
 class _RealmBackdrop extends StatelessWidget {
-  const _RealmBackdrop({required this.child});
+  const _RealmBackdrop({
+    required this.child,
+    this.asset = 'assets/images/title_background.png',
+  });
   final Widget child;
+  final String asset;
 
   @override
   Widget build(BuildContext context) => Stack(
     fit: StackFit.expand,
     children: [
-      CustomPaint(painter: _RealmBackdropPainter()),
+      Image.asset(asset, fit: BoxFit.cover),
+      Container(color: Colors.black.withValues(alpha: .46)),
+      Opacity(
+        opacity: .12,
+        child: CustomPaint(painter: _RealmBackdropPainter()),
+      ),
       child,
     ],
   );
@@ -300,6 +309,7 @@ class ScenarioSelectScreen extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('시나리오 선택')),
     body: _RealmBackdrop(
+      asset: 'assets/images/world_map_background.png',
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -350,6 +360,7 @@ class RulerSelectScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('군주 선택')),
       body: _RealmBackdrop(
+        asset: 'assets/images/world_map_background.png',
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -1052,6 +1063,15 @@ class _Map extends StatelessWidget {
             ),
             child: Stack(
               children: [
+                Positioned.fill(
+                  child: Image.asset(
+                    'assets/images/world_map_background.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Positioned.fill(
+                  child: Container(color: Colors.black.withValues(alpha: .25)),
+                ),
                 Positioned.fill(
                   child: CustomPaint(painter: _MapBackdropPainter()),
                 ),
@@ -1926,9 +1946,16 @@ class _BattleScreenState extends State<BattleScreen> {
           child: Column(
             children: [
               Expanded(
-                child: Container(
-                  color: const Color(0xff263b35),
-                  child: GameWidget(game: battleGame),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      'assets/images/battle_background.png',
+                      fit: BoxFit.cover,
+                    ),
+                    Container(color: Colors.black.withValues(alpha: .28)),
+                    GameWidget(game: battleGame),
+                  ],
                 ),
               ),
               Padding(
@@ -2293,9 +2320,16 @@ class _AiBattleReplayScreenState extends State<AiBattleReplayScreen> {
           child: Column(
             children: [
               Expanded(
-                child: Container(
-                  color: const Color(0xff263b35),
-                  child: GameWidget(game: battleGame),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      'assets/images/battle_background.png',
+                      fit: BoxFit.cover,
+                    ),
+                    Container(color: Colors.black.withValues(alpha: .28)),
+                    GameWidget(game: battleGame),
+                  ],
                 ),
               ),
               Padding(
