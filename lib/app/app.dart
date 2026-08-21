@@ -499,7 +499,7 @@ class _ScenarioCard extends StatelessWidget {
   );
 }
 
-class RulerSelectScreen extends StatelessWidget {
+class RulerSelectScreen extends StatefulWidget {
   const RulerSelectScreen({
     super.key,
     required this.scenario,
@@ -507,80 +507,287 @@ class RulerSelectScreen extends StatelessWidget {
   });
   final Map<String, dynamic> scenario;
   final String? scenarioTitle;
+
+  @override
+  State<RulerSelectScreen> createState() => _RulerSelectScreenState();
+}
+
+class _RulerSelectScreenState extends State<RulerSelectScreen> {
+  int selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
-    final forces = (scenario['forces'] as List).cast<Map<String, dynamic>>();
-    final officers = (scenario['officers'] as List)
+    final forces = (widget.scenario['forces'] as List)
         .cast<Map<String, dynamic>>();
+    final officers = (widget.scenario['officers'] as List)
+        .cast<Map<String, dynamic>>();
+    final selectedForce = forces[selectedIndex];
+    final selectedRuler = officers.firstWhere(
+      (o) => o['id'] == selectedForce['rulerId'],
+    );
+
     return Scaffold(
-      appBar: AppBar(title: const Text('군주 선택')),
       body: _RealmBackdrop(
-        asset: 'assets/images/world_map_background.png',
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text(
-              '군주 선택',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: const Color(0xffe5c88e),
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text('당신이 이끌 세력과 군주를 선택하십시오.'),
-            if (scenarioTitle != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                scenarioTitle!,
-                style: const TextStyle(color: Color(0xffd3aa62)),
-              ),
-            ],
-            const SizedBox(height: 14),
-            ...forces.asMap().entries.map((entry) {
-              final emblemIndex = entry.key % 3;
-              final force = entry.value;
-              final ruler = officers.firstWhere(
-                (o) => o['id'] == force['rulerId'],
-              );
-              return Card(
-                child: ListTile(
-                  isThreeLine: true,
-                  contentPadding: const EdgeInsets.all(12),
-                  leading: _GeneratedPortrait(
-                    seed: ruler['id'] as String,
-                    size: 58,
-                  ),
-                  title: Row(
-                    children: [
-                      AssetSlice(
-                        asset: AssetRepository.factionEmblemStrip,
-                        index: emblemIndex,
-                        segments: 3,
-                        size: 34,
+        asset: AssetRepository.titleBackground,
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) => ListView(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                      color: const Color(0xffe3c88f),
+                      tooltip: '뒤로',
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          const Text(
+                            '군주 선택',
+                            style: TextStyle(
+                              color: Color(0xffffe2aa),
+                              fontSize: 21,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 3,
+                            ),
+                          ),
+                          if (widget.scenarioTitle != null)
+                            Text(
+                              widget.scenarioTitle!,
+                              style: const TextStyle(
+                                color: Color(0xffc7aa78),
+                                fontSize: 11,
+                              ),
+                            ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('${force['name']} · ${ruler['name']}'),
-                      ),
-                    ],
-                  ),
-                  subtitle: Text(
-                    '무력 ${ruler['war']} · 지력 ${ruler['intelligence']} · 매력 ${ruler['charisma']}\n영토 ${force['provinceIds'].length}곳 · 장수 ${force['officerIds'].length}명',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.of(context).pushReplacement(
+                    ),
+                    const SizedBox(width: 48),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  '이끌 세력과 군주를 선택하십시오',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xffd1bb91), fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+                ...forces.asMap().entries.map((entry) {
+                  final force = entry.value;
+                  final ruler = officers.firstWhere(
+                    (o) => o['id'] == force['rulerId'],
+                  );
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 9),
+                    child: _RulerCard(
+                      force: force,
+                      ruler: ruler,
+                      index: entry.key,
+                      selected: entry.key == selectedIndex,
+                      onTap: () => setState(() => selectedIndex = entry.key),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 2),
+                _RulerBrief(force: selectedForce, ruler: selectedRuler),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (_) =>
-                          GameScreen(playerForceId: force['id'] as String),
+                      builder: (_) => GameScreen(
+                        playerForceId: selectedForce['id'] as String,
+                      ),
                     ),
                   ),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    backgroundColor: const Color(0xff75562d),
+                    foregroundColor: const Color(0xffffe4a7),
+                    side: const BorderSide(color: Color(0xffd1a45a)),
+                  ),
+                  child: Text('${selectedRuler['name']}로 시작'),
                 ),
-              );
-            }),
-          ],
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(42),
+                    foregroundColor: const Color(0xffd8c297),
+                    side: const BorderSide(color: Color(0xff806742)),
+                  ),
+                  child: const Text('뒤로'),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
+}
+
+class _RulerCard extends StatelessWidget {
+  const _RulerCard({
+    required this.force,
+    required this.ruler,
+    required this.index,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Map<String, dynamic> force;
+  final Map<String, dynamic> ruler;
+  final int index;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(5),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        height: 112,
+        padding: const EdgeInsets.all(7),
+        decoration: BoxDecoration(
+          color: selected
+              ? const Color(0xff674a29).withValues(alpha: .98)
+              : const Color(0xff211d18).withValues(alpha: .97),
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: selected ? const Color(0xffd7ad68) : const Color(0xff715a3d),
+            width: selected ? 1.8 : 1,
+          ),
+          boxShadow: selected
+              ? const [BoxShadow(color: Color(0x66000000), blurRadius: 7)]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: selected
+                      ? const Color(0xffe2bb76)
+                      : const Color(0xff756044),
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: _GeneratedPortrait(seed: ruler['id'] as String, size: 92),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      AssetSlice(
+                        asset: AssetRepository.factionEmblemStrip,
+                        index: index % 3,
+                        segments: 3,
+                        size: 26,
+                      ),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Text(
+                          ruler['name'] as String,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: selected
+                                ? const Color(0xffffe5ae)
+                                : const Color(0xffead8ad),
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        selected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: 20,
+                        color: selected
+                            ? const Color(0xffffd37f)
+                            : const Color(0xff8e7757),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    force['name'] as String,
+                    style: const TextStyle(
+                      color: Color(0xffc9aa78),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    '무력 ${ruler['war']}   지력 ${ruler['intelligence']}   매력 ${ruler['charisma']}',
+                    style: const TextStyle(
+                      color: Color(0xffd7c19a),
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: List.generate(
+                      5,
+                      (star) => Icon(
+                        star < (3 + index % 3) ? Icons.star : Icons.star_border,
+                        size: 15,
+                        color: const Color(0xffe1b75b),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _RulerBrief extends StatelessWidget {
+  const _RulerBrief({required this.force, required this.ruler});
+  final Map<String, dynamic> force;
+  final Map<String, dynamic> ruler;
+
+  @override
+  Widget build(BuildContext context) => AssetPanel(
+    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+    child: Row(
+      children: [
+        AssetSlice(
+          asset: AssetRepository.factionEmblemStrip,
+          index: 0,
+          segments: 3,
+          size: 38,
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Text(
+            '${force['name']} · 영토 ${force['provinceIds'].length}곳 · 장수 ${force['officerIds'].length}명',
+            style: const TextStyle(color: Color(0xffcbb486), fontSize: 12),
+          ),
+        ),
+        Text(
+          '충성 ${ruler['loyalty']}',
+          style: const TextStyle(color: Color(0xffe1ba70), fontSize: 12),
+        ),
+      ],
+    ),
+  );
 }
 
 class GameScreen extends StatefulWidget {
