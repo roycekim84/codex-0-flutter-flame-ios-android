@@ -60,6 +60,21 @@ class OfficerState {
   int loyalty;
 }
 
+class AiBattleReport {
+  AiBattleReport({
+    required this.attackerName,
+    required this.defenderName,
+    required this.targetProvinceName,
+    required this.attackerWon,
+    required this.day,
+    required this.attackerSoldiers,
+    required this.defenderSoldiers,
+  });
+  final String attackerName, defenderName, targetProvinceName;
+  final bool attackerWon;
+  final int day, attackerSoldiers, defenderSoldiers;
+}
+
 class GameState extends ChangeNotifier {
   GameState({
     required this.scenarioId,
@@ -73,10 +88,12 @@ class GameState extends ChangeNotifier {
     Map<String, int>? relations,
     Set<String>? alliedForceIds,
     Set<String>? revealedProvinceIds,
+    List<AiBattleReport>? lastTurnReports,
     List<String>? gameLog,
   }) : relations = relations ?? {},
        alliedForceIds = alliedForceIds ?? {},
        revealedProvinceIds = revealedProvinceIds ?? {},
+       lastTurnReports = lastTurnReports ?? [],
        gameLog = gameLog ?? [];
   final String scenarioId, playerForceId;
   int year, month;
@@ -87,6 +104,7 @@ class GameState extends ChangeNotifier {
   final Map<String, int> relations;
   final Set<String> alliedForceIds;
   final Set<String> revealedProvinceIds;
+  final List<AiBattleReport> lastTurnReports;
   final List<String> gameLog;
   final Set<String> actedOfficerIds = <String>{};
   ForceState get playerForce => forces.firstWhere((f) => f.id == playerForceId);
@@ -129,6 +147,19 @@ class GameState extends ChangeNotifier {
     'alliedForceIds': alliedForceIds.toList(),
     'revealedProvinceIds': revealedProvinceIds.toList(),
     'gameLog': gameLog,
+    'lastTurnReports': lastTurnReports
+        .map(
+          (r) => {
+            'attackerName': r.attackerName,
+            'defenderName': r.defenderName,
+            'targetProvinceName': r.targetProvinceName,
+            'attackerWon': r.attackerWon,
+            'day': r.day,
+            'attackerSoldiers': r.attackerSoldiers,
+            'defenderSoldiers': r.defenderSoldiers,
+          },
+        )
+        .toList(),
     'forces': forces
         .map(
           (f) => {
@@ -203,6 +234,19 @@ class GameState extends ChangeNotifier {
       alliedForceIds: Set<String>.from(data['alliedForceIds'] ?? []),
       revealedProvinceIds: Set<String>.from(data['revealedProvinceIds'] ?? []),
       gameLog: List<String>.from(data['gameLog'] ?? []),
+      lastTurnReports: (data['lastTurnReports'] as List? ?? [])
+          .map(
+            (x) => AiBattleReport(
+              attackerName: x['attackerName'],
+              defenderName: x['defenderName'],
+              targetProvinceName: x['targetProvinceName'],
+              attackerWon: x['attackerWon'],
+              day: x['day'],
+              attackerSoldiers: x['attackerSoldiers'],
+              defenderSoldiers: x['defenderSoldiers'],
+            ),
+          )
+          .toList(),
       forces: forces,
       provinces: (data['provinces'] as List)
           .map(

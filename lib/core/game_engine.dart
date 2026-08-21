@@ -602,6 +602,7 @@ class GameEngine {
   }
 
   void endTurn() {
+    state.lastTurnReports.clear();
     for (final p in state.provinces.where(state.isPlayerProvince)) {
       state.playerForce.gold += 15 + p.land ~/ 5;
       state.playerForce.food += 20 + p.land ~/ 3;
@@ -723,6 +724,17 @@ class GameEngine {
         '${force.name} AI · ${target.name} 전술 전투 패배 · 병력 귀환 · ${battle.state.day}일',
       );
     }
+    state.lastTurnReports.add(
+      AiBattleReport(
+        attackerName: force.name,
+        defenderName: state.playerForce.name,
+        targetProvinceName: target.name,
+        attackerWon: battle.state.attackerWon,
+        day: battle.state.day,
+        attackerSoldiers: battle.state.attackerSoldiers,
+        defenderSoldiers: battle.state.defenderSoldiers,
+      ),
+    );
   }
 
   ProvinceState? _playerProvince(String id) => state.provinces

@@ -628,12 +628,21 @@ class _GameScreenState extends State<GameScreen> {
     await _saveAuto();
     if (!mounted) return;
     final state = engine.state;
+    final battleReports = state.lastTurnReports
+        .map(
+          (report) =>
+              '${report.attackerName} → ${report.targetProvinceName} · '
+              '${report.attackerWon ? 'AI 승리' : 'AI 패배'} · ${report.day}일 · '
+              '공격 ${report.attackerSoldiers} / 방어 ${report.defenderSoldiers}',
+        )
+        .join('\n');
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text('${state.year}년 ${state.month}월 시작'),
         content: Text(
-          '지난달 정산\n금 $beforeGold → ${state.playerForce.gold}\n군량 $beforeFood → ${state.playerForce.food}\n영토 ${state.playerProvinceIds.length}곳',
+          '지난달 정산\n금 $beforeGold → ${state.playerForce.gold}\n군량 $beforeFood → ${state.playerForce.food}\n영토 ${state.playerProvinceIds.length}곳'
+          '${battleReports.isEmpty ? '' : '\n\n전쟁 보고\n$battleReports'}',
         ),
         actions: [
           FilledButton(
