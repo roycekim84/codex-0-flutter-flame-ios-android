@@ -57,6 +57,8 @@ class BattleState {
   final int dailySupplyCost;
   int attackerMorale;
   int supplyShortageDays = 0;
+  int returnedSoldiers = 0;
+  String? returnProvinceId;
   final List<BattleOfficerOutcome> outcomes = [];
   bool finished = false;
   String? winner;

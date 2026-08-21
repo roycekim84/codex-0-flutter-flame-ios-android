@@ -85,6 +85,42 @@ void main() {
     expect(battle.state.outcomes, isNotEmpty);
   });
 
+  test('전투 패배와 퇴각 시 살아남은 병력이 출발지로 귀환한다', () {
+    final engine = createEngine();
+    final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
+    final before = source.soldiers;
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: source.id,
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    battle!.retreat();
+    engine.resolveBattle(battle);
+    expect(source.soldiers, before);
+    expect(battle.state.returnedSoldiers, greaterThan(0));
+    expect(battle.state.returnProvinceId, source.id);
+  });
+
+  test('승리 시 잔여 병력이 점령지에 주둔한다', () {
+    final engine = createEngine();
+    final target = engine.state.provinces.firstWhere((p) => p.id == 'p_crown');
+    target.soldiers = 100;
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: target.id,
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    while (!battle!.state.finished) {
+      battle.attack();
+    }
+    engine.resolveBattle(battle);
+    expect(target.ownerForceId, engine.state.playerForceId);
+    expect(target.soldiers, battle.state.returnedSoldiers);
+    expect(battle.state.returnProvinceId, target.id);
+  });
+
   test('전투 결과는 포로를 기록하고 석방 처리할 수 있다', () {
     final engine = createEngine();
     final target = engine.state.provinces.firstWhere((p) => p.id == 'p_crown');

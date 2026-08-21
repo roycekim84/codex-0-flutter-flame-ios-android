@@ -1135,6 +1135,12 @@ class _BattleScreenState extends State<BattleScreen> {
                           ? '목표 지역을 점령했습니다.'
                           : '공격군이 후퇴했습니다.',
                     ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${widget.battle.state.returnedSoldiers}명이 '
+                      '${widget.battle.state.returnProvinceId == widget.battle.state.targetProvinceId ? '점령지에 주둔했습니다.' : '출발지로 귀환했습니다.'}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 12),
                     ...outcomes.map(
                       (outcome) => Padding(

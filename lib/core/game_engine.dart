@@ -354,6 +354,11 @@ class GameEngine {
         target.officerIds.remove(officer.id);
         officer.status = 'DEAD';
         officer.provinceId = 'dead';
+      } else if (attackerWon) {
+        target.officerIds.remove(officer.id);
+        oldForce.officerIds.remove(officer.id);
+        officer.status = 'FREE';
+        officer.provinceId = 'free';
       }
     }
     if (battle.state.attackerWon) {
@@ -365,9 +370,15 @@ class GameEngine {
       target.ownerForceId = player.id;
       target.ownerName = player.name;
       target.soldiers = battle.state.attackerSoldiers;
+      battle.state.returnedSoldiers = battle.state.attackerSoldiers;
+      battle.state.returnProvinceId = target.id;
       state.log('${target.name} 점령 · 남은 병력 ${target.soldiers}');
     } else {
       target.soldiers = battle.state.defenderSoldiers;
+      source.soldiers += battle.state.attackerSoldiers;
+      battle.state.returnedSoldiers = battle.state.attackerSoldiers;
+      battle.state.returnProvinceId = source.id;
+      state.log('${source.name} 귀환 · 잔여 병력 ${battle.state.attackerSoldiers}');
       state.log('${target.name} 공격 실패 · 방어군이 지켜냄');
     }
     state.log(
