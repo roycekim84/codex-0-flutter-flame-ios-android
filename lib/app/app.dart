@@ -604,6 +604,7 @@ class _GameScreenState extends State<GameScreen> {
               child: _Map(
                 provinces: state.provinces,
                 playerForceId: state.playerForceId,
+                revealedProvinceIds: state.revealedProvinceIds,
                 selectedId: selectedProvinceId,
                 onSelect: _selectProvince,
               ),
@@ -611,6 +612,9 @@ class _GameScreenState extends State<GameScreen> {
             _ProvincePanel(
               province: selected,
               playerOwned: state.isPlayerProvince(selected),
+              informationRevealed:
+                  state.isPlayerProvince(selected) ||
+                  state.revealedProvinceIds.contains(selected.id),
               governorName: selected.governorId == null
                   ? '미임명'
                   : state.officers
@@ -680,11 +684,13 @@ class _Map extends StatelessWidget {
   const _Map({
     required this.provinces,
     required this.playerForceId,
+    required this.revealedProvinceIds,
     required this.selectedId,
     required this.onSelect,
   });
   final List<ProvinceState> provinces;
   final String playerForceId;
+  final Set<String> revealedProvinceIds;
   final String? selectedId;
   final ValueChanged<String> onSelect;
   @override
@@ -708,6 +714,9 @@ class _Map extends StatelessWidget {
                     child: _ProvinceNode(
                       province: p,
                       playerOwned: p.isOwnedBy(playerForceId),
+                      informationRevealed:
+                          p.isOwnedBy(playerForceId) ||
+                          revealedProvinceIds.contains(p.id),
                       selected: p.id == selectedId,
                     ),
                   ),
@@ -753,10 +762,12 @@ class _ProvinceNode extends StatelessWidget {
     required this.province,
     required this.selected,
     required this.playerOwned,
+    required this.informationRevealed,
   });
   final ProvinceState province;
   final bool selected;
   final bool playerOwned;
+  final bool informationRevealed;
   @override
   Widget build(BuildContext context) => Column(
     children: [
@@ -786,7 +797,10 @@ class _ProvinceNode extends StatelessWidget {
           ),
         ),
       ),
-      Text('${province.soldiers}명', style: const TextStyle(fontSize: 11)),
+      Text(
+        informationRevealed ? '${province.soldiers}명' : '????명',
+        style: const TextStyle(fontSize: 11),
+      ),
     ],
   );
 }
@@ -796,10 +810,12 @@ class _ProvincePanel extends StatelessWidget {
     required this.province,
     required this.playerOwned,
     required this.governorName,
+    required this.informationRevealed,
   });
   final ProvinceState province;
   final bool playerOwned;
   final String governorName;
+  final bool informationRevealed;
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
@@ -808,7 +824,9 @@ class _ProvincePanel extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            '${province.name} · ${province.ownerName}\n태수 $governorName · 개발 ${province.land} · 민심 ${province.publicLoyalty} · 병력 ${province.soldiers} · 장수 ${province.officerIds.length}',
+            informationRevealed
+                ? '${province.name} · ${province.ownerName}\n태수 $governorName · 개발 ${province.land} · 민심 ${province.publicLoyalty} · 병력 ${province.soldiers} · 장수 ${province.officerIds.length}'
+                : '${province.name} · ${province.ownerName}\n태수 ???? · 개발 ???? · 민심 ???? · 병력 ???? · 장수 ${province.officerIds.length}',
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
