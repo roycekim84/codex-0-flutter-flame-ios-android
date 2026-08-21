@@ -5,6 +5,7 @@ import 'asset_repository.dart';
 abstract final class AssetPrecache {
   static const critical = <String>[
     AssetRepository.titleBackground,
+    AssetRepository.titleCrest,
     AssetRepository.worldMapBackground,
     AssetRepository.battleBackground,
     AssetRepository.panelTexture,

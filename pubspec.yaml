@@ -61,6 +61,7 @@ flutter:
 
   assets:
     - assets/images/title_background.png
+    - assets/images/title_crest.png
     - assets/images/world_map_background.png
     - assets/images/battle_background.png
     - assets/images/officer_portrait_warrior.png

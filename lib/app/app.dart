@@ -213,93 +213,158 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       body: _RealmBackdrop(
         child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      width: 92,
-                      height: 92,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xff171510).withValues(alpha: .82),
-                        border: Border.all(
-                          color: const Color(0xffb18a4d),
-                          width: 2,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final contentWidth = constraints.maxWidth.clamp(260.0, 420.0);
+              final crestSize = (constraints.maxHeight * .19).clamp(
+                112.0,
+                164.0,
+              );
+              return Center(
+                child: SizedBox(
+                  width: contentWidth,
+                  height: constraints.maxHeight,
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 2),
+                      Image.asset(
+                        AssetRepository.titleCrest,
+                        width: crestSize,
+                        height: crestSize,
+                        fit: BoxFit.contain,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '군웅의 시대',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.displaySmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 5,
+                              color: const Color(0xfff0d59a),
+                              shadows: const [
+                                Shadow(
+                                  color: Colors.black,
+                                  blurRadius: 12,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'THE THREE REALMS',
+                        style: TextStyle(
+                          color: Color(0xffd5bd8c),
+                          fontSize: 12,
+                          letterSpacing: 4,
+                          fontWeight: FontWeight.w600,
                         ),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black54, blurRadius: 18),
-                        ],
                       ),
-                      child: const Icon(
-                        Icons.castle,
-                        size: 52,
-                        color: Color(0xffd4ad68),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 160,
+                        height: 1,
+                        color: const Color(0xffb18a4d).withValues(alpha: .75),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'REALM LEDGER',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 4,
-                            color: const Color(0xfff0d59a),
-                            shadows: const [
-                              Shadow(color: Colors.black, blurRadius: 10),
-                            ],
+                      const Spacer(flex: 3),
+                      _TitleMenuButton(
+                        label: '새 게임',
+                        primary: true,
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ScenarioSelectScreen(scenario: scenario),
                           ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '한 달의 명령으로 왕국의 운명을 바꾸십시오.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: const Color(0xffd5c09a),
-                        shadows: const [
-                          Shadow(color: Colors.black, blurRadius: 6),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    AssetButton(
-                      primary: true,
-                      label: '새 게임',
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ScenarioSelectScreen(scenario: scenario),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    AssetButton(
-                      label: '불러오기',
-                      onPressed: () => _loadSavedGame(context),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '프로토타입 · 193년 1월 · 6지역',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: const Color(0xffa99572),
+                      const SizedBox(height: 10),
+                      _TitleMenuButton(
+                        label: '불러오기',
+                        onPressed: () => _loadSavedGame(context),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 10),
+                      _TitleMenuButton(
+                        label: '설정',
+                        onPressed: () =>
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('설정 화면은 다음 단계에서 연결됩니다.'),
+                              ),
+                            ),
+                      ),
+                      const SizedBox(height: 10),
+                      _TitleMenuButton(
+                        label: '게임 종료',
+                        onPressed: () =>
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('모바일에서는 홈 버튼으로 게임을 종료할 수 있습니다.'),
+                              ),
+                            ),
+                      ),
+                      const Spacer(flex: 2),
+                      const Text(
+                        'ORIGINAL STRATEGY GAME  ·  193년 1월',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xffb29a71),
+                          fontSize: 10,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),
     );
   }
+}
+
+class _TitleMenuButton extends StatelessWidget {
+  const _TitleMenuButton({
+    required this.label,
+    required this.onPressed,
+    this.primary = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 42,
+    child: FilledButton(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: primary
+            ? const Color(0xff75562d).withValues(alpha: .96)
+            : const Color(0xff1f2928).withValues(alpha: .94),
+        foregroundColor: primary
+            ? const Color(0xffffe6a9)
+            : const Color(0xffe2d0a8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(3),
+          side: BorderSide(
+            color: primary ? const Color(0xffd4aa60) : const Color(0xff806742),
+            width: primary ? 1.4 : 1,
+          ),
+        ),
+        elevation: 4,
+        shadowColor: Colors.black87,
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+      ),
+    ),
+  );
 }
 
 class ScenarioSelectScreen extends StatelessWidget {
