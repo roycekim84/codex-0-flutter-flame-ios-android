@@ -1651,17 +1651,33 @@ class _MapCommandBar extends StatelessWidget {
       children: [
         _MapCommand(
           label: '내정',
-          iconIndex: 0,
+          icon: Icons.account_balance,
           onTap: playerOwned ? onDomestic : null,
         ),
-        _MapCommand(label: '인사', iconIndex: 1, onTap: onPersonnel),
-        _MapCommand(label: '군사', iconIndex: 2, onTap: onMilitary),
-        _MapCommand(label: '외교', iconIndex: 3, onTap: onDiplomacy),
-        _MapCommand(label: '첩보', iconIndex: 4, onTap: onEspionage),
-        _MapCommand(label: '정보', iconIndex: 5, onTap: onInfo),
+        _MapCommand(
+          label: '인사',
+          icon: Icons.people_alt_outlined,
+          onTap: onPersonnel,
+        ),
+        _MapCommand(
+          label: '군사',
+          icon: Icons.shield_outlined,
+          onTap: onMilitary,
+        ),
+        _MapCommand(
+          label: '외교',
+          icon: Icons.handshake_outlined,
+          onTap: onDiplomacy,
+        ),
+        _MapCommand(
+          label: '첩보',
+          icon: Icons.visibility_outlined,
+          onTap: onEspionage,
+        ),
+        _MapCommand(label: '정보', icon: Icons.menu_book_outlined, onTap: onInfo),
         _MapCommand(
           label: '턴 종료',
-          iconIndex: 6,
+          icon: Icons.hourglass_bottom,
           onTap: onEndMonth,
           accent: true,
         ),
@@ -1673,12 +1689,12 @@ class _MapCommandBar extends StatelessWidget {
 class _MapCommand extends StatelessWidget {
   const _MapCommand({
     required this.label,
-    required this.iconIndex,
+    required this.icon,
     required this.onTap,
     this.accent = false,
   });
   final String label;
-  final int iconIndex;
+  final IconData icon;
   final VoidCallback? onTap;
   final bool accent;
 
@@ -1709,20 +1725,12 @@ class _MapCommand extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ColorFiltered(
-                colorFilter: ColorFilter.mode(
-                  onTap == null
-                      ? const Color(0xff5c5140)
-                      : const Color(0xffe0bc73),
-                  BlendMode.multiply,
-                ),
-                child: AssetSlice(
-                  asset: AssetRepository.mapCommandIcons,
-                  index: iconIndex,
-                  segments: 7,
-                  width: 27,
-                  height: 27,
-                ),
+              Icon(
+                icon,
+                size: 22,
+                color: onTap == null
+                    ? const Color(0xff5c5140)
+                    : const Color(0xffe0bc73),
               ),
               const SizedBox(height: 3),
               Text(
