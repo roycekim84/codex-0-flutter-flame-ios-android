@@ -1284,6 +1284,19 @@ class _BattleScreenState extends State<BattleScreen> {
                       ),
                     ],
                   ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '전투 군량 ${battle.attackerFood} · 일일 소모 ${battle.dailySupplyCost} · 사기 ${battle.attackerMorale}'
+                      '${battle.supplyShortageDays > 0 ? ' · 보급 부족 ${battle.supplyShortageDays}일' : ''}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: battle.supplyShortageDays > 0
+                            ? Colors.red
+                            : null,
+                      ),
+                    ),
+                  ),
                   if (battle.attackerUnits.isNotEmpty)
                     Align(
                       alignment: Alignment.centerLeft,

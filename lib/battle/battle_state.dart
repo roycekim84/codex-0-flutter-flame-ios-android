@@ -43,6 +43,9 @@ class BattleState {
     this.commanderName = '',
     this.commanderWar = 50,
     this.terrain = TerrainType.plain,
+    this.attackerFood = 0,
+    this.dailySupplyCost = 50,
+    this.attackerMorale = 100,
   }) : day = 1;
   final String sourceProvinceId, targetProvinceId, attackerName, defenderName;
   int attackerSoldiers, defenderSoldiers, day;
@@ -50,6 +53,10 @@ class BattleState {
   final String commanderName;
   final int commanderWar;
   final TerrainType terrain;
+  int attackerFood;
+  final int dailySupplyCost;
+  int attackerMorale;
+  int supplyShortageDays = 0;
   final List<BattleOfficerOutcome> outcomes = [];
   bool finished = false;
   String? winner;

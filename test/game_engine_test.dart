@@ -265,6 +265,38 @@ void main() {
     expect(battle.state.defenderSoldiers, lessThan(1140));
   });
 
+  test('전투는 매일 군량을 소모하고 보급 부족 시 사기를 낮춘다', () {
+    final engine = createEngine();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    battle!.state.attackerFood = 0;
+    final moraleBefore = battle.state.attackerMorale;
+    battle.attack();
+    expect(battle.state.attackerFood, 0);
+    expect(battle.state.attackerMorale, lessThan(moraleBefore));
+    expect(battle.state.supplyShortageDays, 1);
+  });
+
+  test('보급 부족이 3일 지속되면 공격군이 패배한다', () {
+    final engine = createEngine();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    battle!.state.attackerFood = 0;
+    while (!battle.state.finished && battle.state.supplyShortageDays < 3) {
+      battle.attack();
+    }
+    expect(battle.state.finished, isTrue);
+    expect(battle.state.winner, 'defender');
+  });
+
   test('전투 부대는 한 칸씩만 이동하고 점유 칸으로 이동할 수 없다', () {
     final engine = createEngine();
     final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');

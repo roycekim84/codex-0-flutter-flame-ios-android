@@ -23,15 +23,7 @@ class BattleEngine {
     state.attackerSoldiers -= defenderDamage;
     _syncUnits(state.attackerUnits, state.attackerSoldiers);
     _syncUnits(state.defenderUnits, state.defenderSoldiers);
-    state.day++;
-    if (state.defenderSoldiers <= 0 ||
-        state.attackerSoldiers <= 0 ||
-        state.day > 8) {
-      state.finished = true;
-      state.winner = state.attackerSoldiers > state.defenderSoldiers
-          ? 'attacker'
-          : 'defender';
-    }
+    _advanceDay();
   }
 
   void act({
@@ -89,15 +81,7 @@ class BattleEngine {
       0,
       (sum, u) => sum + u.soldiers,
     );
-    state.day++;
-    if (state.defenderSoldiers <= 0 ||
-        state.attackerSoldiers <= 0 ||
-        state.day > 8) {
-      state.finished = true;
-      state.winner = state.attackerSoldiers > state.defenderSoldiers
-          ? 'attacker'
-          : 'defender';
-    }
+    _advanceDay();
   }
 
   bool moveUnit(String unitId, int row, int column) {
@@ -117,7 +101,7 @@ class BattleEngine {
     if (occupied) return false;
     unit.row = row;
     unit.column = column;
-    state.day++;
+    _advanceDay();
     return true;
   }
 
@@ -132,6 +116,33 @@ class BattleEngine {
           : (units[i].soldiers * total / before).round();
       units[i].soldiers = soldiers.clamp(0, remaining).toInt();
       remaining -= units[i].soldiers;
+    }
+  }
+
+  void _advanceDay() {
+    state.day++;
+    if (state.attackerFood >= state.dailySupplyCost) {
+      state.attackerFood -= state.dailySupplyCost;
+      state.supplyShortageDays = 0;
+    } else {
+      state.attackerFood = 0;
+      state.supplyShortageDays++;
+      state.attackerMorale = (state.attackerMorale - 12).clamp(0, 100);
+      final desertion = (state.attackerSoldiers * .04).round().clamp(
+        1,
+        state.attackerSoldiers,
+      );
+      state.attackerSoldiers -= desertion;
+      _syncUnits(state.attackerUnits, state.attackerSoldiers);
+    }
+    if (state.defenderSoldiers <= 0 ||
+        state.attackerSoldiers <= 0 ||
+        state.day > 8 ||
+        state.supplyShortageDays >= 3) {
+      state.finished = true;
+      state.winner = state.attackerSoldiers > state.defenderSoldiers
+          ? 'attacker'
+          : 'defender';
     }
   }
 

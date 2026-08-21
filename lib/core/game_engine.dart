@@ -283,6 +283,8 @@ class GameEngine {
         commanderName: commander.name,
         commanderWar: commander.war,
         terrain: target.id == 'p_dale' ? TerrainType.fort : TerrainType.plain,
+        attackerFood: state.playerForce.food,
+        dailySupplyCost: (committedSoldiers ~/ 20).clamp(50, 500),
       ),
     );
   }
