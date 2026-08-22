@@ -1132,109 +1132,24 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _showEspionageDialog() async {
-    final targets = engine.state.provinces
-        .where((p) => !engine.state.isPlayerProvince(p))
+    final enemyOfficers = engine.state.officers
+        .where(
+          (o) => o.forceId != engine.state.playerForceId && o.status != 'DEAD',
+        )
         .toList();
-    if (targets.isEmpty || selectedOfficerId == null) return;
-    var provinceId = targets.first.id;
-    var action = 'infiltrate';
-    String? officerId;
-    final choice = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final province = engine.state.provinces.firstWhere(
-            (p) => p.id == provinceId,
-          );
-          final enemyOfficers = engine.state.officers
-              .where((o) => province.officerIds.contains(o.id))
-              .toList();
-          officerId ??= enemyOfficers.firstOrNull?.id;
-          return AlertDialog(
-            title: const Text('첩보'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButton<String>(
-                  isExpanded: true,
-                  value: provinceId,
-                  items: targets
-                      .map(
-                        (p) => DropdownMenuItem(
-                          value: p.id,
-                          child: Text('${p.name} · 민심 ${p.publicLoyalty}'),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (id) {
-                    if (id != null) {
-                      setDialogState(() {
-                        provinceId = id;
-                        officerId = null;
-                      });
-                    }
-                  },
-                ),
-                DropdownButton<String>(
-                  isExpanded: true,
-                  value: action,
-                  items: const [
-                    DropdownMenuItem(value: 'infiltrate', child: Text('잠입')),
-                    DropdownMenuItem(value: 'incite', child: Text('이간')),
-                    DropdownMenuItem(value: 'rumor', child: Text('유언비어')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) setDialogState(() => action = value);
-                  },
-                ),
-                if (action == 'incite' && enemyOfficers.isNotEmpty)
-                  DropdownButton<String>(
-                    isExpanded: true,
-                    value: officerId,
-                    items: enemyOfficers
-                        .map(
-                          (o) => DropdownMenuItem(
-                            value: o.id,
-                            child: Text('${o.name} · 충성 ${o.loyalty}'),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (id) {
-                      if (id != null) setDialogState(() => officerId = id);
-                    },
-                  ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('취소'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, {
-                  'provinceId': provinceId,
-                  'action': action,
-                  if (officerId != null) 'officerId': officerId!,
-                }),
-                child: const Text('실행'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-    if (choice == null || !mounted) return;
-    final type = switch (choice['action']) {
-      'incite' => GameCommandType.inciteOfficer,
-      'rumor' => GameCommandType.spreadRumor,
-      _ => GameCommandType.infiltrate,
-    };
-    await _dispatch(
-      GameCommand(
-        type: type,
-        officerId: selectedOfficerId,
-        provinceId: choice['provinceId'],
-        targetOfficerId: choice['officerId'],
+    if (enemyOfficers.isEmpty || selectedOfficerId == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _EspionageScreen(
+          state: engine.state,
+          targets: enemyOfficers,
+          officerId: selectedOfficerId!,
+          onAction: (command) async {
+            if (!mounted) return;
+            Navigator.pop(context);
+            await _dispatch(command);
+          },
+        ),
       ),
     );
   }
@@ -2740,6 +2655,325 @@ class _DiplomacyScreenState extends State<_DiplomacyScreen> {
     foregroundColor: const Color(0xffffdfa0),
     side: const BorderSide(color: Color(0xffc09351)),
     minimumSize: const Size.fromHeight(50),
+  );
+}
+
+class _EspionageScreen extends StatefulWidget {
+  const _EspionageScreen({
+    required this.state,
+    required this.targets,
+    required this.officerId,
+    required this.onAction,
+  });
+  final GameState state;
+  final List<OfficerState> targets;
+  final String officerId;
+  final Future<void> Function(GameCommand command) onAction;
+
+  @override
+  State<_EspionageScreen> createState() => _EspionageScreenState();
+}
+
+class _EspionageScreenState extends State<_EspionageScreen> {
+  late String targetId = widget.targets.first.id;
+
+  OfficerState get target =>
+      widget.targets.firstWhere((officer) => officer.id == targetId);
+  OfficerState get performer => widget.state.officers.firstWhere(
+    (officer) => officer.id == widget.officerId,
+  );
+  ProvinceState get province =>
+      widget.state.provinces.firstWhere((item) => item.id == target.provinceId);
+  ForceState get force =>
+      widget.state.forces.firstWhere((item) => item.id == target.forceId);
+
+  int get successChance =>
+      (35 +
+              performer.intelligence ~/ 2 +
+              performer.charisma ~/ 8 -
+              target.loyalty ~/ 3)
+          .clamp(18, 86);
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xff090807),
+    body: SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: const Color(0xff171612),
+          image: const DecorationImage(
+            image: AssetImage(AssetRepository.panelTexture),
+            fit: BoxFit.cover,
+            opacity: .12,
+          ),
+          border: Border.all(color: const Color(0xffb38343), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            _espionageHeader(),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(14, 15, 14, 20),
+                children: [
+                  const Text(
+                    '이간 대상 장수',
+                    style: TextStyle(
+                      color: Color(0xffd6a85d),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  DropdownButtonFormField<String>(
+                    initialValue: targetId,
+                    dropdownColor: const Color(0xff2b2117),
+                    style: const TextStyle(color: Color(0xffffdfa0)),
+                    decoration: _moveDecoration('대상 선택'),
+                    items: widget.targets.map((officer) {
+                      final location = widget.state.provinces
+                          .where((item) => item.id == officer.provinceId)
+                          .firstOrNull;
+                      return DropdownMenuItem(
+                        value: officer.id,
+                        child: Text(
+                          '${officer.name} · ${location?.name ?? '재야'} · 충성 ${officer.loyalty}',
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (id) {
+                      if (id != null) setState(() => targetId = id);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _targetCard(),
+                  const SizedBox(height: 12),
+                  _operationCard(),
+                  const SizedBox(height: 12),
+                  _performerCard(),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () => widget.onAction(
+                      GameCommand(
+                        type: GameCommandType.inciteOfficer,
+                        officerId: performer.id,
+                        provinceId: province.id,
+                        targetOfficerId: target.id,
+                      ),
+                    ),
+                    icon: const Icon(Icons.psychology_alt),
+                    label: const Text('이간 실행 · 금 100'),
+                    style: _espionageButton(),
+                  ),
+                  const SizedBox(height: 7),
+                  OutlinedButton.icon(
+                    onPressed: () => widget.onAction(
+                      GameCommand(
+                        type: GameCommandType.infiltrate,
+                        officerId: performer.id,
+                        provinceId: province.id,
+                      ),
+                    ),
+                    icon: const Icon(Icons.visibility),
+                    label: const Text('잠입 · 금 80'),
+                    style: _secondaryEspionageButton(),
+                  ),
+                  const SizedBox(height: 7),
+                  OutlinedButton.icon(
+                    onPressed: () => widget.onAction(
+                      GameCommand(
+                        type: GameCommandType.spreadRumor,
+                        officerId: performer.id,
+                        provinceId: province.id,
+                      ),
+                    ),
+                    icon: const Icon(Icons.record_voice_over),
+                    label: const Text('유언비어 · 금 80'),
+                    style: _secondaryEspionageButton(),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('중지'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _espionageHeader() => Container(
+    height: 60,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.visibility, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            '첩보 · 이간',
+            style: TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+
+  Widget _targetCard() => Container(
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: const Color(0x453d2b17),
+      border: Border.all(color: const Color(0xffa1763c)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        _GeneratedPortrait(seed: target.id, size: 74),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                target.name,
+                style: const TextStyle(
+                  color: Color(0xffffdfa0),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '${force.name} · ${province.name}',
+                style: const TextStyle(color: Color(0xffc1ab82)),
+              ),
+              const SizedBox(height: 7),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.favorite,
+                    color: Color(0xffd6a85d),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '충성도  ${target.loyalty}',
+                    style: const TextStyle(color: Color(0xffe4c783)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _operationCard() => Container(
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: const Color(0x35231b11),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '이간 작전',
+              style: TextStyle(
+                color: Color(0xffffdfa0),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              '$successChance%',
+              style: const TextStyle(
+                color: Color(0xff73d18b),
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 7),
+        LinearProgressIndicator(
+          value: successChance / 100,
+          minHeight: 7,
+          backgroundColor: const Color(0xff49342a),
+          color: const Color(0xffc1944e),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          '대상 장수의 충성도를 낮춰 등용 가능성을 높입니다. 작전은 금 100을 사용합니다.',
+          style: TextStyle(color: Color(0xffc1ab82), fontSize: 12, height: 1.4),
+        ),
+      ],
+    ),
+  );
+
+  Widget _performerCard() => Container(
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: const Color(0x25231b11),
+      border: Border.all(color: const Color(0xff5d472c)),
+      borderRadius: BorderRadius.circular(5),
+    ),
+    child: Row(
+      children: [
+        _GeneratedPortrait(seed: performer.id, size: 52),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            '실행 장수  ${performer.name}\nINT ${performer.intelligence} · CHA ${performer.charisma}',
+            style: const TextStyle(
+              color: Color(0xffc1ab82),
+              fontSize: 12,
+              height: 1.5,
+            ),
+          ),
+        ),
+        _CostMetric(
+          '보유 금',
+          _formatNumber(widget.state.playerForce.gold),
+          const Color(0xffe4c783),
+        ),
+      ],
+    ),
+  );
+
+  ButtonStyle _espionageButton() => FilledButton.styleFrom(
+    backgroundColor: const Color(0xff76572f),
+    foregroundColor: const Color(0xffffdfa0),
+    side: const BorderSide(color: Color(0xffc09351)),
+    minimumSize: const Size.fromHeight(50),
+  );
+
+  ButtonStyle _secondaryEspionageButton() => OutlinedButton.styleFrom(
+    foregroundColor: const Color(0xffe3c480),
+    side: const BorderSide(color: Color(0xff8b6937)),
+    minimumSize: const Size.fromHeight(47),
   );
 }
 
