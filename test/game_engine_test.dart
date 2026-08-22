@@ -128,7 +128,6 @@ void main() {
     expect(restored.playerForce.gold, 1234);
     expect(restored.provinces.length, 12);
     expect(restored.officers.length, 20);
-    expect(restored.provinces.first.territoryPoints, isNotEmpty);
   });
 
   test('첩보는 적 영지 정보를 공개하고 장수 충성도와 민심을 낮춘다', () {

@@ -1922,26 +1922,24 @@ class _TerritoryOverlayPainter extends CustomPainter {
         Offset(province.mapX * size.width, province.mapY * size.height),
     ];
     for (var i = 0; i < provinces.length; i++) {
-      final customPoints = provinces[i].territoryPoints;
-      final polygon = customPoints.length >= 3
-          ? [
-              for (final point in customPoints)
-                Offset(point[0] * size.width, point[1] * size.height),
-            ]
-          : _voronoiPolygon(i, points, size);
+      // The clipped Voronoi cells form a watertight partition: every pixel
+      // belongs to exactly one province, so ownership colors can never stack
+      // into rounded overlapping blobs. Scenario-specific river/mountain
+      // boundaries can later replace this with a validated mesh.
+      final polygon = _voronoiPolygon(i, points, size);
       if (polygon.length < 3) continue;
       final color = _forceColor(provinces[i].ownerForceId);
-      final path = _smoothTerritoryPath(polygon);
+      final path = _territoryPath(polygon);
       canvas.drawPath(
         path,
         Paint()
-          ..color = color.withValues(alpha: .38)
+          ..color = color.withValues(alpha: .22)
           ..style = PaintingStyle.fill,
       );
       canvas.drawPath(
         path,
         Paint()
-          ..color = color.withValues(alpha: .72)
+          ..color = color.withValues(alpha: .58)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.0,
       );
@@ -1951,8 +1949,7 @@ class _TerritoryOverlayPainter extends CustomPainter {
           Paint()
             ..color = const Color(0xffffd36a)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 3.2
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+            ..strokeWidth = 2.8,
         );
         canvas.drawPath(
           path,
@@ -1981,20 +1978,11 @@ class _TerritoryOverlayPainter extends CustomPainter {
     return polygon;
   }
 
-  Path _smoothTerritoryPath(List<Offset> polygon) {
+  Path _territoryPath(List<Offset> polygon) {
     final path = Path();
-    final midpoint = (polygon.last + polygon.first) / 2;
-    path.moveTo(midpoint.dx, midpoint.dy);
-    for (var i = 0; i < polygon.length; i++) {
-      final vertex = polygon[i];
-      final next = polygon[(i + 1) % polygon.length];
-      final nextMidpoint = (vertex + next) / 2;
-      path.quadraticBezierTo(
-        vertex.dx,
-        vertex.dy,
-        nextMidpoint.dx,
-        nextMidpoint.dy,
-      );
+    path.moveTo(polygon.first.dx, polygon.first.dy);
+    for (final vertex in polygon.skip(1)) {
+      path.lineTo(vertex.dx, vertex.dy);
     }
     path.close();
     return path;
