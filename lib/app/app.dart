@@ -1898,18 +1898,13 @@ class _TerritoryOverlayPainter extends CustomPainter {
         Offset(province.mapX * size.width, province.mapY * size.height),
     ];
     for (var i = 0; i < provinces.length; i++) {
-      var polygon = <Offset>[
-        const Offset(0, 0),
-        Offset(size.width, 0),
-        Offset(size.width, size.height),
-        Offset(0, size.height),
-      ];
-      final site = points[i];
-      for (var j = 0; j < points.length; j++) {
-        if (i == j) continue;
-        polygon = _clipToBisector(polygon, site, points[j]);
-        if (polygon.isEmpty) break;
-      }
+      final customPoints = provinces[i].territoryPoints;
+      final polygon = customPoints.length >= 3
+          ? [
+              for (final point in customPoints)
+                Offset(point[0] * size.width, point[1] * size.height),
+            ]
+          : _voronoiPolygon(i, points, size);
       if (polygon.length < 3) continue;
       final color = _forceColor(provinces[i].ownerForceId);
       final path = _smoothTerritoryPath(polygon);
@@ -1927,6 +1922,22 @@ class _TerritoryOverlayPainter extends CustomPainter {
           ..strokeWidth = 1.0,
       );
     }
+  }
+
+  List<Offset> _voronoiPolygon(int index, List<Offset> points, Size size) {
+    var polygon = <Offset>[
+      const Offset(0, 0),
+      Offset(size.width, 0),
+      Offset(size.width, size.height),
+      Offset(0, size.height),
+    ];
+    final site = points[index];
+    for (var j = 0; j < points.length; j++) {
+      if (index == j) continue;
+      polygon = _clipToBisector(polygon, site, points[j]);
+      if (polygon.isEmpty) break;
+    }
+    return polygon;
   }
 
   Path _smoothTerritoryPath(List<Offset> polygon) {

@@ -56,6 +56,97 @@ class DemoScenario {
       [.26, .83],
       [.86, .17],
     ];
+    // Normalized territory polygons are scenario data, not map-renderer logic.
+    // They are intentionally irregular so the ownership overlay can be refined
+    // along rivers, mountain ranges, and coastlines without changing the engine.
+    final territoryShapes = [
+      [
+        [0, .04],
+        [.32, .04],
+        [.37, .23],
+        [.30, .42],
+        [.06, .43],
+        [0, .29],
+      ],
+      [
+        [.32, .04],
+        [.58, 0],
+        [.67, .14],
+        [.54, .30],
+        [.37, .23],
+      ],
+      [
+        [.54, .30],
+        [.67, .14],
+        [.84, .31],
+        [.73, .48],
+        [.55, .45],
+      ],
+      [
+        [.73, .48],
+        [.84, .31],
+        [1, .27],
+        [1, .60],
+        [.83, .63],
+      ],
+      [
+        [.45, .52],
+        [.65, .67],
+        [.70, .84],
+        [.53, 1],
+        [.29, 1],
+        [.25, .59],
+      ],
+      [
+        [.05, .55],
+        [.25, .59],
+        [.29, 1],
+        [0, 1],
+        [0, .73],
+      ],
+      [
+        [.06, .43],
+        [.30, .42],
+        [.37, .23],
+        [.55, .30],
+        [.45, .52],
+        [.25, .59],
+        [.05, .55],
+      ],
+      [
+        [.55, .30],
+        [.73, .48],
+        [.65, .67],
+        [.45, .52],
+      ],
+      [
+        [.84, .31],
+        [1, .27],
+        [1, .60],
+        [.83, .63],
+        [.73, .48],
+      ],
+      [
+        [.65, .67],
+        [.83, .63],
+        [1, .60],
+        [1, .86],
+        [.70, .86],
+      ],
+      [
+        [.25, .59],
+        [.45, .52],
+        [.53, 1],
+        [.29, 1],
+      ],
+      [
+        [.58, 0],
+        [1, 0],
+        [1, .27],
+        [.84, .31],
+        [.67, .14],
+      ],
+    ];
     final adj = [
       ['p_briar', 'p_ford'],
       ['p_ash', 'p_crown', 'p_elm'],
@@ -97,6 +188,7 @@ class DemoScenario {
             : <String>[],
         'mapX': positions[i][0],
         'mapY': positions[i][1],
+        'territoryPoints': territoryShapes[i],
       });
     }
     final officers = <Map<String, dynamic>>[];

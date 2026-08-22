@@ -8,6 +8,17 @@ enum AiPersonality {
   opportunist,
 }
 
+List<List<double>> _territoryPoints(Object? raw) {
+  if (raw is! List) return const [];
+  return raw
+      .whereType<List>()
+      .where((point) => point.length >= 2)
+      .map(
+        (point) => [(point[0] as num).toDouble(), (point[1] as num).toDouble()],
+      )
+      .toList();
+}
+
 class ProvinceState {
   ProvinceState({
     required this.id,
@@ -25,10 +36,12 @@ class ProvinceState {
     required this.ownerName,
     this.governorId,
     this.settlementType = 'medium',
+    this.territoryPoints = const [],
   });
   final String id, name;
   String ownerForceId, ownerName;
   final String settlementType;
+  final List<List<double>> territoryPoints;
   final List<String> adjacentProvinceIds, officerIds;
   String? governorId;
   final double mapX, mapY;
@@ -210,6 +223,7 @@ class GameState extends ChangeNotifier {
             'mapY': p.mapY,
             'governorId': p.governorId,
             'settlementType': p.settlementType,
+            'territoryPoints': p.territoryPoints,
           },
         )
         .toList(),
@@ -289,6 +303,7 @@ class GameState extends ChangeNotifier {
               mapY: (x['mapY'] as num).toDouble(),
               governorId: x['governorId'],
               settlementType: x['settlementType'] as String? ?? 'medium',
+              territoryPoints: _territoryPoints(x['territoryPoints']),
             ),
           )
           .toList(),
@@ -367,6 +382,7 @@ class GameState extends ChangeNotifier {
               mapY: (x['mapY'] as num).toDouble(),
               governorId: x['governorId'],
               settlementType: x['settlementType'] as String? ?? 'medium',
+              territoryPoints: _territoryPoints(x['territoryPoints']),
             ),
           )
           .toList(),
