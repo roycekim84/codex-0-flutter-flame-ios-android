@@ -1449,8 +1449,13 @@ class _GameScreenState extends State<GameScreen> {
           margin: const EdgeInsets.all(5),
           decoration: BoxDecoration(
             color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .08,
+            ),
             borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: const Color(0xff9c7137), width: 2),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
             boxShadow: const [
               BoxShadow(color: Colors.black87, blurRadius: 12, spreadRadius: 1),
             ],
@@ -1546,38 +1551,71 @@ class _WorldMapHeader extends StatelessWidget {
         end: Alignment.bottomCenter,
       ),
       border: const Border(
-        bottom: BorderSide(color: Color(0xffbd8b45), width: 1.4),
+        top: BorderSide(color: Color(0xffd09b4d), width: 1),
+        bottom: BorderSide(color: Color(0xffc08b43), width: 1.6),
       ),
     ),
-    padding: const EdgeInsets.fromLTRB(12, 5, 8, 9),
+    padding: const EdgeInsets.fromLTRB(9, 5, 8, 9),
     child: Column(
       children: [
-        Row(
-          children: [
-            const Icon(Icons.auto_awesome, color: Color(0xffd9af65), size: 21),
-            const SizedBox(width: 7),
-            Expanded(
-              child: Text(
-                '세계 지도',
-                style: const TextStyle(
-                  color: Color(0xffffdfa1),
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 4,
-                  shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
+        SizedBox(
+          height: 43,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.auto_awesome,
+                    color: Color(0xffd9af65),
+                    size: 19,
+                  ),
+                  const SizedBox(width: 7),
+                  const Text(
+                    '세계 지도',
+                    style: TextStyle(
+                      color: Color(0xffffdfa1),
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 4,
+                      shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                right: 0,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xff5c4528),
+                    border: Border.all(
+                      color: const Color(0xffd2a35b),
+                      width: 1.2,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x66000000),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close, size: 21),
+                    color: const Color(0xffffe2a5),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 42,
+                      height: 42,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            IconButton.filled(
-              onPressed: onClose,
-              icon: const Icon(Icons.close, size: 21),
-              style: IconButton.styleFrom(
-                backgroundColor: const Color(0xff5c4528),
-                foregroundColor: const Color(0xffffe2a5),
-                side: const BorderSide(color: Color(0xffc09953)),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
         SizedBox(
           height: 68,
@@ -1632,7 +1670,11 @@ class _WorldMapHeader extends StatelessWidget {
                     '세력 자원',
                     style: TextStyle(color: Color(0xffa9926c), fontSize: 10),
                   ),
-                  _HeaderMetric(Icons.monetization_on_outlined, '금', force.gold),
+                  _HeaderMetric(
+                    Icons.monetization_on_outlined,
+                    '금',
+                    force.gold,
+                  ),
                   _HeaderMetric(Icons.grass, '군량', force.food),
                   _HeaderMetric(Icons.shield, '병력', state.playerSoldiers),
                 ],
@@ -1696,14 +1738,19 @@ class _MapCommandBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      color: Color(0xff1c1a16),
-      border: Border(
-        top: BorderSide(color: Color(0xff715631)),
-        bottom: BorderSide(color: Color(0xff3b3021)),
+    decoration: BoxDecoration(
+      color: const Color(0xff171411),
+      image: const DecorationImage(
+        image: AssetImage(AssetRepository.panelTexture),
+        fit: BoxFit.cover,
+        opacity: .16,
+      ),
+      border: const Border(
+        top: BorderSide(color: Color(0xffbf8a43), width: 1.6),
+        bottom: BorderSide(color: Color(0xff6d4d2b), width: 1),
       ),
     ),
-    padding: const EdgeInsets.fromLTRB(7, 6, 7, 7),
+    padding: const EdgeInsets.fromLTRB(6, 7, 6, 8),
     child: Row(
       children: [
         _MapCommand(
@@ -1749,16 +1796,20 @@ class _MapCommand extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(5),
         child: Container(
-          height: 58,
+          height: 62,
           decoration: BoxDecoration(
-            color: onTap == null
-                ? const Color(0xff28241e)
-                : accent
-                ? const Color(0xff614927)
-                : const Color(0xff29261f),
-            borderRadius: BorderRadius.circular(4),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: onTap == null
+                  ? const [Color(0xff28241e), Color(0xff1c1a17)]
+                  : accent
+                  ? const [Color(0xff806037), Color(0xff4f3921)]
+                  : const [Color(0xff3b3022), Color(0xff211d18)],
+            ),
+            borderRadius: BorderRadius.circular(5),
             border: Border.all(
               color: onTap == null
                   ? const Color(0xff41382d)
@@ -1779,12 +1830,12 @@ class _MapCommand extends StatelessWidget {
                 ),
                 child: Image.asset(
                   AssetRepository.commandIcon(iconIndex),
-                  width: 29,
-                  height: 29,
+                  width: 31,
+                  height: 31,
                   fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
               Text(
                 label,
                 maxLines: 1,
@@ -1793,8 +1844,9 @@ class _MapCommand extends StatelessWidget {
                   color: onTap == null
                       ? const Color(0xff796d5a)
                       : const Color(0xffe2cea3),
-                  fontSize: 11,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w700,
+                  shadows: const [Shadow(color: Colors.black87, blurRadius: 2)],
                 ),
               ),
             ],
@@ -1943,7 +1995,9 @@ class _Map extends StatelessWidget {
                     ),
                   ),
                   Positioned.fill(
-                    child: Container(color: Colors.black.withValues(alpha: .16)),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: .16),
+                    ),
                   ),
                   ...provinces.map(
                     (p) => Positioned(
@@ -1972,11 +2026,7 @@ class _Map extends StatelessWidget {
 }
 
 class _TerritoryOverlayPainter extends CustomPainter {
-  _TerritoryOverlayPainter(
-    this.provinces,
-    this.forces, {
-    this.selectedId,
-  });
+  _TerritoryOverlayPainter(this.provinces, this.forces, {this.selectedId});
   final List<ProvinceState> provinces;
   final List<ForceState> forces;
   final String? selectedId;
@@ -2026,7 +2076,6 @@ class _TerritoryOverlayPainter extends CustomPainter {
         );
       }
     }
-
   }
 
   List<Offset> _voronoiPolygon(int index, List<Offset> points, Size size) {
@@ -2055,7 +2104,6 @@ class _TerritoryOverlayPainter extends CustomPainter {
     path.close();
     return path;
   }
-
 
   List<Offset> _clipToBisector(
     List<Offset> polygon,
@@ -2180,18 +2228,18 @@ class _ProvinceNode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (asset, markerSize) = switch (province.settlementType) {
-      'large' => (AssetRepository.fortressLarge, 64.0),
-      'small' => (AssetRepository.fortressSmall, 38.0),
-      _ => (AssetRepository.fortressMedium, 48.0),
+      'large' => (AssetRepository.fortressLarge, 55.0),
+      'small' => (AssetRepository.fortressSmall, 33.0),
+      _ => (AssetRepository.fortressMedium, 42.0),
     };
     final labelTop = switch (province.settlementType) {
-      'large' => 79.0,
-      'small' => 53.0,
-      _ => 65.0,
+      'large' => 70.0,
+      'small' => 48.0,
+      _ => 59.0,
     };
     return SizedBox(
       width: 88,
-      height: 108,
+      height: 98,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
@@ -2202,22 +2250,22 @@ class _ProvinceNode extends StatelessWidget {
               asset: AssetRepository.forceBannerStrip,
               index: force.bannerIndex,
               segments: 3,
-              width: selected ? 26 : 21,
-              height: selected ? 30 : 25,
+              width: selected ? 24 : 19,
+              height: selected ? 28 : 23,
             ),
           ),
           Positioned(
             top: 7,
             child: Container(
-              padding: const EdgeInsets.all(2),
+              padding: const EdgeInsets.all(1),
               decoration: selected
                   ? const BoxDecoration(
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Color(0x66f6c95b),
-                          blurRadius: 12,
-                          spreadRadius: 3,
+                          color: Color(0x55f6c95b),
+                          blurRadius: 10,
+                          spreadRadius: 2,
                         ),
                       ],
                     )
@@ -2237,8 +2285,16 @@ class _ProvinceNode extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
                     shadows: [
-                      Shadow(color: Colors.black, blurRadius: 1, offset: Offset(1, 0)),
-                      Shadow(color: Colors.black, blurRadius: 1, offset: Offset(-1, 0)),
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 1,
+                        offset: Offset(1, 0),
+                      ),
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 1,
+                        offset: Offset(-1, 0),
+                      ),
                     ],
                   ),
                 ),
@@ -2297,7 +2353,22 @@ class _ProvinceDetailPanel extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(right: 10),
-            child: _GeneratedPortrait(seed: leader.id, size: 96),
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: const Color(0xff211b13),
+                border: Border.all(color: const Color(0xff94703b), width: 1),
+                borderRadius: BorderRadius.circular(3),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black54,
+                    blurRadius: 4,
+                    offset: Offset(1, 2),
+                  ),
+                ],
+              ),
+              child: _GeneratedPortrait(seed: leader.id, size: 92),
+            ),
           ),
           Expanded(
             child: Column(
@@ -2371,49 +2442,61 @@ class _ProvinceDetailPanel extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _ProvinceStatColumn(
-                        values: informationRevealed
-                            ? [
-                                ('지역 금', province.gold),
-                                ('지역 군량', province.food),
-                                ('병력', province.soldiers),
-                                ('민심', province.publicLoyalty),
-                              ]
-                            : const [
-                                ('금', '????'),
-                                ('군량', '????'),
-                                ('병력', '????'),
-                                ('민심', '????'),
-                              ],
+                Container(
+                  margin: const EdgeInsets.only(top: 1),
+                  padding: const EdgeInsets.fromLTRB(2, 3, 2, 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0x24110e0a),
+                    border: Border.all(color: const Color(0xff5f492b)),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _ProvinceStatColumn(
+                          values: informationRevealed
+                              ? [
+                                  ('지역 금', province.gold),
+                                  ('지역 군량', province.food),
+                                  ('병력', province.soldiers),
+                                  ('민심', province.publicLoyalty),
+                                ]
+                              : const [
+                                  ('금', '????'),
+                                  ('군량', '????'),
+                                  ('병력', '????'),
+                                  ('민심', '????'),
+                                ],
+                        ),
                       ),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 93,
-                      color: const Color(0xff5e4b32),
-                    ),
-                    Expanded(
-                      child: _ProvinceStatColumn(
-                        values: informationRevealed
-                            ? [
-                                ('개발', province.land),
-                                ('치수', province.floodControl),
-                                ('성벽', 35),
-                                ('성 규모', _settlementLabel(province.settlementType)),
-                              ]
-                            : const [
-                                ('개발', '????'),
-                                ('치수', '????'),
-                                ('성벽', '????'),
-                                ('주둔 장수', '????'),
-                              ],
+                      Container(
+                        width: 1,
+                        height: 93,
+                        color: const Color(0xff6e5633),
                       ),
-                    ),
-                  ],
+                      Expanded(
+                        child: _ProvinceStatColumn(
+                          values: informationRevealed
+                              ? [
+                                  ('개발', province.land),
+                                  ('치수', province.floodControl),
+                                  ('성벽', 35),
+                                  (
+                                    '성 규모',
+                                    _settlementLabel(province.settlementType),
+                                  ),
+                                ]
+                              : const [
+                                  ('개발', '????'),
+                                  ('치수', '????'),
+                                  ('성벽', '????'),
+                                  ('주둔 장수', '????'),
+                                ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -2439,7 +2522,7 @@ class _ProvinceStatColumn extends StatelessWidget {
               children: [
                 Icon(
                   _statIcon(value.$1),
-                  size: 15,
+                  size: 16,
                   color: const Color(0xffc49b57),
                 ),
                 const SizedBox(width: 5),
@@ -2457,6 +2540,7 @@ class _ProvinceStatColumn extends StatelessWidget {
                     color: Color(0xfff0d9a4),
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
+                    shadows: [Shadow(color: Colors.black87, blurRadius: 2)],
                   ),
                 ),
               ],
