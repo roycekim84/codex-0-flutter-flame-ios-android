@@ -42,6 +42,11 @@ class GameEngine {
           command.provinceId!,
         );
         if (!result.success) return result;
+      case GameCommandType.rewardOfficer:
+        final result = rewardOfficer(
+          command.targetOfficerId ?? command.officerId!,
+        );
+        if (!result.success) return result;
       case GameCommandType.appointGovernor:
         final result = appointGovernor(command.officerId!, command.provinceId!);
         if (!result.success) return result;
@@ -147,6 +152,21 @@ class GameEngine {
     return CommandResult.success(
       '${officer.name}을 ${province.name} 태수로 임명했습니다.',
     );
+  }
+
+  CommandResult rewardOfficer(String officerId) {
+    final officer = _playerOfficer(officerId);
+    if (officer == null) {
+      return const CommandResult.failure('포상할 장수를 찾을 수 없습니다.');
+    }
+    const cost = 100;
+    if (state.playerForce.gold < cost) {
+      return const CommandResult.failure('포상할 금이 부족합니다.');
+    }
+    state.playerForce.gold -= cost;
+    officer.loyalty = (officer.loyalty + 5).clamp(0, 100).toInt();
+    state.log('${officer.name} 포상 · 충성도 +5 · 금 -$cost');
+    return CommandResult.success('${officer.name}을 포상했습니다.');
   }
 
   CommandResult giftForce(String targetForceId, String officerId) {

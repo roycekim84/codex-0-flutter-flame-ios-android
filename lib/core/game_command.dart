@@ -7,6 +7,7 @@ enum GameCommandType {
   fortify,
   search,
   recruitOfficer,
+  rewardOfficer,
   appointGovernor,
   moveOfficer,
   giftForce,

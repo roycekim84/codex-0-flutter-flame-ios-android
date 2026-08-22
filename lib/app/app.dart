@@ -906,13 +906,10 @@ class _GameScreenState extends State<GameScreen> {
     if (selectedOfficerId == null) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _PersonnelSearchScreen(
-          provinceName: engine.state.provinces
-              .firstWhere((p) => p.id == selectedProvinceId)
-              .name,
-          freeOfficerCount: engine.state.officers
-              .where((o) => o.status == 'FREE')
-              .length,
+        builder: (_) => _PersonnelCommandScreen(
+          state: engine.state,
+          officerId: selectedOfficerId!,
+          provinceId: selectedProvinceId!,
           onSearch: () async {
             if (!mounted) return;
             Navigator.pop(context);
@@ -929,6 +926,11 @@ class _GameScreenState extends State<GameScreen> {
               ScaffoldMessenger.of(context).clearSnackBars();
               _showRecruitOfficerScreen(candidate);
             }
+          },
+          onCommand: (command) async {
+            if (!mounted) return;
+            Navigator.pop(context);
+            await _dispatch(command);
           },
         ),
       ),
@@ -1028,6 +1030,7 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.fortify => '축성',
     GameCommandType.search => '탐색',
     GameCommandType.recruitOfficer => '등용',
+    GameCommandType.rewardOfficer => '포상',
     GameCommandType.appointGovernor => '태수 임명',
     GameCommandType.moveOfficer => '장수 이동',
     GameCommandType.giftForce => '외교 · 선물',
@@ -1047,6 +1050,7 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.fortify => '지역 방어 기반을 높입니다. 금 120을 사용합니다.',
     GameCommandType.search => '재야 인재와 아이템을 탐색합니다.',
     GameCommandType.recruitOfficer => '발견한 재야 장수를 금 200으로 등용합니다.',
+    GameCommandType.rewardOfficer => '장수의 충성도를 높입니다. 금 100을 사용합니다.',
     GameCommandType.appointGovernor => '선택한 장수를 이 지역의 태수로 임명합니다.',
     GameCommandType.moveOfficer => '인접한 아군 지역으로 장수를 이동합니다.',
     GameCommandType.giftForce => '금 100으로 관계를 개선합니다.',
@@ -3890,6 +3894,290 @@ class _EspionageScreenState extends State<_EspionageScreen> {
   );
 }
 
+class _PersonnelCommandScreen extends StatefulWidget {
+  const _PersonnelCommandScreen({
+    required this.state,
+    required this.officerId,
+    required this.provinceId,
+    required this.onSearch,
+    required this.onCommand,
+  });
+  final GameState state;
+  final String officerId;
+  final String provinceId;
+  final VoidCallback onSearch;
+  final Future<void> Function(GameCommand command) onCommand;
+  @override
+  State<_PersonnelCommandScreen> createState() =>
+      _PersonnelCommandScreenState();
+}
+
+class _PersonnelCommandScreenState extends State<_PersonnelCommandScreen> {
+  late String targetOfficerId = widget.officerId;
+  late String targetProvinceId = widget.provinceId;
+  OfficerState get target =>
+      widget.state.officers.firstWhere((o) => o.id == targetOfficerId);
+  List<OfficerState> get localOfficers => widget.state.officers
+      .where(
+        (o) =>
+            o.forceId == widget.state.playerForceId &&
+            o.provinceId == targetProvinceId,
+      )
+      .toList();
+  @override
+  Widget build(BuildContext context) {
+    final province = widget.state.provinces.firstWhere(
+      (p) => p.id == targetProvinceId,
+    );
+    return Scaffold(
+      backgroundColor: const Color(0xff090807),
+      body: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .12,
+            ),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              _header(context),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
+                  children: [
+                    _rewardCard(),
+                    const SizedBox(height: 12),
+                    _governorCard(province),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: widget.onSearch,
+                      icon: const Icon(Icons.search),
+                      label: const Text('탐색 · 재야 인재 찾기'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xffe3c480),
+                        side: const BorderSide(color: Color(0xff8b6937)),
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('닫기'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _header(BuildContext context) => Container(
+    height: 60,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.assignment_ind, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            '인사 · 포상 / 태수 임명',
+            style: TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+  Widget _rewardCard() => _panel(
+    '포상 (충성 상승)',
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DropdownButtonFormField<String>(
+          initialValue: targetOfficerId,
+          dropdownColor: const Color(0xff2b2117),
+          style: const TextStyle(color: Color(0xffffdfa0)),
+          decoration: _moveDecoration('대상 장수'),
+          items: widget.state.officers
+              .where((o) => o.forceId == widget.state.playerForceId)
+              .map(
+                (o) => DropdownMenuItem(
+                  value: o.id,
+                  child: Text('${o.name} · 충성 ${o.loyalty}'),
+                ),
+              )
+              .toList(),
+          onChanged: (id) {
+            if (id != null) setState(() => targetOfficerId = id);
+          },
+        ),
+        const SizedBox(height: 10),
+        _rewardRow('공적 하사', '+5', '금 100'),
+        _rewardRow('포상 지급', '+10', '금 200'),
+        const SizedBox(height: 10),
+        FilledButton(
+          onPressed: () => widget.onCommand(
+            GameCommand(
+              type: GameCommandType.rewardOfficer,
+              officerId: target.id,
+              targetOfficerId: target.id,
+              provinceId: target.provinceId,
+            ),
+          ),
+          style: _button(),
+          child: const Text('포상 실행'),
+        ),
+      ],
+    ),
+  );
+  Widget _governorCard(ProvinceState province) => _panel(
+    '태수 임명',
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DropdownButtonFormField<String>(
+          initialValue: targetProvinceId,
+          dropdownColor: const Color(0xff2b2117),
+          style: const TextStyle(color: Color(0xffffdfa0)),
+          decoration: _moveDecoration('임명할 도시'),
+          items: widget.state.provinces
+              .where((p) => widget.state.isPlayerProvince(p))
+              .map((p) => DropdownMenuItem(value: p.id, child: Text(p.name)))
+              .toList(),
+          onChanged: (id) {
+            if (id != null) {
+              setState(() {
+                targetProvinceId = id;
+                final candidates = localOfficers;
+                if (candidates.isNotEmpty) {
+                  targetOfficerId = candidates.first.id;
+                }
+              });
+            }
+          },
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: localOfficers.any((o) => o.id == targetOfficerId)
+              ? targetOfficerId
+              : null,
+          dropdownColor: const Color(0xff2b2117),
+          style: const TextStyle(color: Color(0xffffdfa0)),
+          decoration: _moveDecoration('후보 장수'),
+          items: localOfficers
+              .map(
+                (o) => DropdownMenuItem(
+                  value: o.id,
+                  child: Text('${o.name} · INT ${o.intelligence}'),
+                ),
+              )
+              .toList(),
+          onChanged: (id) {
+            if (id != null) setState(() => targetOfficerId = id);
+          },
+        ),
+        const SizedBox(height: 10),
+        Text(
+          '${province.name}의 관리자를 변경합니다.',
+          style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+        ),
+        const SizedBox(height: 10),
+        FilledButton(
+          onPressed: localOfficers.any((o) => o.id == targetOfficerId)
+              ? () => widget.onCommand(
+                  GameCommand(
+                    type: GameCommandType.appointGovernor,
+                    officerId: targetOfficerId,
+                    provinceId: targetProvinceId,
+                  ),
+                )
+              : null,
+          style: _button(),
+          child: const Text('임명 실행'),
+        ),
+      ],
+    ),
+  );
+  Widget _rewardRow(String label, String effect, String cost) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 5),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+          ),
+        ),
+        Text(
+          effect,
+          style: const TextStyle(
+            color: Color(0xff73d18b),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Text(
+          cost,
+          style: const TextStyle(color: Color(0xffffdfa0), fontSize: 12),
+        ),
+      ],
+    ),
+  );
+  Widget _panel(String title, Widget child) => Container(
+    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+    decoration: BoxDecoration(
+      color: const Color(0x35231b11),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xffd6a85d),
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        child,
+      ],
+    ),
+  );
+  ButtonStyle _button() => FilledButton.styleFrom(
+    backgroundColor: const Color(0xff76572f),
+    foregroundColor: const Color(0xffffdfa0),
+    side: const BorderSide(color: Color(0xffc09351)),
+    minimumSize: const Size.fromHeight(48),
+  );
+}
+
+// Legacy search-only screen retained for the original personnel flow.
+// ignore: unused_element
 class _PersonnelSearchScreen extends StatelessWidget {
   const _PersonnelSearchScreen({
     required this.provinceName,
