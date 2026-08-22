@@ -1107,79 +1107,26 @@ class _GameScreenState extends State<GameScreen> {
         .where((f) => f.id != engine.state.playerForceId)
         .toList();
     if (targets.isEmpty || selectedOfficerId == null) return;
-    var targetId = targets.first.id;
-    final choice = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('외교'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButton<String>(
-                isExpanded: true,
-                value: targetId,
-                items: targets
-                    .map(
-                      (force) => DropdownMenuItem(
-                        value: force.id,
-                        child: Text(
-                          '${force.name} · 관계 ${engine.state.relationTo(force.id)}',
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (id) {
-                  if (id != null) setDialogState(() => targetId = id);
-                },
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _DiplomacyScreen(
+          state: engine.state,
+          targets: targets,
+          officerId: selectedOfficerId!,
+          provinceId: selectedProvinceId,
+          onAction: (type, targetId) async {
+            if (!mounted) return;
+            Navigator.pop(context);
+            await _dispatch(
+              GameCommand(
+                type: type,
+                officerId: selectedOfficerId,
+                provinceId: selectedProvinceId,
+                targetForceId: targetId,
               ),
-              const SizedBox(height: 8),
-              Text('현재 관계 ${engine.state.relationTo(targetId)}'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, {
-                'forceId': targetId,
-                'action': 'gift',
-              }),
-              child: const Text('선물 100금'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, {
-                'forceId': targetId,
-                'action': 'alliance',
-              }),
-              child: const Text('동맹'),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              onPressed: () => Navigator.pop(dialogContext, {
-                'forceId': targetId,
-                'action': 'threaten',
-              }),
-              child: const Text('협박'),
-            ),
-          ],
+            );
+          },
         ),
-      ),
-    );
-    if (choice == null || !mounted) return;
-    final type = switch (choice['action']) {
-      'gift' => GameCommandType.giftForce,
-      'alliance' => GameCommandType.formAlliance,
-      _ => GameCommandType.threatenForce,
-    };
-    await _dispatch(
-      GameCommand(
-        type: type,
-        officerId: selectedOfficerId,
-        provinceId: selectedProvinceId,
-        targetForceId: choice['forceId'],
       ),
     );
   }
@@ -2482,6 +2429,318 @@ class _ProvinceDetailPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DiplomacyScreen extends StatefulWidget {
+  const _DiplomacyScreen({
+    required this.state,
+    required this.targets,
+    required this.officerId,
+    required this.provinceId,
+    required this.onAction,
+  });
+  final GameState state;
+  final List<ForceState> targets;
+  final String officerId;
+  final String? provinceId;
+  final Future<void> Function(GameCommandType type, String targetId) onAction;
+  @override
+  State<_DiplomacyScreen> createState() => _DiplomacyScreenState();
+}
+
+class _DiplomacyScreenState extends State<_DiplomacyScreen> {
+  late String targetId = widget.targets.first.id;
+
+  ForceState get target => widget.targets.firstWhere((f) => f.id == targetId);
+  OfficerState get officer =>
+      widget.state.officers.firstWhere((o) => o.id == widget.officerId);
+  int get targetSoldiers => widget.state.provinces
+      .where((p) => p.ownerForceId == target.id)
+      .fold(0, (sum, p) => sum + p.soldiers);
+  int get playerSoldiers => widget.state.playerSoldiers;
+
+  @override
+  Widget build(BuildContext context) {
+    final relation = widget.state.relationTo(target.id);
+    final allied = widget.state.alliedForceIds.contains(target.id);
+    return Scaffold(
+      backgroundColor: const Color(0xff090807),
+      body: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .12,
+            ),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xff382818), Color(0xff181612)],
+                  ),
+                  border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.handshake,
+                      color: Color(0xffd9af65),
+                      size: 25,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        '외교',
+                        style: TextStyle(
+                          color: Color(0xffffdfa0),
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                      color: const Color(0xffffdfa0),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
+                  children: [
+                    const Text(
+                      '외교 대상',
+                      style: TextStyle(
+                        color: Color(0xffd6a85d),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    DropdownButtonFormField<String>(
+                      initialValue: targetId,
+                      dropdownColor: const Color(0xff2b2117),
+                      style: const TextStyle(color: Color(0xffffdfa0)),
+                      decoration: _moveDecoration('세력 선택'),
+                      items: widget.targets
+                          .map(
+                            (force) => DropdownMenuItem(
+                              value: force.id,
+                              child: Text(force.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (id) {
+                        if (id != null) setState(() => targetId = id);
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(13),
+                      decoration: BoxDecoration(
+                        color: const Color(0x453d2b17),
+                        border: Border.all(color: const Color(0xffa1763c)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          AssetSlice(
+                            asset: AssetRepository.forceBannerStrip,
+                            index: target.bannerIndex,
+                            segments: 3,
+                            size: 58,
+                          ),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  target.name,
+                                  style: const TextStyle(
+                                    color: Color(0xffffdfa0),
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '영토 ${target.provinceIds.length}곳 · 장수 ${target.officerIds.length}명',
+                                  style: const TextStyle(
+                                    color: Color(0xffc1ab82),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              Text(
+                                '$relation',
+                                style: TextStyle(
+                                  color: relation >= 20
+                                      ? const Color(0xff73d18b)
+                                      : const Color(0xffe2bd72),
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const Text(
+                                '관계',
+                                style: TextStyle(
+                                  color: Color(0xffa8906b),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(13),
+                      decoration: BoxDecoration(
+                        color: const Color(0x35231b11),
+                        border: Border.all(color: const Color(0xff6d5230)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _CostMetric(
+                                widget.state.playerForce.name,
+                                '${_formatNumber(playerSoldiers)}명',
+                                const Color(0xff73d18b),
+                              ),
+                              const Text(
+                                'VS',
+                                style: TextStyle(
+                                  color: Color(0xffa8906b),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              _CostMetric(
+                                target.name,
+                                '${_formatNumber(targetSoldiers)}명',
+                                const Color(0xffe17a5d),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          LinearProgressIndicator(
+                            value:
+                                (playerSoldiers /
+                                        (playerSoldiers + targetSoldiers))
+                                    .clamp(.02, .98),
+                            backgroundColor: const Color(0xff6a3e35),
+                            color: const Color(0xff668b6c),
+                            minHeight: 7,
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            allied ? '현재 동맹 상태' : '군사력과 관계를 바탕으로 외교를 선택하십시오',
+                            style: const TextStyle(
+                              color: Color(0xffc1ab82),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0x25231b11),
+                        border: Border.all(color: const Color(0xff5d472c)),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Row(
+                        children: [
+                          _GeneratedPortrait(seed: officer.id, size: 48),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '수행 장수  ${officer.name}\nCHA ${officer.charisma} · INT ${officer.intelligence}',
+                              style: const TextStyle(
+                                color: Color(0xffc1ab82),
+                                fontSize: 12,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () =>
+                          widget.onAction(GameCommandType.giftForce, target.id),
+                      icon: const Icon(Icons.card_giftcard),
+                      label: const Text('선물 보내기 · 금 100'),
+                      style: _diplomacyButton(),
+                    ),
+                    const SizedBox(height: 7),
+                    FilledButton.icon(
+                      onPressed: () => widget.onAction(
+                        GameCommandType.formAlliance,
+                        target.id,
+                      ),
+                      icon: const Icon(Icons.link),
+                      label: Text(allied ? '동맹 유지 중' : '동맹 제안'),
+                      style: _diplomacyButton(),
+                    ),
+                    const SizedBox(height: 7),
+                    FilledButton.icon(
+                      onPressed: () => widget.onAction(
+                        GameCommandType.threatenForce,
+                        target.id,
+                      ),
+                      icon: const Icon(Icons.warning_amber),
+                      label: const Text('협박'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xff6b3025),
+                        foregroundColor: const Color(0xffffd2c4),
+                        side: const BorderSide(color: Color(0xffa84f3c)),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('중지'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  ButtonStyle _diplomacyButton() => FilledButton.styleFrom(
+    backgroundColor: const Color(0xff76572f),
+    foregroundColor: const Color(0xffffdfa0),
+    side: const BorderSide(color: Color(0xffc09351)),
+    minimumSize: const Size.fromHeight(50),
+  );
 }
 
 class _PersonnelSearchScreen extends StatelessWidget {
