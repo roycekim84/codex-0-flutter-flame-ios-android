@@ -1315,88 +1315,24 @@ class _GameScreenState extends State<GameScreen> {
 
   void _showDomesticMenu() {
     if (selectedOfficerId == null) return;
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xff211d18),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                '내정',
-                style: TextStyle(
-                  color: Color(0xffffdfa4),
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+    final province = engine.state.provinces.firstWhere(
+      (p) => p.id == selectedProvinceId,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _DomesticScreen(
+          province: province,
+          onCommand: (type) async {
+            if (!mounted) return;
+            Navigator.pop(context);
+            await _dispatch(
+              GameCommand(
+                type: type,
+                officerId: selectedOfficerId,
+                provinceId: selectedProvinceId,
               ),
-              const SizedBox(height: 4),
-              const Text(
-                '선택한 지역의 발전과 민심을 관리합니다.',
-                style: TextStyle(color: Color(0xffbca981), fontSize: 12),
-              ),
-              const SizedBox(height: 12),
-              _SheetCommand(
-                title: '개발',
-                detail: '토지와 군량 생산 기반을 높입니다 · 금 100',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _dispatch(
-                    GameCommand(
-                      type: GameCommandType.develop,
-                      officerId: selectedOfficerId,
-                      provinceId: selectedProvinceId,
-                    ),
-                  );
-                },
-              ),
-              _SheetCommand(
-                title: '징세',
-                detail: '금 100을 얻고 민심이 하락합니다',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _dispatch(
-                    GameCommand(
-                      type: GameCommandType.tax,
-                      officerId: selectedOfficerId,
-                      provinceId: selectedProvinceId,
-                    ),
-                  );
-                },
-              ),
-              _SheetCommand(
-                title: '시혜',
-                detail: '금 80을 사용해 민심을 높입니다',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _dispatch(
-                    GameCommand(
-                      type: GameCommandType.relief,
-                      officerId: selectedOfficerId,
-                      provinceId: selectedProvinceId,
-                    ),
-                  );
-                },
-              ),
-              _SheetCommand(
-                title: '훈련 · 축성',
-                detail: '군대의 준비도 또는 지역 방어를 높입니다',
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _dispatch(
-                    GameCommand(
-                      type: GameCommandType.train,
-                      officerId: selectedOfficerId,
-                      provinceId: selectedProvinceId,
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -1828,6 +1764,8 @@ class _MapCommand extends StatelessWidget {
   );
 }
 
+// Retained for compact command sheets used by legacy layouts.
+// ignore: unused_element
 class _SheetCommand extends StatelessWidget {
   const _SheetCommand({
     required this.title,
@@ -2484,6 +2422,198 @@ class _ProvinceDetailPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DomesticScreen extends StatelessWidget {
+  const _DomesticScreen({required this.province, required this.onCommand});
+  final ProvinceState province;
+  final Future<void> Function(GameCommandType type) onCommand;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = [
+      (0, '개발', '토지 개발을 실시합니다', '금 100', GameCommandType.develop),
+      (2, '치수', '홍수 피해를 줄이고 치수를 높입니다', '금 80', GameCommandType.fortify),
+      (3, '징세', '금 100을 얻지만 민심이 하락합니다', '금 0', GameCommandType.tax),
+      (4, '시혜', '금 80을 사용해 민심을 높입니다', '금 80', GameCommandType.relief),
+      (5, '군량 거래', '시장 가격으로 군량을 거래합니다', '시세 적용', GameCommandType.tax),
+      (2, '훈련 · 축성', '군대의 준비도와 성벽을 높입니다', '금 60', GameCommandType.train),
+    ];
+    return Scaffold(
+      backgroundColor: const Color(0xff090807),
+      body: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .12,
+            ),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xff382818), Color(0xff181612)],
+                  ),
+                  border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.account_balance,
+                      color: Color(0xffd9af65),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '내정 · ${province.name}',
+                        style: const TextStyle(
+                          color: Color(0xffffdfa0),
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                      color: const Color(0xffffdfa0),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _DomesticMetric('금', province.gold),
+                    _DomesticMetric('군량', province.food),
+                    _DomesticMetric('민심', province.publicLoyalty),
+                    _DomesticMetric('개발', province.land),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                  itemCount: actions.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 7),
+                  itemBuilder: (context, index) {
+                    final action = actions[index];
+                    return InkWell(
+                      onTap: () => onCommand(action.$5),
+                      borderRadius: BorderRadius.circular(5),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xff34291d), Color(0xff211b16)],
+                          ),
+                          border: Border.all(color: const Color(0xff755735)),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Row(
+                          children: [
+                            Image.asset(
+                              AssetRepository.commandIcon(action.$1),
+                              width: 42,
+                              height: 42,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    action.$2,
+                                    style: const TextStyle(
+                                      color: Color(0xffffdfa0),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    action.$3,
+                                    style: const TextStyle(
+                                      color: Color(0xffc4ac83),
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              action.$4,
+                              style: const TextStyle(
+                                color: Color(0xffe2bd72),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: Color(0xffb48a50),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('닫기'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DomesticMetric extends StatelessWidget {
+  const _DomesticMetric(this.label, this.value);
+  final String label;
+  final int value;
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Text(
+        label,
+        style: const TextStyle(color: Color(0xffb9a47c), fontSize: 11),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        _formatNumber(value),
+        style: const TextStyle(
+          color: Color(0xfff0d9a4),
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ],
+  );
 }
 
 class _ProvinceDetailScreen extends StatelessWidget {
