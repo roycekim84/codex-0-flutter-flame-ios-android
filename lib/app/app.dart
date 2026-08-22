@@ -1994,14 +1994,12 @@ class _TerritoryOverlayPainter extends CustomPainter {
       for (final province in provinces)
         Offset(province.mapX * size.width, province.mapY * size.height),
     ];
+    // The Voronoi partition is watertight: every point on the map belongs to
+    // one province only. This prevents overlapping ownership colors and keeps
+    // the map stable when a castle changes owner.
     final polygons = [
       for (var i = 0; i < provinces.length; i++)
-        provinces[i].territoryPoints.length >= 3
-            ? provinces[i]
-                  .territoryPoints
-                  .map((point) => Offset(point[0] * size.width, point[1] * size.height))
-                  .toList()
-            : _voronoiPolygon(i, points, size),
+        _voronoiPolygon(i, points, size),
     ];
     for (var i = 0; i < provinces.length; i++) {
       // Scenario territory geometry is data-driven. A scenario can provide
@@ -2011,6 +2009,7 @@ class _TerritoryOverlayPainter extends CustomPainter {
       if (polygon.length < 3) continue;
       final color = _forceColor(provinces[i].ownerForceId);
       final path = _territoryPath(polygon);
+      final boundaryPath = _smoothTerritoryPath(polygon);
       canvas.drawPath(
         path,
         Paint()
@@ -2022,14 +2021,14 @@ class _TerritoryOverlayPainter extends CustomPainter {
             ? const Color(0xffffd36a)
             : color;
         canvas.drawPath(
-          path,
+          boundaryPath,
           Paint()
             ..color = selectionColor.withValues(alpha: .95)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.2,
         );
         canvas.drawPath(
-          path,
+          boundaryPath,
           Paint()
             ..color = const Color(0xffffe3a0)
             ..style = PaintingStyle.stroke
@@ -2126,6 +2125,17 @@ class _TerritoryOverlayPainter extends CustomPainter {
   }
 
   Path _territoryPath(List<Offset> polygon) {
+    final path = Path();
+    if (polygon.length < 3) return path;
+    path.moveTo(polygon.first.dx, polygon.first.dy);
+    for (final vertex in polygon.skip(1)) {
+      path.lineTo(vertex.dx, vertex.dy);
+    }
+    path.close();
+    return path;
+  }
+
+  Path _smoothTerritoryPath(List<Offset> polygon) {
     final path = Path();
     if (polygon.length < 3) return path;
     final firstMid = (polygon.last + polygon.first) / 2;
@@ -2380,6 +2390,7 @@ class _ProvinceDetailPanel extends StatelessWidget {
     final roleText = governor == null
         ? '태수 미임명 · 군주 ${leader.name}'
         : '태수 ${governor.name}';
+    final assignmentText = '$roleText · 주둔 ${province.officerIds.length}명';
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xff171612),
@@ -2428,7 +2439,7 @@ class _ProvinceDetailPanel extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${ownerForce.name} · $roleText',
+                            '${ownerForce.name} · $assignmentText',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -2505,7 +2516,6 @@ class _ProvinceDetailPanel extends StatelessWidget {
                                 ('개발', province.land),
                                 ('치수', province.floodControl),
                                 ('성벽', 35),
-                                ('주둔 장수', province.officerIds.length),
                                 ('성 규모', _settlementLabel(province.settlementType)),
                               ]
                             : const [
@@ -2570,12 +2580,15 @@ class _ProvinceStatColumn extends StatelessWidget {
   );
 
   static IconData _statIcon(String label) => switch (label) {
-    '금' => Icons.monetization_on_outlined,
-    '군량' => Icons.grass,
+    '금' || '지역 금' => Icons.monetization_on_outlined,
+    '군량' || '지역 군량' => Icons.grass,
     '병력' => Icons.shield_outlined,
     '민심' => Icons.people_alt_outlined,
     '개발' => Icons.construction_outlined,
     '치수' => Icons.water_drop_outlined,
+    '성벽' => Icons.fort,
+    '주둔 장수' => Icons.person_outline,
+    '성 규모' => Icons.account_balance,
     _ => Icons.fort,
   };
 }
