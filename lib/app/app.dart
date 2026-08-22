@@ -1403,28 +1403,9 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showProvinceInfo(ProvinceState province, GameState state) {
-    final governor = province.governorId == null
-        ? '미임명'
-        : state.officers.firstWhere((o) => o.id == province.governorId).name;
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(province.name),
-        content: Text(
-          '소유 세력  ${province.ownerName}\n'
-          '태수  $governor\n'
-          '개발  ${province.land}\n'
-          '치수  ${province.floodControl}\n'
-          '민심  ${province.publicLoyalty}\n'
-          '병력  ${province.soldiers}\n'
-          '장수  ${province.officerIds.length}',
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
-          ),
-        ],
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _ProvinceDetailScreen(province: province, state: state),
       ),
     );
   }
@@ -2500,6 +2481,225 @@ class _ProvinceDetailPanel extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProvinceDetailScreen extends StatelessWidget {
+  const _ProvinceDetailScreen({required this.province, required this.state});
+  final ProvinceState province;
+  final GameState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final force = state.forces.firstWhere((f) => f.id == province.ownerForceId);
+    final governor = province.governorId == null
+        ? null
+        : state.officers.firstWhere((o) => o.id == province.governorId);
+    final leader =
+        governor ?? state.officers.firstWhere((o) => o.id == force.rulerId);
+    final officers = state.officers
+        .where((o) => province.officerIds.contains(o.id))
+        .toList();
+    return Scaffold(
+      backgroundColor: const Color(0xff090807),
+      body: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .12,
+            ),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              Container(
+                height: 58,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xff382818), Color(0xff181612)],
+                  ),
+                  border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+                ),
+                child: Row(
+                  children: [
+                    AssetSlice(
+                      asset: AssetRepository.forceBannerStrip,
+                      index: force.bannerIndex,
+                      segments: 3,
+                      width: 24,
+                      height: 29,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        province.name,
+                        style: const TextStyle(
+                          color: Color(0xffffdfa0),
+                          fontSize: 23,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                      color: const Color(0xffffdfa0),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xff211b13),
+                              border: Border.all(
+                                color: const Color(0xff94703b),
+                              ),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: _GeneratedPortrait(
+                              seed: leader.id,
+                              size: 112,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '태수 ${governor?.name ?? '미임명'} · 주둔 ${province.officerIds.length}명',
+                                  style: const TextStyle(
+                                    color: Color(0xffe5c98d),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: const Color(0xff6d5230),
+                                    ),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: _ProvinceStatColumn(
+                                    values: [
+                                      ('금', province.gold),
+                                      ('군량', province.food),
+                                      ('병력', province.soldiers),
+                                      ('민심', province.publicLoyalty),
+                                      ('개발', province.land),
+                                      ('치수', province.floodControl),
+                                      ('성벽', 35),
+                                      (
+                                        '성 규모',
+                                        _settlementLabel(
+                                          province.settlementType,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        '지역 장수',
+                        style: TextStyle(
+                          color: Color(0xffffdfa0),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      ...officers.map(
+                        (officer) => Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0x441c1812),
+                            border: Border.all(color: const Color(0xff5d472c)),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              _GeneratedPortrait(seed: officer.id, size: 42),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  officer.name,
+                                  style: const TextStyle(
+                                    color: Color(0xfff0d9a4),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '충성 ${officer.loyalty}',
+                                style: const TextStyle(
+                                  color: Color(0xffc9ad78),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                height: 62,
+                padding: const EdgeInsets.all(7),
+                decoration: const BoxDecoration(
+                  color: Color(0xff1c1914),
+                  border: Border(top: BorderSide(color: Color(0xff9b7138))),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back, size: 18),
+                    label: const Text('세계 지도로 돌아가기'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xff624826),
+                      foregroundColor: const Color(0xffffdfa0),
+                      side: const BorderSide(color: Color(0xffb98b4d)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
