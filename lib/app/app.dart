@@ -902,6 +902,33 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  void _showPersonnelScreen() {
+    if (selectedOfficerId == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _PersonnelSearchScreen(
+          provinceName: engine.state.provinces
+              .firstWhere((p) => p.id == selectedProvinceId)
+              .name,
+          freeOfficerCount: engine.state.officers
+              .where((o) => o.status == 'FREE')
+              .length,
+          onSearch: () async {
+            if (!mounted) return;
+            Navigator.pop(context);
+            await _dispatch(
+              GameCommand(
+                type: GameCommandType.search,
+                officerId: selectedOfficerId,
+                provinceId: selectedProvinceId,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   void _showLog() {
     showModalBottomSheet<void>(
       context: context,
@@ -1417,7 +1444,7 @@ class _GameScreenState extends State<GameScreen> {
               _MapCommandBar(
                 playerOwned: state.isPlayerProvince(selected),
                 onDomestic: _showDomesticMenu,
-                onPersonnel: _showOfficers,
+                onPersonnel: _showPersonnelScreen,
                 onMilitary: () {
                   if (state.isPlayerProvince(selected)) {
                     _showMoveDialog();
@@ -2422,6 +2449,162 @@ class _ProvinceDetailPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PersonnelSearchScreen extends StatelessWidget {
+  const _PersonnelSearchScreen({
+    required this.provinceName,
+    required this.freeOfficerCount,
+    required this.onSearch,
+  });
+  final String provinceName;
+  final int freeOfficerCount;
+  final VoidCallback onSearch;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xff090807),
+    body: SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: const Color(0xff171612),
+          image: const DecorationImage(
+            image: AssetImage(AssetRepository.panelTexture),
+            fit: BoxFit.cover,
+            opacity: .12,
+          ),
+          border: Border.all(color: const Color(0xffb38343), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            Container(
+              height: 60,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xff382818), Color(0xff181612)],
+                ),
+                border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.groups, color: Color(0xffd9af65), size: 25),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      '인사 · 탐색',
+                      style: TextStyle(
+                        color: Color(0xffffdfa0),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                    color: const Color(0xffffdfa0),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(5),
+                      child: AssetSlice(
+                        asset: AssetRepository.eventArtStrip,
+                        index: 0,
+                        segments: 4,
+                        width: double.infinity,
+                        height: 210,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '$provinceName 주변을 탐색합니다',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xffffdfa0),
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      '재야 장수와 뜻밖의 발견을 찾아 인재를 확보하십시오.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0x351c1812),
+                        border: Border.all(color: const Color(0xff6d5230)),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.person_search,
+                            color: Color(0xffd2a25a),
+                            size: 30,
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              '현재 재야 장수',
+                              style: TextStyle(
+                                color: Color(0xffc8af7b),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '$freeOfficerCount명',
+                            style: const TextStyle(
+                              color: Color(0xffffdfa0),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    FilledButton.icon(
+                      onPressed: onSearch,
+                      icon: const Icon(Icons.search),
+                      label: const Text('탐색 실행'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                        backgroundColor: const Color(0xff76572f),
+                        foregroundColor: const Color(0xffffdfa0),
+                        side: const BorderSide(color: Color(0xffc09351)),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('중지'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _DomesticScreen extends StatelessWidget {
