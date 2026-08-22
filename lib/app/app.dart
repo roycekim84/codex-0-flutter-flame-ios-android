@@ -1075,30 +1075,31 @@ class _GameScreenState extends State<GameScreen> {
       );
       return;
     }
-    final destination = await showDialog<String>(
-      context: context,
-      builder: (_) => SimpleDialog(
-        title: const Text('이동할 지역 선택'),
-        children: destinations
-            .map(
-              (p) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, p.id),
-                child: Text('${p.name} · 장수 ${p.officerIds.length}명'),
+    final officer = engine.state.officers.firstWhere(
+      (o) => o.id == selectedOfficerId,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _MilitaryMoveScreen(
+          officer: officer,
+          source: selected,
+          destinations: destinations,
+          onMove: (destination, soldiers) async {
+            if (!mounted) return;
+            Navigator.pop(context);
+            await _dispatch(
+              GameCommand(
+                type: GameCommandType.moveOfficer,
+                officerId: selectedOfficerId,
+                provinceId: selected.id,
+                destinationProvinceId: destination.id,
+                soldiers: soldiers,
               ),
-            )
-            .toList(),
+            );
+          },
+        ),
       ),
     );
-    if (destination != null && mounted) {
-      await _dispatch(
-        GameCommand(
-          type: GameCommandType.moveOfficer,
-          officerId: selectedOfficerId,
-          provinceId: selected.id,
-          destinationProvinceId: destination,
-        ),
-      );
-    }
   }
 
   Future<void> _showDiplomacyDialog() async {
@@ -2848,6 +2849,311 @@ class _RecruitStat extends StatelessWidget {
       ],
     ),
   );
+}
+
+class _MilitaryMoveScreen extends StatefulWidget {
+  const _MilitaryMoveScreen({
+    required this.officer,
+    required this.source,
+    required this.destinations,
+    required this.onMove,
+  });
+
+  final OfficerState officer;
+  final ProvinceState source;
+  final List<ProvinceState> destinations;
+  final Future<void> Function(ProvinceState destination, int soldiers) onMove;
+
+  @override
+  State<_MilitaryMoveScreen> createState() => _MilitaryMoveScreenState();
+}
+
+class _MilitaryMoveScreenState extends State<_MilitaryMoveScreen> {
+  late ProvinceState destination = widget.destinations.first;
+  late double soldiers = (widget.source.soldiers / 2).roundToDouble();
+
+  @override
+  Widget build(BuildContext context) {
+    final total = widget.source.soldiers;
+    return Scaffold(
+      backgroundColor: const Color(0xff090807),
+      body: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .12,
+            ),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xff382818), Color(0xff181612)],
+                  ),
+                  border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.swap_horiz,
+                      color: Color(0xffd9af65),
+                      size: 26,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        '군사 · 병력 이동',
+                        style: TextStyle(
+                          color: Color(0xffffdfa0),
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                      color: const Color(0xffffdfa0),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        '출발지',
+                        style: TextStyle(
+                          color: Color(0xffd6a85d),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _MoveProvinceCard(
+                        name: widget.source.name,
+                        subtitle: '현재 병력 ${_formatNumber(total)}명',
+                        selected: true,
+                      ),
+                      const SizedBox(height: 14),
+                      const Center(
+                        child: Icon(
+                          Icons.arrow_downward,
+                          color: Color(0xffd6a85d),
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '도착지',
+                        style: TextStyle(
+                          color: Color(0xffd6a85d),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<ProvinceState>(
+                        initialValue: destination,
+                        dropdownColor: const Color(0xff2b2117),
+                        style: const TextStyle(color: Color(0xffffdfa0)),
+                        decoration: _moveDecoration('인접 아군 지역 선택'),
+                        items: widget.destinations
+                            .map(
+                              (p) => DropdownMenuItem(
+                                value: p,
+                                child: Text(
+                                  '${p.name} · 주둔 ${_formatNumber(p.soldiers)}명',
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) => setState(() {
+                          if (value != null) destination = value;
+                        }),
+                      ),
+                      const SizedBox(height: 18),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0x35231b11),
+                          border: Border.all(color: const Color(0xff8c6735)),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                _GeneratedPortrait(
+                                  seed: widget.officer.id,
+                                  size: 58,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    widget.officer.name,
+                                    style: const TextStyle(
+                                      color: Color(0xffffdfa0),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  '${_formatNumber(soldiers.round())}명',
+                                  style: const TextStyle(
+                                    color: Color(0xff73d18b),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              '이동 병력  ${_formatNumber(soldiers.round())} / ${_formatNumber(total)}명',
+                              style: const TextStyle(
+                                color: Color(0xffc9b184),
+                                fontSize: 13,
+                              ),
+                            ),
+                            Slider(
+                              value: soldiers,
+                              min: 0,
+                              max: total.toDouble().clamp(1, double.infinity),
+                              divisions: total > 0 ? total : 1,
+                              activeColor: const Color(0xffb88645),
+                              onChanged: (value) =>
+                                  setState(() => soldiers = value),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _MoveQuick(
+                                  '절반',
+                                  total / 2,
+                                  () => setState(
+                                    () =>
+                                        soldiers = (total / 2).roundToDouble(),
+                                  ),
+                                ),
+                                _MoveQuick(
+                                  '전군',
+                                  total.toDouble(),
+                                  () => setState(
+                                    () => soldiers = total.toDouble(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      FilledButton.icon(
+                        onPressed: soldiers.round() > 0
+                            ? () => widget.onMove(destination, soldiers.round())
+                            : null,
+                        icon: const Icon(Icons.directions_walk),
+                        label: const Text('이동 실행'),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(54),
+                          backgroundColor: const Color(0xff76572f),
+                          foregroundColor: const Color(0xffffdfa0),
+                          side: const BorderSide(color: Color(0xffc09351)),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('중지'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+InputDecoration _moveDecoration(String label) => InputDecoration(
+  labelText: label,
+  labelStyle: const TextStyle(color: Color(0xffc1ab82)),
+  enabledBorder: const OutlineInputBorder(
+    borderSide: BorderSide(color: Color(0xff6d5230)),
+  ),
+  focusedBorder: const OutlineInputBorder(
+    borderSide: BorderSide(color: Color(0xffd0a25b)),
+  ),
+);
+
+class _MoveProvinceCard extends StatelessWidget {
+  const _MoveProvinceCard({
+    required this.name,
+    required this.subtitle,
+    required this.selected,
+  });
+  final String name, subtitle;
+  final bool selected;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+    decoration: BoxDecoration(
+      color: selected ? const Color(0x454c3920) : const Color(0x30231b11),
+      border: Border.all(
+        color: selected ? const Color(0xffd0a25b) : const Color(0xff6d5230),
+      ),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.fort, color: Color(0xffd3a55d), size: 26),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            name,
+            style: const TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        Text(
+          subtitle,
+          style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+        ),
+      ],
+    ),
+  );
+}
+
+class _MoveQuick extends StatelessWidget {
+  const _MoveQuick(this.label, this.value, this.onTap);
+  final String label;
+  final double value;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) =>
+      TextButton(onPressed: onTap, child: Text(label));
 }
 
 class _DomesticScreen extends StatelessWidget {

@@ -26,6 +26,7 @@ class GameCommand {
     this.targetOfficerId,
     this.targetForceId,
     this.destinationProvinceId,
+    this.soldiers,
   });
   final GameCommandType type;
   final String? officerId;
@@ -33,6 +34,7 @@ class GameCommand {
   final String? targetOfficerId;
   final String? targetForceId;
   final String? destinationProvinceId;
+  final int? soldiers;
 }
 
 class CommandResult {

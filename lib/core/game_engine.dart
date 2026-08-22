@@ -47,7 +47,11 @@ class GameEngine {
         if (!result.success) return result;
       case GameCommandType.moveOfficer:
         if (command.destinationProvinceId == null ||
-            !moveOfficer(command.officerId!, command.destinationProvinceId!)) {
+            !moveOfficer(
+              command.officerId!,
+              command.destinationProvinceId!,
+              soldiers: command.soldiers,
+            )) {
           return const CommandResult.failure('인접한 아군 지역으로만 장수를 이동할 수 있습니다.');
         }
       case GameCommandType.giftForce:
@@ -570,7 +574,7 @@ class GameEngine {
     return true;
   }
 
-  bool moveOfficer(String officerId, String targetProvinceId) {
+  bool moveOfficer(String officerId, String targetProvinceId, {int? soldiers}) {
     final officer = state.officers.firstWhere((o) => o.id == officerId);
     final from = _playerProvince(officer.provinceId);
     final target = _playerProvince(targetProvinceId);
@@ -579,10 +583,15 @@ class GameEngine {
         !from.adjacentProvinceIds.contains(target.id)) {
       return false;
     }
+    final transfer = (soldiers ?? 0).clamp(0, from.soldiers).toInt();
+    from.soldiers -= transfer;
+    target.soldiers += transfer;
     from.officerIds.remove(officer.id);
     target.officerIds.add(officer.id);
     officer.provinceId = target.id;
-    state.log('${officer.name}이(가) ${from.name}에서 ${target.name}(으)로 이동');
+    state.log(
+      '${officer.name}이(가) ${from.name}에서 ${target.name}(으)로 이동 · 병력 $transfer',
+    );
     return true;
   }
 
