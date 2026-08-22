@@ -895,10 +895,10 @@ class _GameScreenState extends State<GameScreen> {
 
   void _refresh() => setState(() {});
   void _showOfficers() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => _OfficerSheet(state: engine.state),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _OfficerListScreen(state: engine.state),
+      ),
     );
   }
 
@@ -6144,6 +6144,234 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 }
 
+class _OfficerListScreen extends StatefulWidget {
+  const _OfficerListScreen({required this.state});
+  final GameState state;
+
+  @override
+  State<_OfficerListScreen> createState() => _OfficerListScreenState();
+}
+
+class _OfficerListScreenState extends State<_OfficerListScreen> {
+  String? provinceId;
+
+  List<OfficerState> get officers => widget.state.officers.where((officer) {
+    if (officer.forceId != widget.state.playerForceId) return false;
+    if (provinceId == null) return true;
+    return officer.provinceId == provinceId;
+  }).toList();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xff090807),
+    body: SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: const Color(0xff171612),
+          image: const DecorationImage(
+            image: AssetImage(AssetRepository.panelTexture),
+            fit: BoxFit.cover,
+            opacity: .12,
+          ),
+          border: Border.all(color: const Color(0xffb38343), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            _officerHeader(context),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String?>(
+                      initialValue: provinceId,
+                      dropdownColor: const Color(0xff2b2117),
+                      style: const TextStyle(color: Color(0xffffdfa0)),
+                      decoration: _moveDecoration('소속 도시'),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('전체 도시'),
+                        ),
+                        ...widget.state.provinces
+                            .where((p) => widget.state.isPlayerProvince(p))
+                            .map(
+                              (p) => DropdownMenuItem<String?>(
+                                value: p.id,
+                                child: Text(p.name),
+                              ),
+                            ),
+                      ],
+                      onChanged: (id) => setState(() => provinceId = id),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${officers.length}명',
+                    style: const TextStyle(
+                      color: Color(0xffe3c480),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: officers.isEmpty
+                  ? const Center(
+                      child: Text(
+                        '등록된 장수가 없습니다.',
+                        style: TextStyle(color: Color(0xffc1ab82)),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(14, 2, 14, 20),
+                      itemCount: officers.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (_, index) =>
+                          _officerCard(context, officers[index]),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _officerHeader(BuildContext context) => Container(
+    height: 60,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.groups, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            '장수 목록',
+            style: const TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        Text(
+          widget.state.playerForce.name,
+          style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+
+  Widget _officerCard(BuildContext context, OfficerState officer) {
+    final province = widget.state.provinces
+        .where((p) => p.id == officer.provinceId)
+        .firstOrNull;
+    final isGovernor = province?.governorId == officer.id;
+    return InkWell(
+      onTap: () => showDialog<void>(
+        context: context,
+        builder: (_) => _OfficerDetailDialog(officer: officer),
+      ),
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0x453d2b17),
+          border: Border.all(color: const Color(0xff805e34)),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          children: [
+            _GeneratedPortrait(seed: officer.id, size: 58),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          officer.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xffffdfa0),
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      if (isGovernor) ...[
+                        const SizedBox(width: 6),
+                        const Text(
+                          '태수',
+                          style: TextStyle(
+                            color: Color(0xffe3b967),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${province?.name ?? '재야'} · ${officer.status}',
+                    style: const TextStyle(
+                      color: Color(0xffbda783),
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'WAR ${officer.war}   INT ${officer.intelligence}   CHA ${officer.charisma}',
+                    style: const TextStyle(
+                      color: Color(0xffd7bc87),
+                      fontSize: 11,
+                      letterSpacing: .3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              children: [
+                const Icon(Icons.favorite, color: Color(0xffbd8b45), size: 16),
+                const SizedBox(height: 2),
+                Text(
+                  '${officer.loyalty}',
+                  style: const TextStyle(
+                    color: Color(0xffffdfa0),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 3),
+            const Icon(Icons.chevron_right, color: Color(0xffa98451)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Legacy compact officer sheet retained for alternate layouts.
+// ignore: unused_element
 class _OfficerSheet extends StatelessWidget {
   const _OfficerSheet({required this.state});
   final GameState state;
