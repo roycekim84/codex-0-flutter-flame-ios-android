@@ -1921,12 +1921,16 @@ class _TerritoryOverlayPainter extends CustomPainter {
       for (final province in provinces)
         Offset(province.mapX * size.width, province.mapY * size.height),
     ];
+    final polygons = [
+      for (var i = 0; i < provinces.length; i++)
+        _voronoiPolygon(i, points, size),
+    ];
     for (var i = 0; i < provinces.length; i++) {
       // The clipped Voronoi cells form a watertight partition: every pixel
       // belongs to exactly one province, so ownership colors can never stack
       // into rounded overlapping blobs. Scenario-specific river/mountain
       // boundaries can later replace this with a validated mesh.
-      final polygon = _voronoiPolygon(i, points, size);
+      final polygon = polygons[i];
       if (polygon.length < 3) continue;
       final color = _forceColor(provinces[i].ownerForceId);
       final path = _territoryPath(polygon);
@@ -1935,13 +1939,6 @@ class _TerritoryOverlayPainter extends CustomPainter {
         Paint()
           ..color = color.withValues(alpha: .22)
           ..style = PaintingStyle.fill,
-      );
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = color.withValues(alpha: .58)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.0,
       );
       if (provinces[i].id == selectedId) {
         canvas.drawPath(
@@ -1960,6 +1957,52 @@ class _TerritoryOverlayPainter extends CustomPainter {
         );
       }
     }
+
+    // Draw only borders between different forces. Provinces belonging to the
+    // same force visually merge into one continuous colored territory.
+    for (var i = 0; i < polygons.length; i++) {
+      final polygon = polygons[i];
+      for (var edge = 0; edge < polygon.length; edge++) {
+        final start = polygon[edge];
+        final end = polygon[(edge + 1) % polygon.length];
+        final delta = end - start;
+        final length = delta.distance;
+        if (length < 1) continue;
+        final midpoint = (start + end) / 2;
+        final normal = Offset(-delta.dy / length, delta.dx / length);
+        final sideA = _nearestProvince(midpoint + normal * 2.5, points);
+        final sideB = _nearestProvince(midpoint - normal * 2.5, points);
+        if (sideA == null || sideB == null || sideA == sideB) continue;
+        if (provinces[sideA].ownerForceId == provinces[sideB].ownerForceId) {
+          continue;
+        }
+        final boundaryColor = _forceColor(provinces[i].ownerForceId);
+        canvas.drawLine(
+          start,
+          end,
+          Paint()
+            ..color = boundaryColor.withValues(alpha: .72)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.2,
+        );
+      }
+    }
+  }
+
+  int? _nearestProvince(Offset point, List<Offset> sites) {
+    if (sites.isEmpty) return null;
+    var nearest = 0;
+    var distance = double.infinity;
+    for (var i = 0; i < sites.length; i++) {
+      final dx = sites[i].dx - point.dx;
+      final dy = sites[i].dy - point.dy;
+      final nextDistance = dx * dx + dy * dy;
+      if (nextDistance < distance) {
+        distance = nextDistance;
+        nearest = i;
+      }
+    }
+    return nearest;
   }
 
   List<Offset> _voronoiPolygon(int index, List<Offset> points, Size size) {
