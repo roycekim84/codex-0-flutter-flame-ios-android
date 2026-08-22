@@ -3981,137 +3981,197 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
     final current = source;
     final max = current?.soldiers.toDouble() ?? 100;
     return Scaffold(
-      appBar: AppBar(title: const Text('출병 준비')),
-      body: _RealmBackdrop(
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+      backgroundColor: const Color(0xff090807),
+      body: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .12,
+            ),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
             children: [
-              Text(
-                '목표 지역  ${target.name}',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              Text('방어 병력 ${target.soldiers} · 소유 ${target.ownerName}'),
-              const SizedBox(height: 18),
-              const Text('출발지', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButton<String>(
-                isExpanded: true,
-                value: sourceId,
-                items: sources
-                    .map(
-                      (p) => DropdownMenuItem(
-                        value: p.id,
-                        child: Text('${p.name} · 병력 ${p.soldiers}'),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (id) {
-                  if (id != null) {
-                    setState(() {
-                      sourceId = id;
-                      committed = (source!.soldiers * .65).roundToDouble();
-                      selectedOfficerIds
-                        ..clear()
-                        ..addAll(source!.officerIds);
-                      commanderId = source!.officerIds.firstOrNull;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                '출전 장수',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              if (current != null)
-                ...current.officerIds.map((id) {
-                  final officer = widget.engine.state.officers.firstWhere(
-                    (o) => o.id == id,
-                  );
-                  return CheckboxListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    value: selectedOfficerIds.contains(id),
-                    title: Text('${officer.name} · WAR ${officer.war}'),
-                    subtitle: Text(
-                      selectedOfficerIds.contains(id) && commanderId == id
-                          ? '총대장'
-                          : '출전 가능',
-                    ),
-                    onChanged: (value) {
-                      if (value == false && selectedOfficerIds.length == 1) {
-                        return;
-                      }
-                      setState(() {
-                        if (value == true) {
-                          selectedOfficerIds.add(id);
-                          commanderId ??= id;
-                        } else {
-                          selectedOfficerIds.remove(id);
-                          if (commanderId == id) {
-                            commanderId = selectedOfficerIds.firstOrNull;
-                          }
-                        }
-                      });
-                    },
-                  );
-                }),
-              if (selectedOfficerIds.isNotEmpty)
-                DropdownButton<String>(
-                  isExpanded: true,
-                  value: commanderId,
-                  items: selectedOfficerIds.map((id) {
-                    final o = widget.engine.state.officers.firstWhere(
-                      (x) => x.id == id,
-                    );
-                    return DropdownMenuItem(
-                      value: id,
-                      child: Text('총대장: ${o.name} · WAR ${o.war}'),
-                    );
-                  }).toList(),
-                  onChanged: (id) {
-                    if (id != null) setState(() => commanderId = id);
-                  },
+              Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xff382818), Color(0xff181612)],
+                  ),
+                  border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
                 ),
-              const Text(
-                '총대장 및 출전 병력',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                child: Row(
+                  children: [
+                    const Icon(Icons.flag, color: Color(0xffd9af65), size: 25),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        '출병 준비',
+                        style: TextStyle(
+                          color: Color(0xffffdfa0),
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                      color: const Color(0xffffdfa0),
+                    ),
+                  ],
+                ),
               ),
-              Text(
-                current == null || current.officerIds.isEmpty
-                    ? '총대장 없음'
-                    : '${widget.engine.state.officers.firstWhere((o) => o.id == current.officerIds.first).name} · ${committed.round()}명',
-              ),
-              Slider(
-                min: 100,
-                max: max < 100 ? 100 : max,
-                divisions: max <= 100 ? 1 : (max - 100).round(),
-                value: committed.clamp(100, max < 100 ? 100 : max),
-                label: '${committed.round()}',
-                onChanged: current == null
-                    ? null
-                    : (value) => setState(() => committed = value),
-              ),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Text(
-                    '출병 비용\n군량 -150\n출전 병력 ${committed.round()}\n예상 잔여 병력 ${(current?.soldiers ?? 0) - committed.round()}',
+              Expanded(
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.dark(
+                      primary: Color(0xffc39450),
+                      surface: Color(0xff231c15),
+                    ),
+                  ),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(14, 16, 14, 22),
+                    children: [
+                      _WarTargetCard(target: target),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '출발지',
+                        style: TextStyle(
+                          color: Color(0xffd6a85d),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      DropdownButtonFormField<String>(
+                        initialValue: sourceId,
+                        isExpanded: true,
+                        decoration: _moveDecoration('출발 지역 선택'),
+                        items: sources
+                            .map(
+                              (p) => DropdownMenuItem(
+                                value: p.id,
+                                child: Text(
+                                  '${p.name} · 병력 ${_formatNumber(p.soldiers)}명',
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (id) {
+                          if (id != null) {
+                            setState(() {
+                              sourceId = id;
+                              committed = (source!.soldiers * .65)
+                                  .roundToDouble();
+                              selectedOfficerIds
+                                ..clear()
+                                ..addAll(source!.officerIds);
+                              commanderId = source!.officerIds.firstOrNull;
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '출전 장수',
+                        style: TextStyle(
+                          color: Color(0xffd6a85d),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      if (current != null)
+                        ...current.officerIds.map((id) {
+                          final officer = widget.engine.state.officers
+                              .firstWhere((o) => o.id == id);
+                          return _WarOfficerTile(
+                            officer: officer,
+                            selected: selectedOfficerIds.contains(id),
+                            commander: commanderId == id,
+                            onChanged: (value) {
+                              if (value == false &&
+                                  selectedOfficerIds.length == 1) {
+                                return;
+                              }
+                              setState(() {
+                                if (value) {
+                                  selectedOfficerIds.add(id);
+                                  commanderId ??= id;
+                                } else {
+                                  selectedOfficerIds.remove(id);
+                                  if (commanderId == id) {
+                                    commanderId =
+                                        selectedOfficerIds.firstOrNull;
+                                  }
+                                }
+                              });
+                            },
+                          );
+                        }),
+                      if (selectedOfficerIds.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          initialValue: commanderId,
+                          isExpanded: true,
+                          decoration: _moveDecoration('총대장 선택'),
+                          items: selectedOfficerIds.map((id) {
+                            final o = widget.engine.state.officers.firstWhere(
+                              (x) => x.id == id,
+                            );
+                            return DropdownMenuItem(
+                              value: id,
+                              child: Text('${o.name} · WAR ${o.war}'),
+                            );
+                          }).toList(),
+                          onChanged: (id) {
+                            if (id != null) setState(() => commanderId = id);
+                          },
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      _WarArmyCard(
+                        current: current,
+                        committed: committed,
+                        max: max,
+                        onChanged: (value) => setState(() => committed = value),
+                      ),
+                      const SizedBox(height: 14),
+                      _WarCostCard(
+                        committed: committed.round(),
+                        remaining: (current?.soldiers ?? 0) - committed.round(),
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: current == null || selectedOfficerIds.isEmpty
+                            ? null
+                            : _launch,
+                        icon: const Icon(Icons.flag),
+                        label: const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Text('출병 확정'),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xff76572f),
+                          foregroundColor: const Color(0xffffdfa0),
+                          side: const BorderSide(color: Color(0xffc09351)),
+                        ),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('취소'),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: current == null ? null : _launch,
-                icon: const Icon(Icons.flag),
-                label: const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Text('출병 확정'),
-                ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('취소'),
               ),
             ],
           ),
@@ -4119,6 +4179,221 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
       ),
     );
   }
+}
+
+class _WarTargetCard extends StatelessWidget {
+  const _WarTargetCard({required this.target});
+  final ProvinceState target;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: const Color(0x453d2118),
+      border: Border.all(color: const Color(0xffa55d43)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.gps_fixed, color: Color(0xffe17a5d), size: 28),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '목표 지역',
+                style: TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+              ),
+              Text(
+                target.name,
+                style: const TextStyle(
+                  color: Color(0xffffdfa0),
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '방어 ${_formatNumber(target.soldiers)}명',
+              style: const TextStyle(color: Color(0xffffb08d), fontSize: 13),
+            ),
+            Text(
+              target.ownerName,
+              style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class _WarOfficerTile extends StatelessWidget {
+  const _WarOfficerTile({
+    required this.officer,
+    required this.selected,
+    required this.commander,
+    required this.onChanged,
+  });
+  final OfficerState officer;
+  final bool selected, commander;
+  final ValueChanged<bool> onChanged;
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: 6),
+    decoration: BoxDecoration(
+      color: selected ? const Color(0x453f2c18) : const Color(0x25231b11),
+      border: Border.all(
+        color: selected ? const Color(0xffb38343) : const Color(0xff5d472c),
+      ),
+      borderRadius: BorderRadius.circular(5),
+    ),
+    child: CheckboxListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      secondary: _GeneratedPortrait(seed: officer.id, size: 42),
+      value: selected,
+      activeColor: const Color(0xffb38343),
+      title: Text(
+        officer.name,
+        style: const TextStyle(
+          color: Color(0xffffdfa0),
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      subtitle: Text(
+        commander ? '총대장 · WAR ${officer.war}' : '출전 가능 · WAR ${officer.war}',
+        style: TextStyle(
+          color: commander ? const Color(0xffe2bd72) : const Color(0xffc1ab82),
+          fontSize: 11,
+        ),
+      ),
+      onChanged: (value) => onChanged(value ?? false),
+    ),
+  );
+}
+
+class _WarArmyCard extends StatelessWidget {
+  const _WarArmyCard({
+    required this.current,
+    required this.committed,
+    required this.max,
+    required this.onChanged,
+  });
+  final ProvinceState? current;
+  final double committed, max;
+  final ValueChanged<double> onChanged;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(12, 12, 12, 5),
+    decoration: BoxDecoration(
+      color: const Color(0x35231b11),
+      border: Border.all(color: const Color(0xff8c6735)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '출전 병력',
+              style: TextStyle(color: Color(0xffc1ab82), fontSize: 13),
+            ),
+            Text(
+              '${_formatNumber(committed.round())}명',
+              style: const TextStyle(
+                color: Color(0xff73d18b),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+        Slider(
+          min: 100,
+          max: max < 100 ? 100 : max,
+          divisions: max <= 100 ? 1 : (max - 100).round(),
+          value: committed.clamp(100, max < 100 ? 100 : max),
+          activeColor: const Color(0xffb88645),
+          onChanged: current == null ? null : onChanged,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '최소 100명',
+              style: const TextStyle(color: Color(0xff9e8969), fontSize: 11),
+            ),
+            Text(
+              '가용 ${_formatNumber(current?.soldiers ?? 0)}명',
+              style: const TextStyle(color: Color(0xff9e8969), fontSize: 11),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class _WarCostCard extends StatelessWidget {
+  const _WarCostCard({required this.committed, required this.remaining});
+  final int committed, remaining;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: const Color(0x35231b11),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        _CostMetric('군량', '-150', const Color(0xffe4a172)),
+        _CostMetric(
+          '출전',
+          '${_formatNumber(committed)}명',
+          const Color(0xffffdfa0),
+        ),
+        _CostMetric(
+          '잔여',
+          '${_formatNumber(remaining)}명',
+          const Color(0xff73d18b),
+        ),
+      ],
+    ),
+  );
+}
+
+class _CostMetric extends StatelessWidget {
+  const _CostMetric(this.label, this.value, this.color);
+  final String label, value;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Text(
+        label,
+        style: const TextStyle(color: Color(0xffa8906b), fontSize: 11),
+      ),
+      const SizedBox(height: 3),
+      Text(
+        value,
+        style: TextStyle(
+          color: color,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ],
+  );
 }
 
 class BattleScreen extends StatefulWidget {
