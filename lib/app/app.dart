@@ -1559,14 +1559,26 @@ class _WorldMapHeader extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  '${state.year}년 ${state.month}월 · 봄\n${force.name}',
-                  style: const TextStyle(
-                    color: Color(0xfff0d9a7),
-                    fontSize: 17,
-                    height: 1.35,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Row(
+                  children: [
+                    AssetSlice(
+                      asset: AssetRepository.forceBannerStrip,
+                      index: force.bannerIndex,
+                      segments: 3,
+                      width: 23,
+                      height: 28,
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      '${state.year}년 ${state.month}월 · 봄\n${force.name}',
+                      style: const TextStyle(
+                        color: Color(0xfff0d9a7),
+                        fontSize: 17,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Container(width: 1, height: 48, color: const Color(0xff725632)),
@@ -1658,7 +1670,11 @@ class _MapCommandBar extends StatelessWidget {
           iconIndex: 0,
           onTap: playerOwned ? onDomestic : null,
         ),
-        _MapCommand(label: '인사', iconIndex: 1, onTap: onPersonnel),
+        _MapCommand(
+          label: '인사',
+          iconIndex: 1,
+          onTap: playerOwned ? onPersonnel : null,
+        ),
         _MapCommand(label: '군사', iconIndex: 2, onTap: onMilitary),
         _MapCommand(label: '외교', iconIndex: 3, onTap: onDiplomacy),
         _MapCommand(label: '첩보', iconIndex: 4, onTap: onEspionage),
@@ -1948,7 +1964,7 @@ class _TerritoryOverlayPainter extends CustomPainter {
       canvas.drawPath(
         path,
         Paint()
-          ..color = color.withValues(alpha: .22)
+          ..color = color.withValues(alpha: .29)
           ..style = PaintingStyle.fill,
       );
       if (provinces[i].id == selectedId) {
@@ -1973,6 +1989,7 @@ class _TerritoryOverlayPainter extends CustomPainter {
 
     // Draw only borders between different forces. Provinces belonging to the
     // same force visually merge into one continuous colored territory.
+    final drawnEdges = <String>{};
     for (var i = 0; i < polygons.length; i++) {
       final polygon = polygons[i];
       for (var edge = 0; edge < polygon.length; edge++) {
@@ -1989,17 +2006,40 @@ class _TerritoryOverlayPainter extends CustomPainter {
         if (provinces[sideA].ownerForceId == provinces[sideB].ownerForceId) {
           continue;
         }
+        final edgeKey = _edgeKey(start, end);
+        if (!drawnEdges.add(edgeKey)) continue;
         final boundaryColor = _forceColor(provinces[i].ownerForceId);
-        canvas.drawLine(
-          start,
-          end,
+        final bend = ((edgeKey.hashCode.abs() % 7) - 3) * 1.8;
+        final boundary = Path()
+          ..moveTo(start.dx, start.dy)
+          ..quadraticBezierTo(
+            midpoint.dx + normal.dx * bend,
+            midpoint.dy + normal.dy * bend,
+            end.dx,
+            end.dy,
+          );
+        canvas.drawPath(
+          boundary,
           Paint()
-            ..color = boundaryColor.withValues(alpha: .72)
+            ..color = const Color(0xaa110f0c)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.2,
+            ..strokeWidth = 3.2,
+        );
+        canvas.drawPath(
+          boundary,
+          Paint()
+            ..color = boundaryColor.withValues(alpha: .92)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.8,
         );
       }
     }
+  }
+
+  String _edgeKey(Offset a, Offset b) {
+    final first = '${a.dx.toStringAsFixed(2)},${a.dy.toStringAsFixed(2)}';
+    final second = '${b.dx.toStringAsFixed(2)},${b.dy.toStringAsFixed(2)}';
+    return first.compareTo(second) < 0 ? '$first|$second' : '$second|$first';
   }
 
   int? _nearestProvince(Offset point, List<Offset> sites) {
@@ -2200,9 +2240,9 @@ class _ProvinceNode extends StatelessWidget {
                   ? BoxDecoration(
                       boxShadow: const [
                         BoxShadow(
-                          blurRadius: 16,
-                          spreadRadius: 3,
-                          color: Color(0xffe6ae3e),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                          color: Color(0xffd7a84c),
                         ),
                       ],
                     )
@@ -2257,12 +2297,12 @@ class _ProvinceDetailPanel extends StatelessWidget {
   final bool informationRevealed;
   @override
   Widget build(BuildContext context) {
-    final ownerForce = state.forces.firstWhere(
-      (force) => force.id == province.ownerForceId,
-    );
     final governor = province.governorId == null
         ? null
         : state.officers.firstWhere((o) => o.id == province.governorId);
+    final leader =
+        governor ??
+        state.officers.firstWhere((o) => o.id == ownerForce.rulerId);
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xff171612),
@@ -2271,20 +2311,19 @@ class _ProvinceDetailPanel extends StatelessWidget {
           fit: BoxFit.cover,
           opacity: .18,
         ),
-        border: const Border(
-          top: BorderSide(color: Color(0xffbd8b45), width: 1.5),
-          bottom: BorderSide(color: Color(0xff634723)),
+        border: Border(
+          top: BorderSide(color: Color(ownerForce.mapColorValue), width: 2),
+          bottom: const BorderSide(color: Color(0xff634723)),
         ),
       ),
       padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (governor != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: _GeneratedPortrait(seed: governor.id, size: 108),
-            ),
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: _GeneratedPortrait(seed: leader.id, size: 96),
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2317,6 +2356,29 @@ class _ProvinceDetailPanel extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (!playerOwned)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          informationRevealed ? Icons.visibility : Icons.lock,
+                          size: 13,
+                          color: Color(ownerForce.mapColorValue),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          informationRevealed
+                              ? '적 세력 · 첩보로 확인된 정보'
+                              : '적 세력 · 공개된 정보만 표시',
+                          style: const TextStyle(
+                            color: Color(0xffbda77b),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 5),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
