@@ -59,10 +59,13 @@ class ForceState {
     required this.provinceIds,
     required this.officerIds,
     this.aiPersonality = AiPersonality.opportunist,
+    this.mapColorValue = 0xff8b7355,
+    this.bannerIndex = 0,
   });
   final String id, name, rulerId;
   final AiPersonality aiPersonality;
   final List<String> provinceIds, officerIds;
+  final int mapColorValue, bannerIndex;
   int gold, food;
 }
 
@@ -202,6 +205,8 @@ class GameState extends ChangeNotifier {
             'provinceIds': f.provinceIds,
             'officerIds': f.officerIds,
             'aiPersonality': f.aiPersonality.name,
+            'mapColorValue': f.mapColorValue,
+            'bannerIndex': f.bannerIndex,
           },
         )
         .toList(),
@@ -258,6 +263,8 @@ class GameState extends ChangeNotifier {
             aiPersonality: AiPersonality.values.byName(
               x['aiPersonality'] as String? ?? 'opportunist',
             ),
+            mapColorValue: (x['mapColorValue'] as num?)?.toInt() ?? 0xff8b7355,
+            bannerIndex: (x['bannerIndex'] as num?)?.toInt() ?? 0,
           ),
         )
         .toList();
@@ -346,6 +353,8 @@ class GameState extends ChangeNotifier {
             aiPersonality: AiPersonality.values.byName(
               x['aiPersonality'] as String? ?? 'opportunist',
             ),
+            mapColorValue: (x['mapColorValue'] as num?)?.toInt() ?? 0xff8b7355,
+            bannerIndex: (x['bannerIndex'] as num?)?.toInt() ?? 0,
           ),
         )
         .toList();

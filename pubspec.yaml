@@ -85,6 +85,7 @@ flutter:
     - assets/images/panel_texture.png
     - assets/images/battle_unit_token.png
     - assets/images/faction_emblem_strip.png
+    - assets/images/force_banner_strip.png
     - assets/images/battle_terrain_overlay.png
     - assets/images/battle_effects_strip.png
     - assets/images/event_art_strip.png

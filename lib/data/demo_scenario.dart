@@ -160,6 +160,8 @@ class DemoScenario {
             'officer_5',
             'officer_6',
           ],
+          'mapColorValue': 0xff267d70,
+          'bannerIndex': 0,
         },
         {
           'id': 'force_red',
@@ -177,6 +179,8 @@ class DemoScenario {
             'officer_12',
           ],
           'aiPersonality': 'aggressive',
+          'mapColorValue': 0xffa3483d,
+          'bannerIndex': 1,
         },
         {
           'id': 'force_blue',
@@ -194,6 +198,8 @@ class DemoScenario {
             'officer_18',
           ],
           'aiPersonality': 'diplomatic',
+          'mapColorValue': 0xff4d568d,
+          'bannerIndex': 2,
         },
       ],
       'provinces': provinces,

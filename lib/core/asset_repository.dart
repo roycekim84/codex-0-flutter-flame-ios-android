@@ -20,6 +20,7 @@ class AssetRepository {
   static const commandIconStrip = 'assets/images/command_icon_strip.png';
   static const battleUnitToken = 'assets/images/battle_unit_token.png';
   static const factionEmblemStrip = 'assets/images/faction_emblem_strip.png';
+  static const forceBannerStrip = 'assets/images/force_banner_strip.png';
   static const battleTerrainOverlay =
       'assets/images/battle_terrain_overlay.png';
   static const battleEffectsStrip = 'assets/images/battle_effects_strip.png';

@@ -1444,6 +1444,7 @@ class _GameScreenState extends State<GameScreen> {
               Expanded(
                 child: _Map(
                   provinces: state.provinces,
+                  forces: state.forces,
                   playerForceId: state.playerForceId,
                   revealedProvinceIds: state.revealedProvinceIds,
                   selectedId: selectedProvinceId,
@@ -1453,6 +1454,9 @@ class _GameScreenState extends State<GameScreen> {
               _ProvinceDetailPanel(
                 province: selected,
                 state: state,
+                ownerForce: state.forces.firstWhere(
+                  (force) => force.id == selected.ownerForceId,
+                ),
                 playerOwned: state.isPlayerProvince(selected),
                 informationRevealed:
                     state.isPlayerProvince(selected) ||
@@ -1819,12 +1823,14 @@ class _Metric extends StatelessWidget {
 class _Map extends StatelessWidget {
   const _Map({
     required this.provinces,
+    required this.forces,
     required this.playerForceId,
     required this.revealedProvinceIds,
     required this.selectedId,
     required this.onSelect,
   });
   final List<ProvinceState> provinces;
+  final List<ForceState> forces;
   final String playerForceId;
   final Set<String> revealedProvinceIds;
   final String? selectedId;
@@ -1874,6 +1880,7 @@ class _Map extends StatelessWidget {
                     child: CustomPaint(
                       painter: _TerritoryOverlayPainter(
                         provinces,
+                        forces,
                         selectedId: selectedId,
                       ),
                     ),
@@ -1891,6 +1898,9 @@ class _Map extends StatelessWidget {
                         onTap: () => onSelect(p.id),
                         child: _ProvinceNode(
                           province: p,
+                          force: forces.firstWhere(
+                            (force) => force.id == p.ownerForceId,
+                          ),
                           playerOwned: p.isOwnedBy(playerForceId),
                           informationRevealed:
                               p.isOwnedBy(playerForceId) ||
@@ -1911,8 +1921,9 @@ class _Map extends StatelessWidget {
 }
 
 class _TerritoryOverlayPainter extends CustomPainter {
-  _TerritoryOverlayPainter(this.provinces, {this.selectedId});
+  _TerritoryOverlayPainter(this.provinces, this.forces, {this.selectedId});
   final List<ProvinceState> provinces;
+  final List<ForceState> forces;
   final String? selectedId;
 
   @override
@@ -1944,7 +1955,9 @@ class _TerritoryOverlayPainter extends CustomPainter {
         canvas.drawPath(
           path,
           Paint()
-            ..color = const Color(0xffffd36a)
+            ..color = _forceColor(
+              provinces[i].ownerForceId,
+            ).withValues(alpha: .95)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.8,
         );
@@ -2063,17 +2076,13 @@ class _TerritoryOverlayPainter extends CustomPainter {
 
   double _dot(Offset a, Offset b) => a.dx * b.dx + a.dy * b.dy;
 
-  Color _forceColor(String forceId) => switch (forceId) {
-    'force_green' => const Color(0xff2e806c),
-    'force_red' => const Color(0xffa94c3c),
-    'force_blue' => const Color(0xff6b5b9d),
-    _ => const Color(0xff9c7a3d),
-  };
+  Color _forceColor(String forceId) => Color(
+    forces.where((force) => force.id == forceId).firstOrNull?.mapColorValue ??
+        0xff9c7a3d,
+  );
 
   @override
-  bool shouldRepaint(covariant _TerritoryOverlayPainter oldDelegate) =>
-      oldDelegate.provinces != provinces ||
-      oldDelegate.selectedId != selectedId;
+  bool shouldRepaint(covariant _TerritoryOverlayPainter oldDelegate) => true;
 }
 
 // Retained for optional adjacency-debug rendering.
@@ -2149,11 +2158,13 @@ class _MapBackdropPainter extends CustomPainter {
 class _ProvinceNode extends StatelessWidget {
   const _ProvinceNode({
     required this.province,
+    required this.force,
     required this.selected,
     required this.playerOwned,
     required this.informationRevealed,
   });
   final ProvinceState province;
+  final ForceState force;
   final bool selected;
   final bool playerOwned;
   final bool informationRevealed;
@@ -2171,11 +2182,16 @@ class _ProvinceNode extends StatelessWidget {
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
         children: [
-          if (selected)
-            const Positioned(
-              top: -7,
-              child: Icon(Icons.flag, color: Color(0xffffd46b), size: 24),
+          Positioned(
+            top: selected ? -10 : -5,
+            child: AssetSlice(
+              asset: AssetRepository.forceBannerStrip,
+              index: force.bannerIndex,
+              segments: 3,
+              width: selected ? 24 : 18,
+              height: selected ? 28 : 22,
             ),
+          ),
           Positioned(
             top: 7,
             child: Container(
@@ -2228,12 +2244,14 @@ class _ProvinceDetailPanel extends StatelessWidget {
   const _ProvinceDetailPanel({
     required this.province,
     required this.state,
+    required this.ownerForce,
     required this.playerOwned,
     required this.governorName,
     required this.informationRevealed,
   });
   final ProvinceState province;
   final GameState state;
+  final ForceState ownerForce;
   final bool playerOwned;
   final String governorName;
   final bool informationRevealed;
@@ -2273,6 +2291,14 @@ class _ProvinceDetailPanel extends StatelessWidget {
               children: [
                 Row(
                   children: [
+                    AssetSlice(
+                      asset: AssetRepository.forceBannerStrip,
+                      index: ownerForce.bannerIndex,
+                      segments: 3,
+                      width: 24,
+                      height: 30,
+                    ),
+                    const SizedBox(width: 6),
                     Text(
                       province.name,
                       style: const TextStyle(
@@ -2283,7 +2309,7 @@ class _ProvinceDetailPanel extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      '태수  ${governor?.name ?? governorName}',
+                      '${ownerForce.name} · 태수  ${governor?.name ?? governorName}',
                       style: const TextStyle(
                         color: Color(0xffd4ba88),
                         fontSize: 13,
