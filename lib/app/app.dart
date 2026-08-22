@@ -2402,6 +2402,25 @@ class _MilitaryCommandScreenState extends State<_MilitaryCommandScreen> {
                   _trainCard(),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => _MilitaryEquipmentScreen(
+                          province: widget.province,
+                          force: widget.force,
+                          onFortify: widget.onCommand,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.construction),
+                    label: const Text('무기 · 군마 · 축성'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xffe3c480),
+                      side: const BorderSide(color: Color(0xff8b6937)),
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  OutlinedButton.icon(
                     onPressed: widget.onMove,
                     icon: const Icon(Icons.swap_horiz),
                     label: const Text('장수·병력 이동'),
@@ -2626,6 +2645,314 @@ class _MilitaryCommandScreenState extends State<_MilitaryCommandScreen> {
     ),
   );
   ButtonStyle _militaryButton() => FilledButton.styleFrom(
+    backgroundColor: const Color(0xff76572f),
+    foregroundColor: const Color(0xffffdfa0),
+    side: const BorderSide(color: Color(0xffc09351)),
+    minimumSize: const Size.fromHeight(48),
+  );
+}
+
+class _MilitaryEquipmentScreen extends StatefulWidget {
+  const _MilitaryEquipmentScreen({
+    required this.province,
+    required this.force,
+    required this.onFortify,
+  });
+  final ProvinceState province;
+  final ForceState force;
+  final Future<void> Function(GameCommandType type) onFortify;
+  @override
+  State<_MilitaryEquipmentScreen> createState() =>
+      _MilitaryEquipmentScreenState();
+}
+
+class _MilitaryEquipmentScreenState extends State<_MilitaryEquipmentScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController tabs = TabController(length: 3, vsync: this);
+  @override
+  void dispose() {
+    tabs.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xff090807),
+    body: SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: const Color(0xff171612),
+          image: const DecorationImage(
+            image: AssetImage(AssetRepository.panelTexture),
+            fit: BoxFit.cover,
+            opacity: .12,
+          ),
+          border: Border.all(color: const Color(0xffb38343), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            _header(context),
+            Container(
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xff6d5230))),
+              ),
+              child: TabBar(
+                controller: tabs,
+                labelColor: const Color(0xffffdfa0),
+                unselectedLabelColor: const Color(0xff9f8967),
+                indicatorColor: const Color(0xffc09351),
+                tabs: const [
+                  Tab(text: '무기'),
+                  Tab(text: '군마'),
+                  Tab(text: '축성'),
+                ],
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: tabs,
+                children: [
+                  _equipmentTab(
+                    context,
+                    '무기',
+                    Icons.gavel,
+                    '공격력 +5',
+                    '금 1,200',
+                    '무기 레벨 1',
+                  ),
+                  _equipmentTab(
+                    context,
+                    '군마',
+                    Icons.directions_run,
+                    '기동력 +8',
+                    '금 1,600',
+                    '군마 보유 0',
+                  ),
+                  _fortificationTab(context),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _header(BuildContext context) => Container(
+    height: 60,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.construction, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            '군사 · 무기 / 군마 / 축성',
+            style: const TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+
+  Widget _equipmentTab(
+    BuildContext context,
+    String title,
+    IconData icon,
+    String effect,
+    String cost,
+    String level,
+  ) => ListView(
+    padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
+    children: [
+      _panel(
+        title,
+        Column(
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: const Color(0xffd6a85d), size: 34),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '${widget.province.name} · $level',
+                    style: const TextStyle(
+                      color: Color(0xffffdfa0),
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Text(
+                  effect,
+                  style: const TextStyle(
+                    color: Color(0xff73d18b),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _itemRow('기본 보급', '공격 효율 상승', cost),
+            _itemRow('정예 보급', '공격력 +8', '금 1,600'),
+            const SizedBox(height: 10),
+            FilledButton(
+              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('장비 구매 시스템은 다음 군사 확장에서 연결됩니다.')),
+              ),
+              style: _button(),
+              child: Text('$title 구매'),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+      _panel(
+        '현재 효과',
+        Text(
+          '$title 효과는 전투 시 $effect로 적용됩니다. 보유 금 ${_formatNumber(widget.force.gold)}',
+          style: const TextStyle(color: Color(0xffc1ab82), height: 1.4),
+        ),
+      ),
+      const SizedBox(height: 12),
+      OutlinedButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('닫기'),
+      ),
+    ],
+  );
+
+  Widget _fortificationTab(BuildContext context) => ListView(
+    padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
+    children: [
+      _panel(
+        '성벽 강화',
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.province.name,
+                  style: const TextStyle(
+                    color: Color(0xffffdfa0),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  'Lv. ${widget.province.land}',
+                  style: const TextStyle(
+                    color: Color(0xffe3c480),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            LinearProgressIndicator(
+              value: widget.province.land / 100,
+              minHeight: 8,
+              backgroundColor: const Color(0xff49342a),
+              color: const Color(0xffc1944e),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              '축성 효과 · 지역 방어 기반 상승',
+              style: TextStyle(color: Color(0xffc1ab82)),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () => widget.onFortify(GameCommandType.fortify),
+              style: _button(),
+              child: const Text('축성 실행 · 금 120'),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+      _panel(
+        '성 규모',
+        Text(
+          _settlementLabel(widget.province.settlementType),
+          style: const TextStyle(
+            color: Color(0xffffdfa0),
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      OutlinedButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('닫기'),
+      ),
+    ],
+  );
+
+  Widget _itemRow(String label, String effect, String cost) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      children: [
+        const Icon(Icons.chevron_right, color: Color(0xffbd8b45), size: 18),
+        Expanded(
+          child: Text(
+            '$label · $effect',
+            style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+          ),
+        ),
+        Text(
+          cost,
+          style: const TextStyle(
+            color: Color(0xffffdfa0),
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
+  Widget _panel(String title, Widget child) => Container(
+    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+    decoration: BoxDecoration(
+      color: const Color(0x35231b11),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xffd6a85d),
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        child,
+      ],
+    ),
+  );
+  ButtonStyle _button() => FilledButton.styleFrom(
     backgroundColor: const Color(0xff76572f),
     foregroundColor: const Color(0xffffdfa0),
     side: const BorderSide(color: Color(0xffc09351)),
