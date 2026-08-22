@@ -1648,15 +1648,6 @@ class _WorldMapHeader extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '현재 세력  ${force.name}',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xffbca781),
-                              fontSize: 12,
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -1669,10 +1660,6 @@ class _WorldMapHeader extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '세력 자원',
-                    style: TextStyle(color: Color(0xffa9926c), fontSize: 10),
-                  ),
                   _HeaderMetric(
                     Icons.monetization_on_outlined,
                     '금',
@@ -2377,7 +2364,7 @@ class _ProvinceDetailPanel extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${ownerForce.name} · $assignmentText',
+                      assignmentText,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -2394,21 +2381,27 @@ class _ProvinceDetailPanel extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: const Color(0xff211b13),
-                  border: Border.all(color: const Color(0xff94703b), width: 1),
-                  borderRadius: BorderRadius.circular(3),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black54,
-                      blurRadius: 4,
-                      offset: Offset(1, 2),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xff211b13),
+                    border: Border.all(
+                      color: const Color(0xff94703b),
+                      width: 1,
                     ),
-                  ],
+                    borderRadius: BorderRadius.circular(3),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black54,
+                        blurRadius: 4,
+                        offset: Offset(1, 2),
+                      ),
+                    ],
+                  ),
+                  child: _GeneratedPortrait(seed: leader.id, size: 92),
                 ),
-                child: _GeneratedPortrait(seed: leader.id, size: 92),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -2436,14 +2429,6 @@ class _ProvinceDetailPanel extends StatelessWidget {
                         ],
                       ),
                     const SizedBox(height: 5),
-                    Text(
-                      informationRevealed ? '지역 자원 · 지역 지표' : '지역 정보 제한',
-                      style: const TextStyle(
-                        color: Color(0xffa99168),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
                     Container(
                       margin: const EdgeInsets.only(top: 1),
                       padding: const EdgeInsets.fromLTRB(2, 3, 2, 2),
