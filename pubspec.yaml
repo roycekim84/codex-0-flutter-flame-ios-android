@@ -89,6 +89,7 @@ flutter:
     - assets/images/battle_terrain_overlay.png
     - assets/images/battle_effects_strip.png
     - assets/images/event_art_strip.png
+    - assets/images/personnel_search_art.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
