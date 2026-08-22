@@ -2368,7 +2368,7 @@ class _ProvinceDetailPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 2),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2393,7 +2393,7 @@ class _ProvinceDetailPanel extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: _GeneratedPortrait(seed: leader.id, size: 92),
+                    child: _GeneratedPortrait(seed: leader.id, size: 106),
                   ),
                 ),
               ),
