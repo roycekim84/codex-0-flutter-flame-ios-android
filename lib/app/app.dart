@@ -923,6 +923,37 @@ class _GameScreenState extends State<GameScreen> {
                 provinceId: selectedProvinceId,
               ),
             );
+            if (!mounted) return;
+            final candidate = engine.firstFreeOfficer;
+            if (candidate != null) {
+              _showRecruitOfficerScreen(candidate);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showRecruitOfficerScreen(OfficerState candidate) {
+    final province = engine.state.provinces.firstWhere(
+      (p) => p.id == selectedProvinceId,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _OfficerRecruitScreen(
+          candidate: candidate,
+          provinceName: province.name,
+          onRecruit: () async {
+            if (!mounted) return;
+            Navigator.pop(context);
+            await _dispatch(
+              GameCommand(
+                type: GameCommandType.recruitOfficer,
+                officerId: selectedOfficerId,
+                provinceId: selectedProvinceId,
+                targetOfficerId: candidate.id,
+              ),
+            );
           },
         ),
       ),
@@ -2604,6 +2635,216 @@ class _PersonnelSearchScreen extends StatelessWidget {
           ],
         ),
       ),
+    ),
+  );
+}
+
+class _OfficerRecruitScreen extends StatelessWidget {
+  const _OfficerRecruitScreen({
+    required this.candidate,
+    required this.provinceName,
+    required this.onRecruit,
+  });
+
+  final OfficerState candidate;
+  final String provinceName;
+  final Future<void> Function() onRecruit;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xff090807),
+    body: SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: const Color(0xff171612),
+          image: const DecorationImage(
+            image: AssetImage(AssetRepository.panelTexture),
+            fit: BoxFit.cover,
+            opacity: .12,
+          ),
+          border: Border.all(color: const Color(0xffb38343), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            Container(
+              height: 60,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xff382818), Color(0xff181612)],
+                ),
+                border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.person_add_alt_1,
+                    color: Color(0xffd9af65),
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      '인사 · 등용',
+                      style: TextStyle(
+                        color: Color(0xffffdfa0),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                    color: const Color(0xffffdfa0),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(14, 18, 14, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      '재야 장수',
+                      style: TextStyle(
+                        color: Color(0xffd6a85d),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0x35231b11),
+                        border: Border.all(color: const Color(0xff8c6735)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _GeneratedPortrait(seed: candidate.id, size: 104),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  candidate.name,
+                                  style: const TextStyle(
+                                    color: Color(0xffffdfa0),
+                                    fontSize: 23,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                _RecruitStat('WAR', candidate.war),
+                                _RecruitStat('INT', candidate.intelligence),
+                                _RecruitStat('CHA', candidate.charisma),
+                                _RecruitStat('관계', '중립'),
+                                _RecruitStat('충성도', candidate.loyalty),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    Text(
+                      '$provinceName에서 등용을 제안합니다',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xffffdfa0),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 15,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x35231b11),
+                        border: Border.all(color: const Color(0xff6d5230)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '등용 확률',
+                            style: TextStyle(
+                              color: Color(0xffc7ae83),
+                              fontSize: 15,
+                            ),
+                          ),
+                          Text(
+                            '72%',
+                            style: TextStyle(
+                              color: Color(0xff6fce8a),
+                              fontSize: 23,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    FilledButton.icon(
+                      onPressed: onRecruit,
+                      icon: const Icon(Icons.handshake_outlined),
+                      label: const Text('등용 실행 · 금 200'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(54),
+                        backgroundColor: const Color(0xff76572f),
+                        foregroundColor: const Color(0xffffdfa0),
+                        side: const BorderSide(color: Color(0xffc09351)),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('중지'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _RecruitStat extends StatelessWidget {
+  const _RecruitStat(this.label, this.value);
+  final String label;
+  final Object value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 3),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+        ),
+        Text(
+          '$value',
+          style: const TextStyle(color: Color(0xffffdfa0), fontSize: 13),
+        ),
+      ],
     ),
   );
 }
