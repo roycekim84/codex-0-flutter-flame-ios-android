@@ -1845,40 +1845,63 @@ class _Map extends StatelessWidget {
                 colors: [Color(0xff35443c), Color(0xff182522)],
               ),
             ),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: Image.asset(
-                    AssetRepository.worldMapBackground,
-                    fit: BoxFit.cover,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapUp: (details) {
+                final tap = details.localPosition;
+                ProvinceState? nearest;
+                var nearestDistance = double.infinity;
+                for (final province in provinces) {
+                  final dx = province.mapX * width - tap.dx;
+                  final dy = province.mapY * constraints.maxHeight - tap.dy;
+                  final distance = dx * dx + dy * dy;
+                  if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearest = province;
+                  }
+                }
+                if (nearest != null) onSelect(nearest.id);
+              },
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image.asset(
+                      AssetRepository.worldMapBackground,
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                ),
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _TerritoryOverlayPainter(provinces),
-                  ),
-                ),
-                Positioned.fill(
-                  child: Container(color: Colors.black.withValues(alpha: .25)),
-                ),
-                ...provinces.map(
-                  (p) => Positioned(
-                    left: p.mapX * width - 34,
-                    top: p.mapY * constraints.maxHeight - 46,
-                    child: GestureDetector(
-                      onTap: () => onSelect(p.id),
-                      child: _ProvinceNode(
-                        province: p,
-                        playerOwned: p.isOwnedBy(playerForceId),
-                        informationRevealed:
-                            p.isOwnedBy(playerForceId) ||
-                            revealedProvinceIds.contains(p.id),
-                        selected: p.id == selectedId,
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _TerritoryOverlayPainter(
+                        provinces,
+                        selectedId: selectedId,
                       ),
                     ),
                   ),
-                ),
-              ],
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: .25),
+                    ),
+                  ),
+                  ...provinces.map(
+                    (p) => Positioned(
+                      left: p.mapX * width - 34,
+                      top: p.mapY * constraints.maxHeight - 46,
+                      child: GestureDetector(
+                        onTap: () => onSelect(p.id),
+                        child: _ProvinceNode(
+                          province: p,
+                          playerOwned: p.isOwnedBy(playerForceId),
+                          informationRevealed:
+                              p.isOwnedBy(playerForceId) ||
+                              revealedProvinceIds.contains(p.id),
+                          selected: p.id == selectedId,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1888,8 +1911,9 @@ class _Map extends StatelessWidget {
 }
 
 class _TerritoryOverlayPainter extends CustomPainter {
-  _TerritoryOverlayPainter(this.provinces);
+  _TerritoryOverlayPainter(this.provinces, {this.selectedId});
   final List<ProvinceState> provinces;
+  final String? selectedId;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1921,6 +1945,23 @@ class _TerritoryOverlayPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.0,
       );
+      if (provinces[i].id == selectedId) {
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = const Color(0xffffd36a)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3.2
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+        );
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = const Color(0xffffe3a0)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.2,
+        );
+      }
     }
   }
 
@@ -1999,7 +2040,9 @@ class _TerritoryOverlayPainter extends CustomPainter {
   };
 
   @override
-  bool shouldRepaint(covariant _TerritoryOverlayPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _TerritoryOverlayPainter oldDelegate) =>
+      oldDelegate.provinces != provinces ||
+      oldDelegate.selectedId != selectedId;
 }
 
 // Retained for optional adjacency-debug rendering.
