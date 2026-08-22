@@ -70,6 +70,20 @@ class DemoScenario {
       ['p_crown', 'p_briar', 'p_east'],
       ['p_briar', 'p_jade', 'p_north'],
     ];
+    final assignedOfficers = [
+      ['officer_1', 'officer_5'],
+      ['officer_2', 'officer_6'],
+      ['officer_7', 'officer_11'],
+      ['officer_8', 'officer_12'],
+      ['officer_13', 'officer_17'],
+      ['officer_14', 'officer_18'],
+      ['officer_3'],
+      ['officer_4'],
+      ['officer_9'],
+      ['officer_10'],
+      ['officer_15'],
+      ['officer_16'],
+    ];
     final provinces = <Map<String, dynamic>>[];
     for (var i = 0; i < provinceIds.length; i++) {
       provinces.add({
@@ -83,31 +97,46 @@ class DemoScenario {
         'gold': 180 + i * 25,
         'food': 600 + i * 100,
         'floodControl': 25 + i * 3,
-        'governorId': i < 6 ? 'officer_${i * 3 + 1}' : null,
+        'governorId': assignedOfficers[i].first,
         'settlementType': switch (i) {
           0 || 4 || 7 => 'large',
           1 || 2 || 3 || 5 || 6 || 8 => 'medium',
           _ => 'small',
         },
-        'officerIds': i < 6
-            ? [
-                'officer_${i * 3 + 1}',
-                'officer_${i * 3 + 2}',
-                'officer_${i * 3 + 3}',
-              ]
-            : <String>[],
+        'officerIds': assignedOfficers[i],
         'mapX': positions[i][0],
         'mapY': positions[i][1],
       });
     }
     final officers = <Map<String, dynamic>>[];
+    final officerProvinceIndices = [
+      0,
+      1,
+      6,
+      7,
+      0,
+      1,
+      2,
+      3,
+      8,
+      9,
+      2,
+      3,
+      4,
+      5,
+      10,
+      11,
+      4,
+      5,
+    ];
     for (var i = 0; i < 18; i++) {
-      final force = owner[i ~/ 3];
+      final provinceIndex = officerProvinceIndices[i];
+      final force = owner[provinceIndex];
       officers.add({
         'id': 'officer_${i + 1}',
         'name': '가상 장수 ${i + 1}',
         'forceId': force,
-        'provinceId': provinceIds[i ~/ 3],
+        'provinceId': provinceIds[provinceIndex],
         'war': 52 + (i * 7) % 42,
         'intelligence': 48 + (i * 11) % 45,
         'charisma': 50 + (i * 13) % 43,

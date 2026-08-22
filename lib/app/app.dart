@@ -1897,6 +1897,7 @@ class _Map extends StatelessWidget {
                       painter: _TerritoryOverlayPainter(
                         provinces,
                         forces,
+                        playerForceId: playerForceId,
                         selectedId: selectedId,
                       ),
                     ),
@@ -1937,9 +1938,15 @@ class _Map extends StatelessWidget {
 }
 
 class _TerritoryOverlayPainter extends CustomPainter {
-  _TerritoryOverlayPainter(this.provinces, this.forces, {this.selectedId});
+  _TerritoryOverlayPainter(
+    this.provinces,
+    this.forces, {
+    required this.playerForceId,
+    this.selectedId,
+  });
   final List<ProvinceState> provinces;
   final List<ForceState> forces;
+  final String playerForceId;
   final String? selectedId;
 
   @override
@@ -1968,12 +1975,13 @@ class _TerritoryOverlayPainter extends CustomPainter {
           ..style = PaintingStyle.fill,
       );
       if (provinces[i].id == selectedId) {
+        final selectionColor = provinces[i].ownerForceId == playerForceId
+            ? const Color(0xffffd36a)
+            : color;
         canvas.drawPath(
           path,
           Paint()
-            ..color = _forceColor(
-              provinces[i].ownerForceId,
-            ).withValues(alpha: .95)
+            ..color = selectionColor.withValues(alpha: .95)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.8,
         );
@@ -2215,9 +2223,14 @@ class _ProvinceNode extends StatelessWidget {
       'small' => (AssetRepository.fortressSmall, 38.0),
       _ => (AssetRepository.fortressMedium, 48.0),
     };
+    final labelTop = switch (province.settlementType) {
+      'large' => 79.0,
+      'small' => 53.0,
+      _ => 65.0,
+    };
     return SizedBox(
       width: 88,
-      height: 92,
+      height: 108,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
@@ -2238,6 +2251,7 @@ class _ProvinceNode extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               decoration: selected
                   ? BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: const Color(0xffffdf91),
                         width: 1.2,
@@ -2255,7 +2269,7 @@ class _ProvinceNode extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 66,
+            top: labelTop,
             child: Text(
               province.name,
               textAlign: TextAlign.center,
