@@ -2027,7 +2027,6 @@ class _TerritoryOverlayPainter extends CustomPainter {
       }
     }
 
-    // Draw only borders between different forces. Provinces belonging to the
   }
 
   List<Offset> _voronoiPolygon(int index, List<Offset> points, Size size) {
