@@ -4396,6 +4396,288 @@ class _CostMetric extends StatelessWidget {
   );
 }
 
+class BattleResultScreen extends StatefulWidget {
+  const BattleResultScreen({
+    super.key,
+    required this.engine,
+    required this.battle,
+    required this.outcomes,
+  });
+  final GameEngine engine;
+  final BattleEngine battle;
+  final List<BattleOfficerOutcome> outcomes;
+
+  @override
+  State<BattleResultScreen> createState() => _BattleResultScreenState();
+}
+
+class _BattleResultScreenState extends State<BattleResultScreen> {
+  late final List<BattleOfficerOutcome> remainingPrisoners = widget.outcomes
+      .where((o) => o.result == BattleOfficerResult.captured)
+      .toList();
+
+  String _resultLabel(BattleOfficerResult result) => switch (result) {
+    BattleOfficerResult.escaped => '귀환',
+    BattleOfficerResult.captured => '포로',
+    BattleOfficerResult.dead => '전사',
+  };
+
+  Color _resultColor(BattleOfficerResult result) => switch (result) {
+    BattleOfficerResult.escaped => const Color(0xff73d18b),
+    BattleOfficerResult.captured => const Color(0xffe2bd72),
+    BattleOfficerResult.dead => const Color(0xffe17a5d),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final battle = widget.battle.state;
+    final won = battle.attackerWon;
+    final prisoners = widget.outcomes
+        .where((o) => o.result == BattleOfficerResult.captured)
+        .length;
+    return Scaffold(
+      backgroundColor: const Color(0xff090807),
+      body: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .12,
+            ),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xff382818), Color(0xff181612)],
+                  ),
+                  border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      won ? Icons.emoji_events : Icons.warning_amber,
+                      color: won
+                          ? const Color(0xffe2bd72)
+                          : const Color(0xffe17a5d),
+                      size: 25,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '전투 결과',
+                        style: const TextStyle(
+                          color: Color(0xffffdfa0),
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(14, 18, 14, 20),
+                  children: [
+                    Center(
+                      child: Text(
+                        won ? '승리' : '패배',
+                        style: TextStyle(
+                          color: won
+                              ? const Color(0xffe2bd72)
+                              : const Color(0xffe17a5d),
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Center(
+                      child: Text(
+                        won
+                            ? '${battle.targetProvinceId}을 점령했습니다.'
+                            : '공격군이 후퇴했습니다.',
+                        style: const TextStyle(
+                          color: Color(0xffc1ab82),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      padding: const EdgeInsets.all(13),
+                      decoration: BoxDecoration(
+                        color: const Color(0x35231b11),
+                        border: Border.all(color: const Color(0xff8c6735)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _CostMetric(
+                            '전투일',
+                            '${battle.day}일',
+                            const Color(0xffffdfa0),
+                          ),
+                          _CostMetric(
+                            '잔여 병력',
+                            '${_formatNumber(battle.returnedSoldiers)}명',
+                            const Color(0xff73d18b),
+                          ),
+                          _CostMetric(
+                            '포로',
+                            '$prisoners명',
+                            const Color(0xffe2bd72),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '장수 결과',
+                      style: TextStyle(
+                        color: Color(0xffd6a85d),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    ...widget.outcomes.map(
+                      (outcome) => Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0x25231b11),
+                          border: Border.all(color: const Color(0xff5d472c)),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Row(
+                          children: [
+                            _GeneratedPortrait(
+                              seed: outcome.officerId,
+                              size: 38,
+                            ),
+                            const SizedBox(width: 9),
+                            Expanded(
+                              child: Text(
+                                outcome.name,
+                                style: const TextStyle(
+                                  color: Color(0xffffdfa0),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${outcome.soldiers}명 · ${_resultLabel(outcome.result)}',
+                              style: TextStyle(
+                                color: _resultColor(outcome.result),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (remainingPrisoners.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      const Text(
+                        '포로 처리',
+                        style: TextStyle(
+                          color: Color(0xffd6a85d),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      ...remainingPrisoners.map(
+                        (prisoner) => Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.fromLTRB(10, 8, 5, 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0x453d2b17),
+                            border: Border.all(color: const Color(0xff8c6735)),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  prisoner.name,
+                                  style: const TextStyle(
+                                    color: Color(0xffffdfa0),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    _handle(prisoner, PrisonerAction.recruit),
+                                child: const Text('등용'),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    _handle(prisoner, PrisonerAction.release),
+                                child: const Text('석방'),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    _handle(prisoner, PrisonerAction.execute),
+                                child: const Text(
+                                  '처형',
+                                  style: TextStyle(color: Color(0xffe17a5d)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: remainingPrisoners.isEmpty
+                          ? () => Navigator.pop(context)
+                          : null,
+                      icon: const Icon(Icons.check),
+                      label: const Text('확인'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xff76572f),
+                        foregroundColor: const Color(0xffffdfa0),
+                        side: const BorderSide(color: Color(0xffc09351)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handle(BattleOfficerOutcome prisoner, PrisonerAction action) {
+    final handled = widget.engine.handlePrisoner(
+      prisoner.officerId,
+      action,
+      widget.battle.state.targetProvinceId,
+    );
+    if (handled) setState(() => remainingPrisoners.remove(prisoner));
+  }
+}
+
 class BattleScreen extends StatefulWidget {
   const BattleScreen({super.key, required this.engine, required this.battle});
   final GameEngine engine;
@@ -4408,6 +4690,7 @@ class _BattleScreenState extends State<BattleScreen> {
   String? selectedAttackerId;
   String? selectedDefenderId;
   late final BattleGame battleGame;
+  bool _resultOpened = false;
 
   @override
   void initState() {
@@ -4479,11 +4762,28 @@ class _BattleScreenState extends State<BattleScreen> {
 
   Future<void> _finishIfNeeded() async {
     if (!widget.battle.state.finished) return;
+    if (_resultOpened) return;
+    _resultOpened = true;
     final outcomes = widget.engine.resolveBattle(widget.battle);
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BattleResultScreen(
+          engine: widget.engine,
+          battle: widget.battle,
+          outcomes: outcomes,
+        ),
+      ),
+    );
+    if (mounted) Navigator.of(context).pop();
+    return;
+
+    // Legacy dialog flow retained below for reference during battle UI migration.
+    // ignore: dead_code
     final remainingPrisoners = outcomes
         .where((o) => o.result == BattleOfficerResult.captured)
         .toList();
     await showDialog<void>(
+      // ignore: use_build_context_synchronously
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
