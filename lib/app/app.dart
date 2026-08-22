@@ -1938,7 +1938,6 @@ class _Map extends StatelessWidget {
                       painter: _TerritoryOverlayPainter(
                         provinces,
                         forces,
-                        playerForceId: playerForceId,
                         selectedId: selectedId,
                       ),
                     ),
@@ -1980,12 +1979,10 @@ class _TerritoryOverlayPainter extends CustomPainter {
   _TerritoryOverlayPainter(
     this.provinces,
     this.forces, {
-    required this.playerForceId,
     this.selectedId,
   });
   final List<ProvinceState> provinces;
   final List<ForceState> forces;
-  final String playerForceId;
   final String? selectedId;
 
   @override
@@ -2016,9 +2013,7 @@ class _TerritoryOverlayPainter extends CustomPainter {
           ..style = PaintingStyle.fill,
       );
       if (provinces[i].id == selectedId) {
-        final selectionColor = provinces[i].ownerForceId == playerForceId
-            ? const Color(0xffffd36a)
-            : color;
+        const selectionColor = Color(0xffffd36a);
         canvas.drawPath(
           path,
           Paint()
@@ -2289,22 +2284,6 @@ class _ProvinceNode extends StatelessWidget {
             top: 7,
             child: Container(
               padding: const EdgeInsets.all(2),
-              decoration: selected
-                  ? BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xffffdf91),
-                        width: 1.2,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          blurRadius: 4,
-                          spreadRadius: 0,
-                          color: Color(0x99d7a84c),
-                        ),
-                      ],
-                    )
-                  : null,
               child: Image.asset(asset, width: markerSize, height: markerSize),
             ),
           ),
