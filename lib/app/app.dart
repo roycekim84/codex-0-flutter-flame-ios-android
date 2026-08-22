@@ -1157,74 +1157,43 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _endMonth() async {
     final beforeGold = engine.state.playerForce.gold;
     final beforeFood = engine.state.playerForce.food;
+    final beforeSoldiers = engine.state.playerSoldiers;
+    final beforeLoyalty = engine.state.officers
+        .where((o) => o.forceId == engine.state.playerForceId)
+        .fold<int>(0, (sum, o) => sum + o.loyalty);
+    final beforeOfficerCount = engine.state.officers
+        .where((o) => o.forceId == engine.state.playerForceId)
+        .length;
+    final beforeYear = engine.state.year;
     engine.dispatch(const GameCommand(type: GameCommandType.endMonth));
     await _saveAuto();
     if (!mounted) return;
     final state = engine.state;
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('${state.year}년 ${state.month}월 시작'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '지난달 정산\n금 $beforeGold → ${state.playerForce.gold}\n군량 $beforeFood → ${state.playerForce.food}\n영토 ${state.playerProvinceIds.length}곳',
-              ),
-              if (state.lastTurnReports.isNotEmpty) ...[
-                const Divider(height: 24),
-                const Text(
-                  '전쟁 보고',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                ...state.lastTurnReports.map(
-                  (report) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(
-                      '${report.attackerName} → ${report.targetProvinceName}',
-                    ),
-                    subtitle: Text(
-                      '${report.attackerWon ? 'AI 승리' : 'AI 패배'} · ${report.day}일 · 공격 ${report.attackerSoldiers} / 방어 ${report.defenderSoldiers}',
-                    ),
-                    trailing: TextButton(
-                      onPressed: () => _watchAiReport(report),
-                      child: const Text('관전'),
-                    ),
-                  ),
-                ),
-              ],
-              if (state.lastEvent != null) ...[
-                const Divider(height: 24),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: AssetSlice(
-                    asset: AssetRepository.eventArtStrip,
-                    index: _eventArtIndex(state.lastEvent!),
-                    segments: 4,
-                    size: 72,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(state.lastEvent!),
-              ],
-            ],
-          ),
+    final afterOfficerCount = state.officers
+        .where((o) => o.forceId == state.playerForceId)
+        .length;
+    final afterLoyalty = state.officers
+        .where((o) => o.forceId == state.playerForceId)
+        .fold<int>(0, (sum, o) => sum + o.loyalty);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _YearSummaryScreen(
+          year: beforeYear,
+          nextMonth: state.month,
+          forceName: state.playerForce.name,
+          goldDelta: state.playerForce.gold - beforeGold,
+          foodDelta: state.playerForce.food - beforeFood,
+          soldierDelta: state.playerSoldiers - beforeSoldiers,
+          loyaltyDelta: afterOfficerCount == 0 || beforeOfficerCount == 0
+              ? 0
+              : (afterLoyalty / afterOfficerCount -
+                        beforeLoyalty / beforeOfficerCount)
+                    .round(),
+          event: state.lastEvent,
+          battleReports: state.lastTurnReports,
+          gameOver: state.gameOver,
+          onReplay: _watchAiReport,
         ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
-          ),
-          if (state.gameOver)
-            FilledButton(
-              onPressed: () =>
-                  Navigator.popUntil(context, (route) => route.isFirst),
-              child: const Text('메인 메뉴'),
-            ),
-        ],
       ),
     );
   }
@@ -2344,6 +2313,305 @@ class _ProvinceDetailPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+class _YearSummaryScreen extends StatelessWidget {
+  const _YearSummaryScreen({
+    required this.year,
+    required this.nextMonth,
+    required this.forceName,
+    required this.goldDelta,
+    required this.foodDelta,
+    required this.soldierDelta,
+    required this.loyaltyDelta,
+    required this.event,
+    required this.battleReports,
+    required this.gameOver,
+    required this.onReplay,
+  });
+  final int year, nextMonth, goldDelta, foodDelta, soldierDelta, loyaltyDelta;
+  final String forceName;
+  final String? event;
+  final List<AiBattleReport> battleReports;
+  final bool gameOver;
+  final ValueChanged<AiBattleReport> onReplay;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xff090807),
+    body: SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: const Color(0xff171612),
+          image: const DecorationImage(
+            image: AssetImage(AssetRepository.panelTexture),
+            fit: BoxFit.cover,
+            opacity: .12,
+          ),
+          border: Border.all(color: const Color(0xffb38343), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            _summaryHeader(context),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(14, 17, 14, 20),
+                children: [
+                  Center(
+                    child: Text(
+                      '$year년 결산',
+                      style: const TextStyle(
+                        color: Color(0xffffdfa0),
+                        fontSize: 25,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: Text(
+                      '$forceName · 다음 달 $nextMonth월',
+                      style: const TextStyle(
+                        color: Color(0xffbda783),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _summarySection(
+                    title: '수입',
+                    color: const Color(0xff73d18b),
+                    rows: [
+                      _SummaryRow('금', goldDelta >= 0 ? goldDelta : 0),
+                      _SummaryRow('군량', foodDelta >= 0 ? foodDelta : 0),
+                      _SummaryRow('병력', soldierDelta >= 0 ? soldierDelta : 0),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  _summarySection(
+                    title: '지출·변화',
+                    color: const Color(0xffdf8d73),
+                    rows: [
+                      _SummaryRow('금', goldDelta < 0 ? goldDelta : 0),
+                      _SummaryRow('군량', foodDelta < 0 ? foodDelta : 0),
+                      _SummaryRow('병력', soldierDelta < 0 ? soldierDelta : 0),
+                      _SummaryRow('민심 변화', loyaltyDelta),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  _eventCard(),
+                  if (battleReports.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _battleCard(context),
+                  ],
+                  const SizedBox(height: 18),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                      backgroundColor: const Color(0xff76572f),
+                      foregroundColor: const Color(0xffffdfa0),
+                      side: const BorderSide(color: Color(0xffc09351)),
+                    ),
+                    child: Text(gameOver ? '결산 확인 · 메인으로' : '확인'),
+                  ),
+                  if (gameOver) ...[
+                    const SizedBox(height: 7),
+                    OutlinedButton(
+                      onPressed: () =>
+                          Navigator.popUntil(context, (route) => route.isFirst),
+                      child: const Text('메인 메뉴'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _summaryHeader(BuildContext context) => Container(
+    height: 60,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.menu_book, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            '연도 말 요약',
+            style: TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+
+  Widget _summarySection({
+    required String title,
+    required Color color,
+    required List<_SummaryRow> rows,
+  }) => Container(
+    padding: const EdgeInsets.fromLTRB(13, 11, 13, 10),
+    decoration: BoxDecoration(
+      color: const Color(0x35231b11),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 5),
+        ...rows.map(
+          (row) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  row.label,
+                  style: const TextStyle(
+                    color: Color(0xffc1ab82),
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  row.value == 0
+                      ? '—'
+                      : '${row.value > 0 ? '+' : ''}${_formatNumber(row.value)}',
+                  style: TextStyle(
+                    color: row.value < 0
+                        ? const Color(0xffdf8d73)
+                        : const Color(0xffffdfa0),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _eventCard() => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(
+      color: const Color(0x25231b11),
+      border: Border.all(color: const Color(0xff5d472c)),
+      borderRadius: BorderRadius.circular(5),
+    ),
+    child: Row(
+      children: [
+        AssetSlice(
+          asset: AssetRepository.eventArtStrip,
+          index: _eventArtIndex(event ?? ''),
+          segments: 4,
+          size: 58,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '특이 사항',
+                style: TextStyle(
+                  color: Color(0xffd6a85d),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                event ?? '이번 달에는 특별한 사건이 없었습니다.',
+                style: const TextStyle(
+                  color: Color(0xffc1ab82),
+                  fontSize: 12,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _battleCard(BuildContext context) => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(
+      color: const Color(0x25231b11),
+      border: Border.all(color: const Color(0xff5d472c)),
+      borderRadius: BorderRadius.circular(5),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '전쟁 보고',
+          style: TextStyle(
+            color: Color(0xffd6a85d),
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        ...battleReports.map(
+          (report) => ListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            title: Text(
+              '${report.attackerName} → ${report.targetProvinceName}',
+              style: const TextStyle(color: Color(0xffffdfa0), fontSize: 12),
+            ),
+            subtitle: Text(
+              report.attackerWon
+                  ? '공격군 승리 · ${report.day}일'
+                  : '공격군 패배 · ${report.day}일',
+              style: const TextStyle(color: Color(0xffc1ab82), fontSize: 11),
+            ),
+            trailing: TextButton(
+              onPressed: () => onReplay(report),
+              child: const Text('관전'),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _SummaryRow {
+  const _SummaryRow(this.label, this.value);
+  final String label;
+  final int value;
 }
 
 class _DiplomacyScreen extends StatefulWidget {
