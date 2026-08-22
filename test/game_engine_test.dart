@@ -101,11 +101,11 @@ void main() {
     engine.endTurn();
     expect(target.ownerForceId, 'force_red');
     expect(
-      engine.state.gameLog.any((log) => log.contains('AI · 가시 숲 전술 전투 승리')),
+      engine.state.gameLog.any((log) => log.contains('AI · 가시 전술 전투 승리')),
       isTrue,
     );
     expect(engine.state.lastTurnReports, hasLength(1));
-    expect(engine.state.lastTurnReports.first.targetProvinceName, '가시 숲');
+    expect(engine.state.lastTurnReports.first.targetProvinceName, '가시');
   });
 
   test('인접한 아군 영지 사이에서 장수를 이동할 수 있다', () {

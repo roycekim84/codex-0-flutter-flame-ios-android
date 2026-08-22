@@ -1956,10 +1956,6 @@ class _Map extends StatelessWidget {
                           force: forces.firstWhere(
                             (force) => force.id == p.ownerForceId,
                           ),
-                          playerOwned: p.isOwnedBy(playerForceId),
-                          informationRevealed:
-                              p.isOwnedBy(playerForceId) ||
-                              revealedProvinceIds.contains(p.id),
                           selected: p.id == selectedId,
                         ),
                       ),
@@ -2178,14 +2174,10 @@ class _ProvinceNode extends StatelessWidget {
     required this.province,
     required this.force,
     required this.selected,
-    required this.playerOwned,
-    required this.informationRevealed,
   });
   final ProvinceState province;
   final ForceState force;
   final bool selected;
-  final bool playerOwned;
-  final bool informationRevealed;
   @override
   Widget build(BuildContext context) {
     final (asset, markerSize) = switch (province.settlementType) {
@@ -2249,18 +2241,6 @@ class _ProvinceNode extends StatelessWidget {
                       Shadow(color: Colors.black, blurRadius: 1, offset: Offset(1, 0)),
                       Shadow(color: Colors.black, blurRadius: 1, offset: Offset(-1, 0)),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  informationRevealed
-                      ? '${_formatNumber(province.soldiers)}명'
-                      : '????명',
-                  style: const TextStyle(
-                    color: Color(0xffd8c39a),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    shadows: [Shadow(color: Colors.black, blurRadius: 2)],
                   ),
                 ),
               ],
