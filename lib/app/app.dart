@@ -2373,7 +2373,7 @@ class _ProvinceDetailPanel extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                height: 136,
+                height: 120,
                 child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Container(
