@@ -2372,26 +2372,29 @@ class _ProvinceDetailPanel extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xff211b13),
-                    border: Border.all(
-                      color: const Color(0xff94703b),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(3),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black54,
-                        blurRadius: 4,
-                        offset: Offset(1, 2),
+              SizedBox(
+                height: 136,
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xff211b13),
+                      border: Border.all(
+                        color: const Color(0xff94703b),
+                        width: 1,
                       ),
-                    ],
+                      borderRadius: BorderRadius.circular(3),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black54,
+                          blurRadius: 4,
+                          offset: Offset(1, 2),
+                        ),
+                      ],
+                    ),
+                    child: _GeneratedPortrait(seed: leader.id, size: 92),
                   ),
-                  child: _GeneratedPortrait(seed: leader.id, size: 92),
                 ),
               ),
               const SizedBox(width: 10),
