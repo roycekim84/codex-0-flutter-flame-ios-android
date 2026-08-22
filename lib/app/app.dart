@@ -15,6 +15,31 @@ import '../core/asset_repository.dart';
 import '../core/asset_precache.dart';
 import '../ui/widgets/asset_widgets.dart';
 
+String _formatNumber(Object value) {
+  final text = '$value';
+  final sign = text.startsWith('-') ? '-' : '';
+  final digits = sign.isEmpty ? text : text.substring(1);
+  final buffer = StringBuffer(sign);
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+    buffer.write(digits[i]);
+  }
+  return buffer.toString();
+}
+
+String _seasonForMonth(int month) => switch (month) {
+  12 || 1 || 2 => '겨울',
+  3 || 4 || 5 => '봄',
+  6 || 7 || 8 => '여름',
+  _ => '가을',
+};
+
+String _settlementLabel(String type) => switch (type) {
+  'large' => '대성',
+  'small' => '소성',
+  _ => '중성',
+};
+
 class CodexStrategyApp extends StatelessWidget {
   const CodexStrategyApp({super.key});
   @override
@@ -1555,7 +1580,7 @@ class _WorldMapHeader extends StatelessWidget {
           ],
         ),
         SizedBox(
-          height: 65,
+          height: 68,
           child: Row(
             children: [
               Expanded(
@@ -1569,13 +1594,29 @@ class _WorldMapHeader extends StatelessWidget {
                       height: 28,
                     ),
                     const SizedBox(width: 7),
-                    Text(
-                      '${state.year}년 ${state.month}월 · 봄\n${force.name}',
-                      style: const TextStyle(
-                        color: Color(0xfff0d9a7),
-                        fontSize: 17,
-                        height: 1.35,
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${state.year}년 ${state.month}월 · ${_seasonForMonth(state.month)}',
+                            style: const TextStyle(
+                              color: Color(0xfff0d9a7),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '현재 세력  ${force.name}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xffbca781),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1587,11 +1628,11 @@ class _WorldMapHeader extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _HeaderMetric(
-                    Icons.monetization_on_outlined,
-                    '금',
-                    force.gold,
+                  const Text(
+                    '세력 자원',
+                    style: TextStyle(color: Color(0xffa9926c), fontSize: 10),
                   ),
+                  _HeaderMetric(Icons.monetization_on_outlined, '금', force.gold),
                   _HeaderMetric(Icons.grass, '군량', force.food),
                   _HeaderMetric(Icons.shield, '병력', state.playerSoldiers),
                 ],
@@ -1622,7 +1663,7 @@ class _HeaderMetric extends StatelessWidget {
       ),
       const SizedBox(width: 4),
       Text(
-        '$value',
+        _formatNumber(value),
         style: const TextStyle(
           color: Color(0xfff0d08e),
           fontSize: 15,
@@ -1903,9 +1944,7 @@ class _Map extends StatelessWidget {
                     ),
                   ),
                   Positioned.fill(
-                    child: Container(
-                      color: Colors.black.withValues(alpha: .25),
-                    ),
+                    child: Container(color: Colors.black.withValues(alpha: .16)),
                   ),
                   ...provinces.map(
                     (p) => Positioned(
@@ -1957,13 +1996,17 @@ class _TerritoryOverlayPainter extends CustomPainter {
     ];
     final polygons = [
       for (var i = 0; i < provinces.length; i++)
-        _voronoiPolygon(i, points, size),
+        provinces[i].territoryPoints.length >= 3
+            ? provinces[i]
+                  .territoryPoints
+                  .map((point) => Offset(point[0] * size.width, point[1] * size.height))
+                  .toList()
+            : _voronoiPolygon(i, points, size),
     ];
     for (var i = 0; i < provinces.length; i++) {
-      // The clipped Voronoi cells form a watertight partition: every pixel
-      // belongs to exactly one province, so ownership colors can never stack
-      // into rounded overlapping blobs. Scenario-specific river/mountain
-      // boundaries can later replace this with a validated mesh.
+      // Scenario territory geometry is data-driven. A scenario can provide
+      // terrain-aware polygons; older scenarios still fall back to a clipped
+      // Voronoi partition so the renderer remains backwards compatible.
       final polygon = polygons[i];
       if (polygon.length < 3) continue;
       final color = _forceColor(provinces[i].ownerForceId);
@@ -1971,7 +2014,7 @@ class _TerritoryOverlayPainter extends CustomPainter {
       canvas.drawPath(
         path,
         Paint()
-          ..color = color.withValues(alpha: .29)
+          ..color = color.withValues(alpha: .22)
           ..style = PaintingStyle.fill,
       );
       if (provinces[i].id == selectedId) {
@@ -1983,14 +2026,14 @@ class _TerritoryOverlayPainter extends CustomPainter {
           Paint()
             ..color = selectionColor.withValues(alpha: .95)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.8,
+            ..strokeWidth = 2.2,
         );
         canvas.drawPath(
           path,
           Paint()
             ..color = const Color(0xffffe3a0)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.2,
+            ..strokeWidth = 1.0,
         );
       }
     }
@@ -2031,14 +2074,14 @@ class _TerritoryOverlayPainter extends CustomPainter {
           Paint()
             ..color = const Color(0xaa110f0c)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 3.2,
+            ..strokeWidth = 2.2,
         );
         canvas.drawPath(
           boundary,
           Paint()
             ..color = boundaryColor.withValues(alpha: .92)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.8,
+            ..strokeWidth = 1.25,
         );
       }
     }
@@ -2084,9 +2127,14 @@ class _TerritoryOverlayPainter extends CustomPainter {
 
   Path _territoryPath(List<Offset> polygon) {
     final path = Path();
-    path.moveTo(polygon.first.dx, polygon.first.dy);
-    for (final vertex in polygon.skip(1)) {
-      path.lineTo(vertex.dx, vertex.dy);
+    if (polygon.length < 3) return path;
+    final firstMid = (polygon.last + polygon.first) / 2;
+    path.moveTo(firstMid.dx, firstMid.dy);
+    for (var i = 0; i < polygon.length; i++) {
+      final vertex = polygon[i];
+      final next = polygon[(i + 1) % polygon.length];
+      final midpoint = (vertex + next) / 2;
+      path.quadraticBezierTo(vertex.dx, vertex.dy, midpoint.dx, midpoint.dy);
     }
     path.close();
     return path;
@@ -2241,8 +2289,8 @@ class _ProvinceNode extends StatelessWidget {
               asset: AssetRepository.forceBannerStrip,
               index: force.bannerIndex,
               segments: 3,
-              width: selected ? 24 : 18,
-              height: selected ? 28 : 22,
+              width: selected ? 26 : 21,
+              height: selected ? 30 : 25,
             ),
           ),
           Positioned(
@@ -2251,7 +2299,7 @@ class _ProvinceNode extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               decoration: selected
                   ? BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
+                      shape: BoxShape.circle,
                       border: Border.all(
                         color: const Color(0xffffdf91),
                         width: 1.2,
@@ -2270,26 +2318,34 @@ class _ProvinceNode extends StatelessWidget {
           ),
           Positioned(
             top: labelTop,
-            child: Text(
-              province.name,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xffffefd0),
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                shadows: [
-                  Shadow(
-                    color: Colors.black,
-                    blurRadius: 1,
-                    offset: Offset(1, 0),
+            child: Column(
+              children: [
+                Text(
+                  province.name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xffffefd0),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    shadows: [
+                      Shadow(color: Colors.black, blurRadius: 1, offset: Offset(1, 0)),
+                      Shadow(color: Colors.black, blurRadius: 1, offset: Offset(-1, 0)),
+                    ],
                   ),
-                  Shadow(
-                    color: Colors.black,
-                    blurRadius: 1,
-                    offset: Offset(-1, 0),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  informationRevealed
+                      ? '${_formatNumber(province.soldiers)}명'
+                      : '????명',
+                  style: const TextStyle(
+                    color: Color(0xffd8c39a),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    shadows: [Shadow(color: Colors.black, blurRadius: 2)],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -2359,20 +2415,28 @@ class _ProvinceDetailPanel extends StatelessWidget {
                       height: 30,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      province.name,
-                      style: const TextStyle(
-                        color: Color(0xffffdfa0),
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      '${ownerForce.name} · $roleText',
-                      style: const TextStyle(
-                        color: Color(0xffd4ba88),
-                        fontSize: 13,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            province.name,
+                            style: const TextStyle(
+                              color: Color(0xffffdfa0),
+                              fontSize: 21,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            '${ownerForce.name} · $roleText',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xffd4ba88),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -2401,6 +2465,14 @@ class _ProvinceDetailPanel extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: 5),
+                Text(
+                  informationRevealed ? '지역 자원 · 지역 지표' : '지역 정보 제한',
+                  style: const TextStyle(
+                    color: Color(0xffa99168),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2433,12 +2505,14 @@ class _ProvinceDetailPanel extends StatelessWidget {
                                 ('개발', province.land),
                                 ('치수', province.floodControl),
                                 ('성벽', 35),
-                                ('장수', province.officerIds.length),
+                                ('주둔 장수', province.officerIds.length),
+                                ('성 규모', _settlementLabel(province.settlementType)),
                               ]
                             : const [
                                 ('개발', '????'),
                                 ('치수', '????'),
                                 ('성벽', '????'),
+                                ('주둔 장수', '????'),
                               ],
                       ),
                     ),
@@ -2481,7 +2555,7 @@ class _ProvinceStatColumn extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '${value.$2}',
+                  value.$2 is int ? _formatNumber(value.$2) : '${value.$2}',
                   style: const TextStyle(
                     color: Color(0xfff0d9a4),
                     fontSize: 13,
