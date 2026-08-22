@@ -2363,15 +2363,6 @@ class _ProvinceDetailPanel extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    Text(
-                      assignmentText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xffd4ba88),
-                        fontSize: 11,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -2408,6 +2399,18 @@ class _ProvinceDetailPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        assignmentText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xffd4ba88),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
                     if (!playerOwned)
                       Row(
                         children: [
