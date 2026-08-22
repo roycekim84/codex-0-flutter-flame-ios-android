@@ -2393,7 +2393,7 @@ class _ProvinceDetailPanel extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: _GeneratedPortrait(seed: leader.id, size: 106),
+                    child: _GeneratedPortrait(seed: leader.id, size: 114),
                   ),
                 ),
               ),
@@ -2410,7 +2410,8 @@ class _ProvinceDetailPanel extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Color(0xffd4ba88),
-                          fontSize: 11,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
