@@ -926,6 +926,7 @@ class _GameScreenState extends State<GameScreen> {
             if (!mounted) return;
             final candidate = engine.firstFreeOfficer;
             if (candidate != null) {
+              ScaffoldMessenger.of(context).clearSnackBars();
               _showRecruitOfficerScreen(candidate);
             }
           },
