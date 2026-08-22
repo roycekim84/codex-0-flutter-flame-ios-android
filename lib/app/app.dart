@@ -2009,7 +2009,6 @@ class _TerritoryOverlayPainter extends CustomPainter {
       if (polygon.length < 3) continue;
       final color = _forceColor(provinces[i].ownerForceId);
       final path = _territoryPath(polygon);
-      final boundaryPath = _smoothTerritoryPath(polygon);
       canvas.drawPath(
         path,
         Paint()
@@ -2021,14 +2020,14 @@ class _TerritoryOverlayPainter extends CustomPainter {
             ? const Color(0xffffd36a)
             : color;
         canvas.drawPath(
-          boundaryPath,
+          path,
           Paint()
             ..color = selectionColor.withValues(alpha: .95)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.2,
         );
         canvas.drawPath(
-          boundaryPath,
+          path,
           Paint()
             ..color = const Color(0xffffe3a0)
             ..style = PaintingStyle.stroke
@@ -2059,15 +2058,12 @@ class _TerritoryOverlayPainter extends CustomPainter {
         final edgeKey = _edgeKey(start, end);
         if (!drawnEdges.add(edgeKey)) continue;
         final boundaryColor = _forceColor(provinces[i].ownerForceId);
-        final bend = ((edgeKey.hashCode.abs() % 7) - 3) * 1.8;
+        // Both provinces use the exact same endpoints for this shared edge.
+        // Keep the segment straight so there can be no gap or mismatched
+        // curve where two territories meet.
         final boundary = Path()
           ..moveTo(start.dx, start.dy)
-          ..quadraticBezierTo(
-            midpoint.dx + normal.dx * bend,
-            midpoint.dy + normal.dy * bend,
-            end.dx,
-            end.dy,
-          );
+          ..lineTo(end.dx, end.dy);
         canvas.drawPath(
           boundary,
           Paint()
@@ -2135,20 +2131,6 @@ class _TerritoryOverlayPainter extends CustomPainter {
     return path;
   }
 
-  Path _smoothTerritoryPath(List<Offset> polygon) {
-    final path = Path();
-    if (polygon.length < 3) return path;
-    final firstMid = (polygon.last + polygon.first) / 2;
-    path.moveTo(firstMid.dx, firstMid.dy);
-    for (var i = 0; i < polygon.length; i++) {
-      final vertex = polygon[i];
-      final next = polygon[(i + 1) % polygon.length];
-      final midpoint = (vertex + next) / 2;
-      path.quadraticBezierTo(vertex.dx, vertex.dy, midpoint.dx, midpoint.dy);
-    }
-    path.close();
-    return path;
-  }
 
   List<Offset> _clipToBisector(
     List<Offset> polygon,
