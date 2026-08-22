@@ -2351,61 +2351,152 @@ class _ProvinceDetailPanel extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: const Color(0xff211b13),
-                border: Border.all(color: const Color(0xff94703b), width: 1),
-                borderRadius: BorderRadius.circular(3),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black54,
-                    blurRadius: 4,
-                    offset: Offset(1, 2),
-                  ),
-                ],
+          Row(
+            children: [
+              AssetSlice(
+                asset: AssetRepository.forceBannerStrip,
+                index: ownerForce.bannerIndex,
+                segments: 3,
+                width: 24,
+                height: 30,
               ),
-              child: _GeneratedPortrait(seed: leader.id, size: 92),
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              const SizedBox(width: 6),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AssetSlice(
-                      asset: AssetRepository.forceBannerStrip,
-                      index: ownerForce.bannerIndex,
-                      segments: 3,
-                      width: 24,
-                      height: 30,
+                    Text(
+                      province.name,
+                      style: const TextStyle(
+                        color: Color(0xffffdfa0),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    Text(
+                      '${ownerForce.name} · $assignmentText',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xffd4ba88),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: const Color(0xff211b13),
+                  border: Border.all(color: const Color(0xff94703b), width: 1),
+                  borderRadius: BorderRadius.circular(3),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black54,
+                      blurRadius: 4,
+                      offset: Offset(1, 2),
+                    ),
+                  ],
+                ),
+                child: _GeneratedPortrait(seed: leader.id, size: 92),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (!playerOwned)
+                      Row(
                         children: [
+                          Icon(
+                            informationRevealed ? Icons.visibility : Icons.lock,
+                            size: 13,
+                            color: Color(ownerForce.mapColorValue),
+                          ),
+                          const SizedBox(width: 4),
                           Text(
-                            province.name,
+                            informationRevealed
+                                ? '적 세력 · 첩보로 확인된 정보'
+                                : '적 세력 · 공개된 정보만 표시',
                             style: const TextStyle(
-                              color: Color(0xffffdfa0),
-                              fontSize: 21,
-                              fontWeight: FontWeight.w800,
+                              color: Color(0xffbda77b),
+                              fontSize: 11,
                             ),
                           ),
-                          Text(
-                            '${ownerForce.name} · $assignmentText',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xffd4ba88),
-                              fontSize: 11,
+                        ],
+                      ),
+                    const SizedBox(height: 5),
+                    Text(
+                      informationRevealed ? '지역 자원 · 지역 지표' : '지역 정보 제한',
+                      style: const TextStyle(
+                        color: Color(0xffa99168),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(top: 1),
+                      padding: const EdgeInsets.fromLTRB(2, 3, 2, 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0x24110e0a),
+                        border: Border.all(color: const Color(0xff5f492b)),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _ProvinceStatColumn(
+                              values: informationRevealed
+                                  ? [
+                                      ('지역 금', province.gold),
+                                      ('지역 군량', province.food),
+                                      ('병력', province.soldiers),
+                                      ('민심', province.publicLoyalty),
+                                    ]
+                                  : const [
+                                      ('금', '????'),
+                                      ('군량', '????'),
+                                      ('병력', '????'),
+                                      ('민심', '????'),
+                                    ],
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 93,
+                            color: const Color(0xff6e5633),
+                          ),
+                          Expanded(
+                            child: _ProvinceStatColumn(
+                              values: informationRevealed
+                                  ? [
+                                      ('개발', province.land),
+                                      ('치수', province.floodControl),
+                                      ('성벽', 35),
+                                      (
+                                        '성 규모',
+                                        _settlementLabel(
+                                          province.settlementType,
+                                        ),
+                                      ),
+                                    ]
+                                  : const [
+                                      ('개발', '????'),
+                                      ('치수', '????'),
+                                      ('성벽', '????'),
+                                      ('주둔 장수', '????'),
+                                    ],
                             ),
                           ),
                         ],
@@ -2413,96 +2504,8 @@ class _ProvinceDetailPanel extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (!playerOwned)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Row(
-                      children: [
-                        Icon(
-                          informationRevealed ? Icons.visibility : Icons.lock,
-                          size: 13,
-                          color: Color(ownerForce.mapColorValue),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          informationRevealed
-                              ? '적 세력 · 첩보로 확인된 정보'
-                              : '적 세력 · 공개된 정보만 표시',
-                          style: const TextStyle(
-                            color: Color(0xffbda77b),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 5),
-                Text(
-                  informationRevealed ? '지역 자원 · 지역 지표' : '지역 정보 제한',
-                  style: const TextStyle(
-                    color: Color(0xffa99168),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(top: 1),
-                  padding: const EdgeInsets.fromLTRB(2, 3, 2, 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0x24110e0a),
-                    border: Border.all(color: const Color(0xff5f492b)),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _ProvinceStatColumn(
-                          values: informationRevealed
-                              ? [
-                                  ('지역 금', province.gold),
-                                  ('지역 군량', province.food),
-                                  ('병력', province.soldiers),
-                                  ('민심', province.publicLoyalty),
-                                ]
-                              : const [
-                                  ('금', '????'),
-                                  ('군량', '????'),
-                                  ('병력', '????'),
-                                  ('민심', '????'),
-                                ],
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 93,
-                        color: const Color(0xff6e5633),
-                      ),
-                      Expanded(
-                        child: _ProvinceStatColumn(
-                          values: informationRevealed
-                              ? [
-                                  ('개발', province.land),
-                                  ('치수', province.floodControl),
-                                  ('성벽', 35),
-                                  (
-                                    '성 규모',
-                                    _settlementLabel(province.settlementType),
-                                  ),
-                                ]
-                              : const [
-                                  ('개발', '????'),
-                                  ('치수', '????'),
-                                  ('성벽', '????'),
-                                  ('주둔 장수', '????'),
-                                ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
