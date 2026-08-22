@@ -1370,7 +1370,17 @@ class _WorldMapHeader extends StatelessWidget {
           height: 43,
           child: Row(
             children: [
-              const SizedBox(width: 42),
+              IconButton(
+                onPressed: onOfficers,
+                tooltip: '장수 목록',
+                icon: const Icon(Icons.groups, size: 21),
+                color: const Color(0xffd9af65),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 36,
+                  height: 36,
+                ),
+              ),
               Expanded(
                 child: Center(
                   child: Row(
