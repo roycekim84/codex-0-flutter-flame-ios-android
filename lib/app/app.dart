@@ -2525,13 +2525,17 @@ class _PersonnelSearchScreen extends StatelessWidget {
                         child: LayoutBuilder(
                           builder: (context, constraints) => ClipRect(
                             child: Transform.translate(
-                              offset: const Offset(0, -38),
-                              child: Image.asset(
-                                AssetRepository.eventArtStrip,
+                              offset: const Offset(0, -50),
+                              child: SizedBox(
                                 width: constraints.maxWidth * 4,
-                                height: 285,
-                                fit: BoxFit.fill,
-                                alignment: Alignment.centerLeft,
+                                height: 330,
+                                child: Image.asset(
+                                  AssetRepository.eventArtStrip,
+                                  width: constraints.maxWidth * 4,
+                                  height: 330,
+                                  fit: BoxFit.fill,
+                                  alignment: Alignment.centerLeft,
+                                ),
                               ),
                             ),
                           ),
