@@ -2032,71 +2032,6 @@ class _TerritoryOverlayPainter extends CustomPainter {
     }
 
     // Draw only borders between different forces. Provinces belonging to the
-    // same force visually merge into one continuous colored territory.
-    final drawnEdges = <String>{};
-    for (var i = 0; i < polygons.length; i++) {
-      final polygon = polygons[i];
-      for (var edge = 0; edge < polygon.length; edge++) {
-        final start = polygon[edge];
-        final end = polygon[(edge + 1) % polygon.length];
-        final delta = end - start;
-        final length = delta.distance;
-        if (length < 1) continue;
-        final midpoint = (start + end) / 2;
-        final normal = Offset(-delta.dy / length, delta.dx / length);
-        final sideA = _nearestProvince(midpoint + normal * 2.5, points);
-        final sideB = _nearestProvince(midpoint - normal * 2.5, points);
-        if (sideA == null || sideB == null || sideA == sideB) continue;
-        if (provinces[sideA].ownerForceId == provinces[sideB].ownerForceId) {
-          continue;
-        }
-        final edgeKey = _edgeKey(start, end);
-        if (!drawnEdges.add(edgeKey)) continue;
-        final boundaryColor = _forceColor(provinces[i].ownerForceId);
-        // Both provinces use the exact same endpoints for this shared edge.
-        // Keep the segment straight so there can be no gap or mismatched
-        // curve where two territories meet.
-        final boundary = Path()
-          ..moveTo(start.dx, start.dy)
-          ..lineTo(end.dx, end.dy);
-        canvas.drawPath(
-          boundary,
-          Paint()
-            ..color = const Color(0xaa110f0c)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.2,
-        );
-        canvas.drawPath(
-          boundary,
-          Paint()
-            ..color = boundaryColor.withValues(alpha: .92)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.25,
-        );
-      }
-    }
-  }
-
-  String _edgeKey(Offset a, Offset b) {
-    final first = '${a.dx.toStringAsFixed(2)},${a.dy.toStringAsFixed(2)}';
-    final second = '${b.dx.toStringAsFixed(2)},${b.dy.toStringAsFixed(2)}';
-    return first.compareTo(second) < 0 ? '$first|$second' : '$second|$first';
-  }
-
-  int? _nearestProvince(Offset point, List<Offset> sites) {
-    if (sites.isEmpty) return null;
-    var nearest = 0;
-    var distance = double.infinity;
-    for (var i = 0; i < sites.length; i++) {
-      final dx = sites[i].dx - point.dx;
-      final dy = sites[i].dy - point.dy;
-      final nextDistance = dx * dx + dy * dy;
-      if (nextDistance < distance) {
-        distance = nextDistance;
-        nearest = i;
-      }
-    }
-    return nearest;
   }
 
   List<Offset> _voronoiPolygon(int index, List<Offset> points, Size size) {
@@ -2284,6 +2219,18 @@ class _ProvinceNode extends StatelessWidget {
             top: 7,
             child: Container(
               padding: const EdgeInsets.all(2),
+              decoration: selected
+                  ? const BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x66f6c95b),
+                          blurRadius: 12,
+                          spreadRadius: 3,
+                        ),
+                      ],
+                    )
+                  : null,
               child: Image.asset(asset, width: markerSize, height: markerSize),
             ),
           ),
