@@ -2519,12 +2519,14 @@ class _PersonnelSearchScreen extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(5),
-                      child: AssetSlice(
-                        asset: AssetRepository.eventArtStrip,
-                        index: 0,
-                        segments: 4,
+                      child: SizedBox(
                         width: double.infinity,
                         height: 210,
+                        child: Image.asset(
+                          AssetRepository.eventArtStrip,
+                          fit: BoxFit.cover,
+                          alignment: Alignment.centerLeft,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
