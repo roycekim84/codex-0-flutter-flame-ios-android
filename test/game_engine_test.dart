@@ -130,6 +130,7 @@ void main() {
     expect(restored.officers.length, 20);
     expect(restored.forces.first.mapColorValue, 0xff267d70);
     expect(restored.forces[1].bannerIndex, 1);
+    expect(restored.provinces.first.floodControl, 25);
   });
 
   test('첩보는 적 영지 정보를 공개하고 장수 충성도와 민심을 낮춘다', () {

@@ -80,8 +80,9 @@ class DemoScenario {
         'land': 35 + i * 3,
         'publicLoyalty': 65 + i,
         'soldiers': 900 + i * 120,
-        'gold': 0,
-        'food': 0,
+        'gold': 180 + i * 25,
+        'food': 600 + i * 100,
+        'floodControl': 25 + i * 3,
         'governorId': i < 6 ? 'officer_${i * 3 + 1}' : null,
         'settlementType': switch (i) {
           0 || 4 || 7 => 'large',

@@ -1389,7 +1389,7 @@ class _GameScreenState extends State<GameScreen> {
           '소유 세력  ${province.ownerName}\n'
           '태수  $governor\n'
           '개발  ${province.land}\n'
-          '치수  ${province.food}\n'
+          '치수  ${province.floodControl}\n'
           '민심  ${province.publicLoyalty}\n'
           '병력  ${province.soldiers}\n'
           '장수  ${province.officerIds.length}',
@@ -1710,7 +1710,7 @@ class _MapCommand extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(4),
         child: Container(
-          height: 54,
+          height: 58,
           decoration: BoxDecoration(
             color: onTap == null
                 ? const Color(0xff28241e)
@@ -1738,8 +1738,8 @@ class _MapCommand extends StatelessWidget {
                 ),
                 child: Image.asset(
                   AssetRepository.commandIcon(iconIndex),
-                  width: 25,
-                  height: 25,
+                  width: 29,
+                  height: 29,
                   fit: BoxFit.contain,
                 ),
               ),
@@ -1752,7 +1752,7 @@ class _MapCommand extends StatelessWidget {
                   color: onTap == null
                       ? const Color(0xff796d5a)
                       : const Color(0xffe2cea3),
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -2211,9 +2211,9 @@ class _ProvinceNode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (asset, markerSize) = switch (province.settlementType) {
-      'large' => (AssetRepository.fortressLarge, 56.0),
-      'small' => (AssetRepository.fortressSmall, 34.0),
-      _ => (AssetRepository.fortressMedium, 44.0),
+      'large' => (AssetRepository.fortressLarge, 64.0),
+      'small' => (AssetRepository.fortressSmall, 38.0),
+      _ => (AssetRepository.fortressMedium, 48.0),
     };
     return SizedBox(
       width: 88,
@@ -2238,11 +2238,15 @@ class _ProvinceNode extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               decoration: selected
                   ? BoxDecoration(
+                      border: Border.all(
+                        color: const Color(0xffffdf91),
+                        width: 1.2,
+                      ),
                       boxShadow: const [
                         BoxShadow(
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                          color: Color(0xffd7a84c),
+                          blurRadius: 4,
+                          spreadRadius: 0,
+                          color: Color(0x99d7a84c),
                         ),
                       ],
                     )
@@ -2251,7 +2255,7 @@ class _ProvinceNode extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 57,
+            top: 66,
             child: Text(
               province.name,
               textAlign: TextAlign.center,
@@ -2303,6 +2307,9 @@ class _ProvinceDetailPanel extends StatelessWidget {
     final leader =
         governor ??
         state.officers.firstWhere((o) => o.id == ownerForce.rulerId);
+    final roleText = governor == null
+        ? '태수 미임명 · 군주 ${leader.name}'
+        : '태수 ${governor.name}';
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xff171612),
@@ -2348,7 +2355,7 @@ class _ProvinceDetailPanel extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      '${ownerForce.name} · 태수  ${governor?.name ?? governorName}',
+                      '${ownerForce.name} · $roleText',
                       style: const TextStyle(
                         color: Color(0xffd4ba88),
                         fontSize: 13,
@@ -2387,8 +2394,8 @@ class _ProvinceDetailPanel extends StatelessWidget {
                       child: _ProvinceStatColumn(
                         values: informationRevealed
                             ? [
-                                ('금', ownerForce.gold),
-                                ('군량', ownerForce.food),
+                                ('지역 금', province.gold),
+                                ('지역 군량', province.food),
                                 ('병력', province.soldiers),
                                 ('민심', province.publicLoyalty),
                               ]
@@ -2410,8 +2417,9 @@ class _ProvinceDetailPanel extends StatelessWidget {
                         values: informationRevealed
                             ? [
                                 ('개발', province.land),
-                                ('치수', province.food ~/ 10),
+                                ('치수', province.floodControl),
                                 ('성벽', 35),
+                                ('장수', province.officerIds.length),
                               ]
                             : const [
                                 ('개발', '????'),
