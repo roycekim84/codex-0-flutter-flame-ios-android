@@ -1560,57 +1560,60 @@ class _WorldMapHeader extends StatelessWidget {
       children: [
         SizedBox(
           height: 43,
-          child: Stack(
-            alignment: Alignment.center,
+          child: Row(
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.auto_awesome,
-                    color: Color(0xffd9af65),
-                    size: 19,
-                  ),
-                  const SizedBox(width: 7),
-                  const Text(
-                    '세계 지도',
-                    style: TextStyle(
-                      color: Color(0xffffdfa1),
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 4,
-                      shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
-                    ),
-                  ),
-                ],
-              ),
-              Positioned(
-                right: 0,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xff5c4528),
-                    border: Border.all(
-                      color: const Color(0xffd2a35b),
-                      width: 1.2,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x66000000),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
+              const SizedBox(width: 42),
+              Expanded(
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.auto_awesome,
+                        color: Color(0xffd9af65),
+                        size: 19,
+                      ),
+                      const SizedBox(width: 7),
+                      const Text(
+                        '세계 지도',
+                        style: TextStyle(
+                          color: Color(0xffffdfa1),
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 4,
+                          shadows: [
+                            Shadow(color: Colors.black87, blurRadius: 4),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  child: IconButton(
-                    onPressed: onClose,
-                    icon: const Icon(Icons.close, size: 21),
-                    color: const Color(0xffffe2a5),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 42,
-                      height: 42,
+                ),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xff5c4528),
+                  border: Border.all(
+                    color: const Color(0xffd2a35b),
+                    width: 1.2,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x66000000),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
                     ),
+                  ],
+                ),
+                child: IconButton(
+                  onPressed: onClose,
+                  icon: const Icon(Icons.close, size: 21),
+                  color: const Color(0xffffe2a5),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 42,
+                    height: 42,
                   ),
                 ),
               ),
