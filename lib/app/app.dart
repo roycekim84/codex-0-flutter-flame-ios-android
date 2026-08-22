@@ -4602,6 +4602,33 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
                         ),
                       ),
                       const SizedBox(height: 7),
+                      FilledButton.icon(
+                        onPressed: () async {
+                          final completed = await Navigator.of(context)
+                              .push<bool>(
+                                MaterialPageRoute(
+                                  builder: (_) => PrisonerManagementScreen(
+                                    engine: widget.engine,
+                                    provinceId:
+                                        widget.battle.state.targetProvinceId,
+                                    prisoners: remainingPrisoners,
+                                  ),
+                                ),
+                              );
+                          if (completed == true && mounted) {
+                            setState(() => remainingPrisoners.clear());
+                          }
+                        },
+                        icon: const Icon(Icons.gavel),
+                        label: Text(
+                          '${remainingPrisoners.length}명 포로 처리 화면 열기',
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xff76572f),
+                          foregroundColor: const Color(0xffffdfa0),
+                        ),
+                      ),
+                      const SizedBox(height: 5),
                       ...remainingPrisoners.map(
                         (prisoner) => Container(
                           margin: const EdgeInsets.only(bottom: 8),
@@ -4676,6 +4703,232 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
     );
     if (handled) setState(() => remainingPrisoners.remove(prisoner));
   }
+}
+
+class PrisonerManagementScreen extends StatefulWidget {
+  const PrisonerManagementScreen({
+    super.key,
+    required this.engine,
+    required this.provinceId,
+    required this.prisoners,
+  });
+  final GameEngine engine;
+  final String provinceId;
+  final List<BattleOfficerOutcome> prisoners;
+
+  @override
+  State<PrisonerManagementScreen> createState() =>
+      _PrisonerManagementScreenState();
+}
+
+class _PrisonerManagementScreenState extends State<PrisonerManagementScreen> {
+  late final List<BattleOfficerOutcome> remaining = [...widget.prisoners];
+
+  OfficerState _officer(BattleOfficerOutcome outcome) =>
+      widget.engine.state.officers.firstWhere((o) => o.id == outcome.officerId);
+
+  void _handle(BattleOfficerOutcome prisoner, PrisonerAction action) {
+    final handled = widget.engine.handlePrisoner(
+      prisoner.officerId,
+      action,
+      widget.provinceId,
+    );
+    if (handled) setState(() => remaining.remove(prisoner));
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xff090807),
+    body: SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: const Color(0xff171612),
+          image: const DecorationImage(
+            image: AssetImage(AssetRepository.panelTexture),
+            fit: BoxFit.cover,
+            opacity: .12,
+          ),
+          border: Border.all(color: const Color(0xffb38343), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            Container(
+              height: 60,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xff382818), Color(0xff181612)],
+                ),
+                border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.gavel, color: Color(0xffd9af65), size: 25),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      '포로 처리',
+                      style: TextStyle(
+                        color: Color(0xffffdfa0),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: remaining.isEmpty
+                        ? () => Navigator.pop(context, true)
+                        : null,
+                    icon: const Icon(Icons.close),
+                    color: const Color(0xffffdfa0),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(14, 18, 14, 20),
+                children: [
+                  const Center(
+                    child: Text(
+                      '포로로 잡힌 장수',
+                      style: TextStyle(
+                        color: Color(0xffffdfa0),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Center(
+                    child: Text(
+                      '${remaining.length}명에 대한 처리를 결정하십시오',
+                      style: const TextStyle(
+                        color: Color(0xffc1ab82),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  ...remaining.map((prisoner) {
+                    final officer = _officer(prisoner);
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(
+                        color: const Color(0x453d2b17),
+                        border: Border.all(color: const Color(0xffa1763c)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              _GeneratedPortrait(seed: officer.id, size: 78),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      officer.name,
+                                      style: const TextStyle(
+                                        color: Color(0xffffdfa0),
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 7),
+                                    Text(
+                                      'WAR ${officer.war}  ·  INT ${officer.intelligence}',
+                                      style: const TextStyle(
+                                        color: Color(0xffc1ab82),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      'CHA ${officer.charisma}  ·  충성 ${officer.loyalty}',
+                                      style: const TextStyle(
+                                        color: Color(0xffc1ab82),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton(
+                                  onPressed: () =>
+                                      _handle(prisoner, PrisonerAction.recruit),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xff76572f),
+                                    foregroundColor: const Color(0xffffdfa0),
+                                  ),
+                                  child: const Text('등용 · 금 500'),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () =>
+                                      _handle(prisoner, PrisonerAction.release),
+                                  child: const Text('석방'),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: FilledButton(
+                                  onPressed: () =>
+                                      _handle(prisoner, PrisonerAction.execute),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xff6b3025),
+                                    foregroundColor: const Color(0xffffd2c4),
+                                  ),
+                                  child: const Text('처형'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 8),
+                  FilledButton.icon(
+                    onPressed: remaining.isEmpty
+                        ? () => Navigator.pop(context, true)
+                        : null,
+                    icon: const Icon(Icons.check),
+                    label: Text(remaining.isEmpty ? '처리 완료' : '모든 포로를 처리하십시오'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xff76572f),
+                      foregroundColor: const Color(0xffffdfa0),
+                      side: const BorderSide(color: Color(0xffc09351)),
+                    ),
+                  ),
+                  OutlinedButton(
+                    onPressed: remaining.isEmpty
+                        ? () => Navigator.pop(context, true)
+                        : null,
+                    child: const Text('확인'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class BattleScreen extends StatefulWidget {
