@@ -1058,6 +1058,35 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.endMonth => '모든 세력의 명령을 처리하고 다음 달로 넘어갑니다.',
   };
 
+  void _showMilitaryCommandScreen() {
+    final province = engine.state.provinces.firstWhere(
+      (p) => p.id == selectedProvinceId,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _MilitaryCommandScreen(
+          province: province,
+          force: engine.state.playerForce,
+          onCommand: (type) async {
+            if (!mounted) return;
+            Navigator.pop(context);
+            await _dispatch(
+              GameCommand(
+                type: type,
+                officerId: selectedOfficerId,
+                provinceId: province.id,
+              ),
+            );
+          },
+          onMove: () {
+            Navigator.pop(context);
+            _showMoveDialog();
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _showMoveDialog() async {
     final selected = engine.state.provinces.firstWhere(
       (p) => p.id == selectedProvinceId,
@@ -1311,7 +1340,7 @@ class _GameScreenState extends State<GameScreen> {
                 onPersonnel: _showPersonnelScreen,
                 onMilitary: () {
                   if (state.isPlayerProvince(selected)) {
-                    _showMoveDialog();
+                    _showMilitaryCommandScreen();
                   } else {
                     _startBattle();
                   }
@@ -2323,6 +2352,285 @@ class _ProvinceDetailPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MilitaryCommandScreen extends StatefulWidget {
+  const _MilitaryCommandScreen({
+    required this.province,
+    required this.force,
+    required this.onCommand,
+    required this.onMove,
+  });
+  final ProvinceState province;
+  final ForceState force;
+  final Future<void> Function(GameCommandType type) onCommand;
+  final VoidCallback onMove;
+  @override
+  State<_MilitaryCommandScreen> createState() => _MilitaryCommandScreenState();
+}
+
+class _MilitaryCommandScreenState extends State<_MilitaryCommandScreen> {
+  double recruitCount = 3000;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xff090807),
+    body: SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: const Color(0xff171612),
+          image: const DecorationImage(
+            image: AssetImage(AssetRepository.panelTexture),
+            fit: BoxFit.cover,
+            opacity: .12,
+          ),
+          border: Border.all(color: const Color(0xffb38343), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            _header(context),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
+                children: [
+                  _provinceCard(),
+                  const SizedBox(height: 12),
+                  _recruitCard(),
+                  const SizedBox(height: 12),
+                  _trainCard(),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: widget.onMove,
+                    icon: const Icon(Icons.swap_horiz),
+                    label: const Text('장수·병력 이동'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xffe3c480),
+                      side: const BorderSide(color: Color(0xff8b6937)),
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('닫기'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _header(BuildContext context) => Container(
+    height: 60,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.shield, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            '군사 · 징병 / 훈련',
+            style: TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+
+  Widget _provinceCard() => Container(
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: const Color(0x453d2b17),
+      border: Border.all(color: const Color(0xffa1763c)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.castle, color: Color(0xffd6a85d), size: 40),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.province.name,
+                style: const TextStyle(
+                  color: Color(0xffffdfa0),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${widget.force.name} · 금 ${_formatNumber(widget.force.gold)}',
+                style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        _CostMetric(
+          '현재 병력',
+          '${_formatNumber(widget.province.soldiers)}명',
+          const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+
+  Widget _recruitCard() => _panel(
+    '징병',
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          '모집 병사 수',
+          style: TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _formatNumber(recruitCount.round()),
+              style: const TextStyle(
+                color: Color(0xffffdfa0),
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const Text(
+              '0 / 10,000',
+              style: TextStyle(color: Color(0xffa8906b), fontSize: 11),
+            ),
+          ],
+        ),
+        Slider(
+          value: recruitCount,
+          min: 0,
+          max: 10000,
+          divisions: 100,
+          activeColor: const Color(0xffb88645),
+          onChanged: (value) => setState(() => recruitCount = value),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _CostMetric('예상 비용', '금 80', const Color(0xffe4a172)),
+            _CostMetric(
+              '민심 효율',
+              '${widget.province.publicLoyalty}%',
+              const Color(0xff73d18b),
+            ),
+            _CostMetric(
+              '예상 증가',
+              '+${_formatNumber((recruitCount * (widget.province.publicLoyalty / 100)).round())}',
+              const Color(0xff73d18b),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        FilledButton(
+          onPressed: recruitCount > 0
+              ? () => widget.onCommand(GameCommandType.recruit)
+              : null,
+          style: _militaryButton(),
+          child: const Text('징병 실행'),
+        ),
+      ],
+    ),
+  );
+
+  Widget _trainCard() => _panel(
+    '훈련',
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '현재 훈련도',
+              style: TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+            ),
+            Text(
+              'Lv. ${((widget.province.training / 20).floor() + 1).clamp(1, 5)} (${widget.province.training})',
+              style: const TextStyle(
+                color: Color(0xffffdfa0),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: widget.province.training / 100,
+          minHeight: 8,
+          backgroundColor: const Color(0xff49342a),
+          color: const Color(0xffc1944e),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          '훈련 효과  ·  전투 준비도 상승',
+          style: TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+        ),
+        const SizedBox(height: 8),
+        _CostMetric('훈련 비용', '금 60', const Color(0xffe4a172)),
+        const SizedBox(height: 10),
+        FilledButton(
+          onPressed: () => widget.onCommand(GameCommandType.train),
+          style: _militaryButton(),
+          child: const Text('훈련 실행'),
+        ),
+      ],
+    ),
+  );
+
+  Widget _panel(String title, Widget child) => Container(
+    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+    decoration: BoxDecoration(
+      color: const Color(0x35231b11),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xffd6a85d),
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        child,
+      ],
+    ),
+  );
+  ButtonStyle _militaryButton() => FilledButton.styleFrom(
+    backgroundColor: const Color(0xff76572f),
+    foregroundColor: const Color(0xffffdfa0),
+    side: const BorderSide(color: Color(0xffc09351)),
+    minimumSize: const Size.fromHeight(48),
+  );
 }
 
 class _YearSummaryScreen extends StatelessWidget {

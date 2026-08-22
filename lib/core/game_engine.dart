@@ -297,6 +297,7 @@ class GameEngine {
     final p = _playerProvince(provinceId);
     if (p == null || state.playerForce.gold < 60) return;
     state.playerForce.gold -= 60;
+    p.training = (p.training + 5).clamp(0, 100).toInt();
     state.log('${p.name} 훈련 · 군사 훈련도 상승 · 금 -60');
   }
 
