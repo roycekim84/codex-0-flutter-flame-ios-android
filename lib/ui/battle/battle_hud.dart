@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../battle/battle_engine.dart';
 import '../../battle/battle_state.dart';
 import '../../battle/terrain.dart';
+import '../../core/asset_repository.dart';
 
 class BattleTopHud extends StatelessWidget {
   const BattleTopHud({super.key, required this.battle});
@@ -11,9 +12,14 @@ class BattleTopHud extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-    decoration: const BoxDecoration(
-      color: Color(0xff171612),
-      border: Border(bottom: BorderSide(color: Color(0xff9c743b))),
+    decoration: BoxDecoration(
+      color: const Color(0xff171612),
+      image: DecorationImage(
+        image: AssetImage(AssetRepository.panelTexture),
+        fit: BoxFit.cover,
+        opacity: .18,
+      ),
+      border: const Border(bottom: BorderSide(color: Color(0xffc0924b))),
     ),
     child: Row(
       children: [
@@ -31,9 +37,15 @@ class BattleTopHud extends StatelessWidget {
           decoration: _box(const Color(0xff332b20)),
           child: Column(
             children: [
-              const Text(
-                '아군 턴',
-                style: TextStyle(color: Color(0xfff0d49d), fontSize: 11),
+              Text(
+                battle.phaseLabel,
+                style: TextStyle(
+                  color: battle.isAttackerTurn
+                      ? const Color(0xfff0d49d)
+                      : const Color(0xffe58d7b),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               Text(
                 '${battle.day}일째',
@@ -91,9 +103,14 @@ class BattleInfoPanel extends StatelessWidget {
     final shortage = battle.supplyShortageDays > 0;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: const BoxDecoration(
-        color: Color(0xff171612),
-        border: Border(
+      decoration: BoxDecoration(
+        color: const Color(0xff171612),
+        image: DecorationImage(
+          image: AssetImage(AssetRepository.panelTexture),
+          fit: BoxFit.cover,
+          opacity: .14,
+        ),
+        border: const Border(
           top: BorderSide(color: Color(0xff9c743b)),
           bottom: BorderSide(color: Color(0xff4f402a)),
         ),
@@ -249,6 +266,7 @@ class BattleCommandBar extends StatelessWidget {
   const BattleCommandBar({
     super.key,
     required this.disabled,
+    required this.turnLabel,
     required this.onMove,
     required this.onAction,
     required this.onRetreat,
@@ -256,6 +274,7 @@ class BattleCommandBar extends StatelessWidget {
     required this.onEndTurn,
   });
   final bool disabled;
+  final String turnLabel;
   final VoidCallback onMove;
   final void Function(BattleAction action) onAction;
   final VoidCallback onRetreat;
@@ -265,14 +284,22 @@ class BattleCommandBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-    color: const Color(0xff100e0b),
+    decoration: BoxDecoration(
+      color: const Color(0xff100e0b),
+      image: DecorationImage(
+        image: AssetImage(AssetRepository.panelTexture),
+        fit: BoxFit.cover,
+        opacity: .12,
+      ),
+      border: const Border(top: BorderSide(color: Color(0xff9c743b))),
+    ),
     child: Column(
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                '아군 턴 · 부대별 1회 행동',
+                '$turnLabel · 부대별 1회 행동',
                 style: TextStyle(
                   color: Color(0xffe8c98f),
                   fontSize: 11,
@@ -303,7 +330,6 @@ class BattleCommandBar extends StatelessWidget {
               '공격',
               Icons.gavel,
               disabled ? null : () => onAction(BattleAction.attack),
-              selected: true,
             ),
             _button(
               '책략',

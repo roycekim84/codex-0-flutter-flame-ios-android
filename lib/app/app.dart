@@ -8414,6 +8414,7 @@ class _BattleScreenState extends State<BattleScreen> {
                 ),
               BattleCommandBar(
                 disabled: battle.finished || !battle.isAttackerTurn,
+                turnLabel: battle.phaseLabel,
                 onMove: _moveSelected,
                 onAction: _act,
                 onInfo: () => _act(BattleAction.information),
