@@ -70,22 +70,92 @@ class BattleActionEffectComponent extends PositionComponent {
     final action = event.command.type;
 
     if (action == BattleCommandType.fire) {
-      final paint = Paint()
-        ..color = const Color(0xffff7b22).withValues(alpha: alpha * .9)
-        ..strokeWidth = 7 - progress * 3
+      final direction = defender - attacker;
+      final distance = direction.length;
+      final unitDirection = distance == 0
+          ? Vector2(1, 0)
+          : direction / distance;
+      final perpendicular = Vector2(-unitDirection.y, unitDirection.x);
+      final flameHead = attacker + direction * progress;
+      final flameTail = attacker + direction * (progress * .12);
+      final corePaint = Paint()
+        ..color = const Color(0xffffc247).withValues(alpha: alpha * .94)
+        ..strokeWidth = 10 - progress * 4
         ..strokeCap = ui.StrokeCap.round;
-      for (var i = 0; i < 7; i++) {
-        final offset = (i - 3) * 8.0;
+      final outerPaint = Paint()
+        ..color = const Color(0xffff6a21).withValues(alpha: alpha * .72)
+        ..strokeWidth = 17 - progress * 7
+        ..strokeCap = ui.StrokeCap.round;
+      canvas.drawLine(
+        Offset(flameTail.x, flameTail.y),
+        Offset(flameHead.x, flameHead.y),
+        outerPaint,
+      );
+      canvas.drawLine(
+        Offset(flameTail.x, flameTail.y),
+        Offset(flameHead.x, flameHead.y),
+        corePaint,
+      );
+      for (var i = 0; i < 9; i++) {
+        final offset = (i - 4) * 7.0;
+        final wave = math.sin(elapsed * 18 + i * 1.7) * 5;
+        final start =
+            attacker +
+            direction * (.12 + (i % 3) * .035) +
+            perpendicular * (offset + wave);
+        final endProgress = (.42 + (i % 4) * .12) * progress;
+        final end =
+            attacker +
+            direction * endProgress +
+            perpendicular * (offset * .45 + wave * .35);
         canvas.drawLine(
-          Offset(defender.x - 18, defender.y + offset),
-          Offset(attacker.x + 18, attacker.y - offset),
-          paint,
+          Offset(start.x, start.y),
+          Offset(end.x, end.y),
+          Paint()
+            ..color =
+                (i.isEven ? const Color(0xffffe8a0) : const Color(0xffff862c))
+                    .withValues(alpha: alpha * (i.isEven ? .9 : .74))
+            ..strokeWidth = i.isEven ? 3.2 : 5.0
+            ..strokeCap = ui.StrokeCap.round,
+        );
+      }
+      for (var i = 0; i < 8; i++) {
+        final t = ((i * .19) + progress * .8) % 1.0;
+        final wave = math.sin(elapsed * 9 + i * 2.1) * 10;
+        final ember =
+            attacker + direction * (.18 + t * .7) + perpendicular * wave;
+        canvas.drawCircle(
+          Offset(ember.x, ember.y),
+          1.5 + (i % 3) * .7,
+          Paint()
+            ..color = const Color(
+              0xffffd56a,
+            ).withValues(alpha: alpha * (.45 + (i % 3) * .12)),
         );
       }
       canvas.drawCircle(
-        Offset((attacker.x + defender.x) / 2, (attacker.y + defender.y) / 2),
-        22 + progress * 18,
-        Paint()..color = const Color(0xffffb52e).withValues(alpha: alpha * .22),
+        Offset(flameHead.x, flameHead.y),
+        24 + progress * 22,
+        Paint()..color = const Color(0xffff9d35).withValues(alpha: alpha * .2),
+      );
+      for (var i = 0; i < 4; i++) {
+        final smoke =
+            defender -
+            direction * (i * 8 + 12) +
+            perpendicular * math.sin(elapsed * 5 + i) * 9;
+        canvas.drawCircle(
+          Offset(smoke.x, smoke.y),
+          7 + i * 2.5 + progress * 4,
+          Paint()
+            ..color = const Color(
+              0xff5a5144,
+            ).withValues(alpha: alpha * (.16 - i * .02)),
+        );
+      }
+      canvas.drawCircle(
+        Offset(defender.x, defender.y),
+        20 + progress * 22,
+        Paint()..color = const Color(0xffff6b2d).withValues(alpha: alpha * .28),
       );
     } else if (action == BattleCommandType.charge) {
       final direction = defender - attacker;
