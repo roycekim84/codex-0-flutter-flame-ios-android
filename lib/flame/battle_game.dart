@@ -7,6 +7,7 @@ import '../core/asset_repository.dart';
 import '../battle/battle_command.dart';
 import '../battle/battle_map.dart';
 import '../battle/battle_state.dart';
+import 'battle_unit_component.dart';
 
 class BattleGame extends FlameGame {
   BattleGame(this.battle);
@@ -17,7 +18,7 @@ class BattleGame extends FlameGame {
 
   @override
   Future<void> onLoad() async {
-    unitImage = await images.load('battle_unit_token.png');
+    unitImage = await images.load('battle_unit_token_alpha.png');
     terrainImage = await images.load(
       AssetRepository.battleTerrainOverlay.replaceFirst('assets/images/', ''),
     );
@@ -64,29 +65,11 @@ class BattleGame extends FlameGame {
         BattleCell(unit.row, unit.column),
       );
       add(
-        SpriteComponent.fromImage(
-          unitImage,
-          position: center,
-          size: Vector2.all(48),
-          anchor: Anchor.center,
-          paint: Paint()
-            ..colorFilter = ColorFilter.mode(
-              unit.burning
-                  ? const Color(0xffd87928)
-                  : battle.attackerUnits.contains(unit)
-                  ? Colors.white
-                  : const Color(0xffa84f45),
-              BlendMode.modulate,
-            ),
-        ),
-      );
-      add(
-        TextComponent(
-          text: '${unit.soldiers}${unit.burning ? ' 🔥' : ''}',
-          position: center - Vector2(18, 8),
-          textRenderer: TextPaint(
-            style: const TextStyle(color: Color(0xffffffff), fontSize: 10),
-          ),
+        BattleUnitComponent(
+          unit: unit,
+          image: unitImage,
+          isAttacker: battle.attackerUnits.contains(unit),
+          center: center,
         ),
       );
     }

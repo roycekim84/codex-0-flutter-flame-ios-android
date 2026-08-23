@@ -19,6 +19,8 @@ class AssetRepository {
   static const panelTexture = 'assets/images/panel_texture.png';
   static const commandIconStrip = 'assets/images/command_icon_strip.png';
   static const battleUnitToken = 'assets/images/battle_unit_token.png';
+  static const battleUnitTokenAlpha =
+      'assets/images/battle_unit_token_alpha.png';
   static const factionEmblemStrip = 'assets/images/faction_emblem_strip.png';
   static const forceBannerStrip = 'assets/images/force_banner_strip.png';
   static const battleTerrainOverlay =
