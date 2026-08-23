@@ -8,7 +8,11 @@ const page = await browser.newPage({ viewport: { width: 390, height: 844 }, devi
 try {
   await mkdir('artifacts', { recursive: true });
   await page.goto(url, { waitUntil: 'networkidle' });
-  await page.locator('flt-glass-pane').waitFor({ state: 'attached', timeout: 60000 });
+  await page.waitForFunction(
+    () => Boolean(document.querySelector('flutter-view, flt-glass-pane')),
+    null,
+    { timeout: 60000 },
+  );
   await page.waitForTimeout(20000);
   console.log(`Flutter DOM length: ${(await page.content()).length}`);
   await page.screenshot({ path: 'artifacts/battle.png', fullPage: false });
