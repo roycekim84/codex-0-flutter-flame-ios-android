@@ -88,25 +88,48 @@ class BattleActionEffectComponent extends PositionComponent {
         Paint()..color = const Color(0xffffb52e).withValues(alpha: alpha * .22),
       );
     } else if (action == BattleCommandType.charge) {
+      final direction = defender - attacker;
+      final distance = direction.length;
+      final unitDirection = distance == 0
+          ? Vector2(1, 0)
+          : direction / distance;
+      final perpendicular = Vector2(-unitDirection.y, unitDirection.x);
+      final lancePoint = attacker + direction * progress.clamp(0.0, 1.0);
       final paint = Paint()
         ..color = const Color(0xffffe3a1).withValues(alpha: alpha * .85)
         ..strokeWidth = 3
         ..strokeCap = ui.StrokeCap.round;
-      for (var i = 0; i < 5; i++) {
-        final y = attacker.y + (i - 2) * 7.0;
+      for (var i = 0; i < 7; i++) {
+        final offset = (i - 3) * 5.5;
+        final trailStart =
+            lancePoint -
+            unitDirection * (25 + (1 - progress) * 18) +
+            perpendicular * offset;
+        final trailEnd =
+            lancePoint - unitDirection * 4 + perpendicular * offset;
         canvas.drawLine(
-          Offset(attacker.x - 28 - progress * 22, y),
-          Offset(attacker.x + 10, y),
+          Offset(trailStart.x, trailStart.y),
+          Offset(trailEnd.x, trailEnd.y),
           paint,
         );
       }
       canvas.drawCircle(
+        Offset(lancePoint.x, lancePoint.y),
+        13 + progress * 16,
+        Paint()..color = const Color(0xffffd16f).withValues(alpha: alpha * .16),
+      );
+      canvas.drawCircle(
         Offset(defender.x, defender.y),
-        14 + progress * 15,
+        14 + progress * 22,
+        Paint()..color = const Color(0xffff9c64).withValues(alpha: alpha * .22),
+      );
+      canvas.drawCircle(
+        Offset(defender.x, defender.y),
+        15 + progress * 16,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 4
-          ..color = const Color(0xffff9c64).withValues(alpha: alpha),
+          ..strokeWidth = 4 - progress * 2
+          ..color = const Color(0xffffc276).withValues(alpha: alpha),
       );
     } else if (action == BattleCommandType.cooperate) {
       final paint = Paint()
