@@ -622,4 +622,28 @@ void main() {
     expect(battle.state.selectedAttacker, isNull);
     expect(battle.state.selectedDefender, isNull);
   });
+
+  test('B6 전투 행동은 최근 전투 로그를 남긴다', () {
+    final engine = createEngine();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    final attacker = battle!.state.attackerUnits.first;
+    final defender = battle.state.defenderUnits.first;
+    battle.execute(BattleCommand.selectAttacker(attacker.officerId));
+    battle.execute(BattleCommand.selectDefender(defender.officerId));
+    final event = battle.execute(
+      BattleCommand.action(
+        type: BattleCommandType.fire,
+        attackerId: attacker.officerId,
+        defenderId: defender.officerId,
+      ),
+    );
+    expect(event.logMessage, contains('화공'));
+    expect(battle.state.battleLog, hasLength(1));
+    expect(battle.state.battleLog.single, contains('화공'));
+  });
 }

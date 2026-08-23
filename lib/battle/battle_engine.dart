@@ -110,6 +110,7 @@ class BattleEngine {
     _syncUnits(state.attackerUnits, state.attackerSoldiers);
     _syncUnits(state.defenderUnits, state.defenderSoldiers);
     _advanceDay();
+    _record('일반 공격 실행 · 피해 $attackerDamage · 반격 손실 $defenderDamage');
     return BattleResultEvent(
       command: const BattleCommand.action(
         type: BattleCommandType.attack,
@@ -212,6 +213,7 @@ class BattleEngine {
       (sum, u) => sum + u.soldiers,
     );
     _advanceDay();
+    _record(_logFor(action, damage));
     return BattleResultEvent(
       command: eventCommand,
       attackerId: attackerId,
@@ -237,7 +239,22 @@ class BattleEngine {
   };
 
   String _logFor(BattleAction action, int damage) =>
-      '${action.name} 실행 · 피해 $damage';
+      '${_labelFor(action)} 실행 · 피해 $damage';
+
+  String _labelFor(BattleAction action) => switch (action) {
+    BattleAction.attack => '일반 공격',
+    BattleAction.fire => '화공',
+    BattleAction.charge => '돌격',
+    BattleAction.cooperate => '협공',
+    BattleAction.information => '정보전',
+    BattleAction.wait => '대기',
+  };
+
+  void _record(String message) {
+    if (message.isEmpty) return;
+    state.battleLog.add('[${state.day}일째] $message');
+    if (state.battleLog.length > 30) state.battleLog.removeAt(0);
+  }
 
   bool moveUnit(String unitId, int row, int column) {
     if (state.finished || row < 0 || row > 4 || column < 0 || column > 5) {
@@ -258,6 +275,7 @@ class BattleEngine {
     unit.column = column;
     state.selectedAttackerId = unitId;
     _advanceDay();
+    _record('${unit.name} 이동 · ${row + 1}-${column + 1}');
     return true;
   }
 
@@ -332,6 +350,7 @@ class BattleEngine {
     }
     state.finished = true;
     state.winner = 'defender';
+    _record('공격군 퇴각');
     return BattleResultEvent(
       command: eventCommand,
       finished: true,

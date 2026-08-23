@@ -67,6 +67,7 @@ class BattleState {
   int returnedSoldiers = 0;
   String? returnProvinceId;
   final List<BattleOfficerOutcome> outcomes = [];
+  final List<String> battleLog = [];
   bool finished = false;
   String? winner;
   String? selectedAttackerId;

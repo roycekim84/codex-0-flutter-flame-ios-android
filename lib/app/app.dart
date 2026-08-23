@@ -7345,6 +7345,41 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    if (battle.battleLog.isNotEmpty) ...[
+                      const Text(
+                        '전투 기록',
+                        style: TextStyle(
+                          color: Color(0xffd6a85d),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0x25231b11),
+                          border: Border.all(color: const Color(0xff5d472c)),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: battle.battleLog.reversed
+                              .take(5)
+                              .map(
+                                (log) => Text(
+                                  log,
+                                  style: const TextStyle(
+                                    color: Color(0xffc1ab82),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     const Text(
                       '장수 결과',
                       style: TextStyle(
@@ -8289,6 +8324,7 @@ class _BattleScreenState extends State<BattleScreen> {
                 ),
               ),
               BattleInfoPanel(battle: battle),
+              BattleLogPanel(battle: battle),
               if (battle.attackerUnits.isNotEmpty &&
                   battle.defenderUnits.isNotEmpty)
                 Padding(

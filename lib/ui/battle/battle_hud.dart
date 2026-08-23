@@ -232,6 +232,48 @@ class BattleCommandBar extends StatelessWidget {
   );
 }
 
+class BattleLogPanel extends StatelessWidget {
+  const BattleLogPanel({super.key, required this.battle});
+  final BattleState battle;
+
+  @override
+  Widget build(BuildContext context) {
+    final logs = battle.battleLog.reversed.take(4).toList().reversed.toList();
+    return Container(
+      constraints: const BoxConstraints(minHeight: 32, maxHeight: 74),
+      padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+      decoration: const BoxDecoration(
+        color: Color(0xff100e0b),
+        border: Border(top: BorderSide(color: Color(0xff4f402a))),
+      ),
+      child: logs.isEmpty
+          ? const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '전투 기록이 없습니다.',
+                style: TextStyle(color: Color(0xff9d8967), fontSize: 10),
+              ),
+            )
+          : ListView(
+              padding: EdgeInsets.zero,
+              children: logs
+                  .map(
+                    (log) => Text(
+                      log,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xffcdb58a),
+                        fontSize: 10,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+    );
+  }
+}
+
 BoxDecoration _box(Color color) => BoxDecoration(
   color: color,
   border: Border.all(color: const Color(0xffa47a3e)),
