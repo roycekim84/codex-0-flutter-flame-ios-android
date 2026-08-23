@@ -11,10 +11,31 @@ class BattleEngine {
   BattleResultEvent execute(BattleCommand command) {
     switch (command.type) {
       case BattleCommandType.selectAttacker:
+        if (!state.attackerUnits.any(
+          (unit) => unit.officerId == command.attackerId,
+        )) {
+          return BattleResultEvent(
+            command: command,
+            logMessage: '선택할 수 없는 공격 부대입니다.',
+          );
+        }
         state.selectedAttackerId = command.attackerId;
+        state.selectedDefenderId = null;
         return BattleResultEvent(command: command);
       case BattleCommandType.selectDefender:
+        if (!state.defenderUnits.any(
+          (unit) => unit.officerId == command.defenderId,
+        )) {
+          return BattleResultEvent(
+            command: command,
+            logMessage: '선택할 수 없는 방어 부대입니다.',
+          );
+        }
         state.selectedDefenderId = command.defenderId;
+        return BattleResultEvent(command: command);
+      case BattleCommandType.clearSelection:
+        state.selectedAttackerId = null;
+        state.selectedDefenderId = null;
         return BattleResultEvent(command: command);
       case BattleCommandType.move:
         final moved =

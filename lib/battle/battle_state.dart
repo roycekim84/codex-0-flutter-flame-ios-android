@@ -99,6 +99,16 @@ class BattleState {
         .toList();
   }
 
+  int? get expectedDamage {
+    final attacker = selectedAttacker;
+    final defender = selectedDefender;
+    if (attacker == null || defender == null) return null;
+    return (attacker.soldiers * .14 * terrain.attackModifier)
+        .round()
+        .clamp(0, defender.soldiers)
+        .toInt();
+  }
+
   BattleUnit? _unitById(List<BattleUnit> units, String? id) => id == null
       ? null
       : units.where((unit) => unit.officerId == id).firstOrNull;

@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'dart:math' as math;
 
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 
 import 'battle_command.dart';
@@ -23,12 +24,32 @@ class BattleMapLayout {
 }
 
 /// 배경 이미지 위에 투명한 육각 격자와 상호작용 상태를 그린다.
-class BattleMapComponent extends PositionComponent {
-  BattleMapComponent(this.battle)
+class BattleMapComponent extends PositionComponent with TapCallbacks {
+  BattleMapComponent(this.battle, {this.onCellTap})
     : super(position: BattleMapLayout.mapOffset, size: Vector2(356, 310));
 
   final BattleState battle;
+  final void Function(BattleCell cell)? onCellTap;
   static const _radius = 28.5;
+
+  @override
+  void onTapUp(TapUpEvent event) {
+    final point = event.localPosition;
+    BattleCell? closest;
+    var closestDistance = double.infinity;
+    for (var row = 0; row < BattleMapLayout.rows; row++) {
+      for (var column = 0; column < BattleMapLayout.columns; column++) {
+        final center = BattleMapLayout.cellCenter(BattleCell(row, column));
+        final distance = (center - point).length;
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closest = BattleCell(row, column);
+        }
+      }
+    }
+    if (closest != null && closestDistance <= _radius) onCellTap?.call(closest);
+    event.handled = true;
+  }
 
   @override
   void render(ui.Canvas canvas) {

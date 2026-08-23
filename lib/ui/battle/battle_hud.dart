@@ -97,23 +97,38 @@ class BattleInfoPanel extends StatelessWidget {
           bottom: BorderSide(color: Color(0xff4f402a)),
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(child: _stat('지형', _terrainLabel(battle.terrain))),
-          Expanded(child: _stat('날씨', '맑음')),
-          Expanded(
-            child: _stat(
-              '군량',
-              '${_format(battle.attackerFood)} / ${_format(battle.dailySupplyCost)}',
-            ),
+          Row(
+            children: [
+              Expanded(child: _stat('지형', _terrainLabel(battle.terrain))),
+              Expanded(child: _stat('날씨', '맑음')),
+              Expanded(
+                child: _stat(
+                  '군량',
+                  '${_format(battle.attackerFood)} / ${_format(battle.dailySupplyCost)}',
+                ),
+              ),
+              Expanded(
+                child: _stat(
+                  '사기',
+                  '${battle.attackerMorale} / ${battle.defenderMorale}',
+                  warning: shortage,
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: _stat(
-              '사기',
-              '${battle.attackerMorale} / ${battle.defenderMorale}',
-              warning: shortage,
+          if (battle.selectedAttacker != null) ...[
+            const SizedBox(height: 3),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '선택 ${battle.selectedAttacker!.name} · 이동 ${battle.movementCells.length}칸 · 공격 ${battle.attackCells.length}칸'
+                '${battle.expectedDamage == null ? '' : ' · 예상 피해 ${_format(battle.expectedDamage!)}'}',
+                style: const TextStyle(color: Color(0xffd8bd89), fontSize: 10),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

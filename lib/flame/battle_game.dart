@@ -10,8 +10,9 @@ import '../battle/battle_state.dart';
 import 'battle_unit_component.dart';
 
 class BattleGame extends FlameGame {
-  BattleGame(this.battle);
+  BattleGame(this.battle, {this.onCellTap});
   final BattleState battle;
+  final void Function(BattleCell cell)? onCellTap;
   late ui.Image unitImage;
   late ui.Image terrainImage;
   late ui.Image effectsImage;
@@ -46,7 +47,7 @@ class BattleGame extends FlameGame {
           ),
       ),
     );
-    add(BattleMapComponent(battle));
+    add(BattleMapComponent(battle, onCellTap: onCellTap));
     for (final unit in [...battle.attackerUnits, ...battle.defenderUnits]) {
       final center = BattleMapLayout.worldCenter(
         BattleCell(unit.row, unit.column),

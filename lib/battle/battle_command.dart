@@ -2,6 +2,7 @@
 enum BattleCommandType {
   selectAttacker,
   selectDefender,
+  clearSelection,
   move,
   attack,
   fire,
@@ -32,6 +33,9 @@ class BattleCommand {
 
   const BattleCommand.selectDefender(String unitId)
     : this._(type: BattleCommandType.selectDefender, defenderId: unitId);
+
+  const BattleCommand.clearSelection()
+    : this._(type: BattleCommandType.clearSelection);
 
   const BattleCommand.move({
     required String unitId,

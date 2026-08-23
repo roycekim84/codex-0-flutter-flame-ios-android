@@ -7766,7 +7766,55 @@ class _BattleScreenState extends State<BattleScreen> {
         widget.battle.state.defenderUnits.firstOrNull?.officerId;
     widget.battle.state.selectedAttackerId = selectedAttackerId;
     widget.battle.state.selectedDefenderId = selectedDefenderId;
-    battleGame = BattleGame(widget.battle.state);
+    battleGame = BattleGame(widget.battle.state, onCellTap: _onBattleCellTap);
+  }
+
+  void _onBattleCellTap(BattleCell cell) {
+    final battle = widget.battle.state;
+    if (battle.finished) return;
+    final attacker = battle.attackerUnits
+        .where((unit) => unit.row == cell.row && unit.column == cell.column)
+        .firstOrNull;
+    final defender = battle.defenderUnits
+        .where((unit) => unit.row == cell.row && unit.column == cell.column)
+        .firstOrNull;
+    final selected = battle.selectedAttacker;
+    if (attacker != null) {
+      widget.battle.execute(BattleCommand.selectAttacker(attacker.officerId));
+      setState(() {
+        selectedAttackerId = attacker.officerId;
+        selectedDefenderId = null;
+      });
+    } else if (defender != null) {
+      final event = widget.battle.execute(
+        BattleCommand.selectDefender(defender.officerId),
+      );
+      if (event.logMessage.isNotEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(event.logMessage)));
+      }
+      setState(() => selectedDefenderId = defender.officerId);
+    } else if (selected != null && battle.movementCells.contains(cell)) {
+      final event = widget.battle.execute(
+        BattleCommand.move(
+          unitId: selected.officerId,
+          row: cell.row,
+          column: cell.column,
+        ),
+      );
+      if (event.logMessage.contains('없')) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(event.logMessage)));
+      }
+      setState(() {});
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('선택한 부대가 이동할 수 없는 칸입니다.')));
+    }
+    battleGame.refreshBoard();
   }
 
   void _act(BattleAction action) {
@@ -8252,6 +8300,7 @@ class _BattleScreenState extends State<BattleScreen> {
                                       BattleCommand.selectAttacker(id),
                                     );
                                   }
+                                  battleGame.refreshBoard();
                                 },
                         ),
                       ),
@@ -8280,8 +8329,25 @@ class _BattleScreenState extends State<BattleScreen> {
                                       BattleCommand.selectDefender(id),
                                     );
                                   }
+                                  battleGame.refreshBoard();
                                 },
                         ),
+                      ),
+                      IconButton(
+                        tooltip: '선택 해제',
+                        onPressed: battle.finished
+                            ? null
+                            : () {
+                                widget.battle.execute(
+                                  const BattleCommand.clearSelection(),
+                                );
+                                setState(() {
+                                  selectedAttackerId = null;
+                                  selectedDefenderId = null;
+                                });
+                                battleGame.refreshBoard();
+                              },
+                        icon: const Icon(Icons.close, size: 18),
                       ),
                     ],
                   ),

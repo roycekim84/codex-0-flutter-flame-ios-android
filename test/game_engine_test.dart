@@ -596,4 +596,30 @@ void main() {
     expect(event.logMessage, isNotEmpty);
     expect(defender.burning, isTrue);
   });
+
+  test('B4 선택 명령은 범위와 예상 피해를 제공하고 잘못된 선택을 거부한다', () {
+    final engine = createEngine();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    final attacker = battle!.state.attackerUnits.first;
+    final defender = battle.state.defenderUnits.first;
+
+    final invalid = battle.execute(
+      const BattleCommand.selectAttacker('missing'),
+    );
+    expect(invalid.logMessage, isNotEmpty);
+    battle.execute(BattleCommand.selectAttacker(attacker.officerId));
+    battle.execute(BattleCommand.selectDefender(defender.officerId));
+    expect(battle.state.movementCells, isNotEmpty);
+    expect(battle.state.expectedDamage, isNotNull);
+    expect(battle.state.expectedDamage, greaterThan(0));
+
+    battle.execute(const BattleCommand.clearSelection());
+    expect(battle.state.selectedAttacker, isNull);
+    expect(battle.state.selectedDefender, isNull);
+  });
 }
