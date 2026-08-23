@@ -1,4 +1,5 @@
 import 'terrain.dart';
+import 'battle_command.dart';
 
 enum BattleOfficerResult { escaped, captured, dead }
 
@@ -68,5 +69,58 @@ class BattleState {
   final List<BattleOfficerOutcome> outcomes = [];
   bool finished = false;
   String? winner;
+  String? selectedAttackerId;
+  String? selectedDefenderId;
   bool get attackerWon => winner == 'attacker';
+
+  BattleUnit? get selectedAttacker =>
+      _unitById(attackerUnits, selectedAttackerId);
+  BattleUnit? get selectedDefender =>
+      _unitById(defenderUnits, selectedDefenderId);
+
+  List<BattleCell> get movementCells {
+    final unit = selectedAttacker;
+    if (unit == null || finished || unit.soldiers <= 0) return const [];
+    return _neighbors(unit).where((cell) => !_occupied(cell)).toList();
+  }
+
+  List<BattleCell> get attackCells {
+    final unit = selectedAttacker;
+    if (unit == null || finished || unit.soldiers <= 0) return const [];
+    return _neighbors(unit)
+        .where(
+          (cell) => defenderUnits.any(
+            (enemy) =>
+                enemy.row == cell.row &&
+                enemy.column == cell.column &&
+                enemy.soldiers > 0,
+          ),
+        )
+        .toList();
+  }
+
+  BattleUnit? _unitById(List<BattleUnit> units, String? id) => id == null
+      ? null
+      : units.where((unit) => unit.officerId == id).firstOrNull;
+
+  List<BattleCell> _neighbors(BattleUnit unit) =>
+      [
+            BattleCell(unit.row - 1, unit.column),
+            BattleCell(unit.row + 1, unit.column),
+            BattleCell(unit.row, unit.column - 1),
+            BattleCell(unit.row, unit.column + 1),
+          ]
+          .where(
+            (cell) =>
+                cell.row >= 0 &&
+                cell.row < 5 &&
+                cell.column >= 0 &&
+                cell.column < 6,
+          )
+          .toList();
+
+  bool _occupied(BattleCell cell) => [...attackerUnits, ...defenderUnits].any(
+    (unit) =>
+        unit.soldiers > 0 && unit.row == cell.row && unit.column == cell.column,
+  );
 }

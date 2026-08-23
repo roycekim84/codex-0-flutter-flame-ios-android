@@ -1,4 +1,5 @@
 import 'battle_state.dart';
+import 'battle_command.dart';
 import 'terrain.dart';
 
 enum BattleAction { attack, fire, charge, cooperate, information, wait }
@@ -7,8 +8,72 @@ class BattleEngine {
   BattleEngine(this.state);
   final BattleState state;
 
-  void attack() {
-    if (state.finished) return;
+  BattleResultEvent execute(BattleCommand command) {
+    switch (command.type) {
+      case BattleCommandType.selectAttacker:
+        state.selectedAttackerId = command.attackerId;
+        return BattleResultEvent(command: command);
+      case BattleCommandType.selectDefender:
+        state.selectedDefenderId = command.defenderId;
+        return BattleResultEvent(command: command);
+      case BattleCommandType.move:
+        final moved =
+            command.attackerId != null &&
+            command.row != null &&
+            command.column != null &&
+            moveUnit(command.attackerId!, command.row!, command.column!);
+        return BattleResultEvent(
+          command: command,
+          attackerId: command.attackerId,
+          logMessage: moved ? '부대가 이동했습니다.' : '이동할 수 없는 칸입니다.',
+        );
+      case BattleCommandType.attack:
+      case BattleCommandType.fire:
+      case BattleCommandType.charge:
+      case BattleCommandType.cooperate:
+      case BattleCommandType.information:
+      case BattleCommandType.wait:
+        final attackerId = command.attackerId ?? state.selectedAttackerId;
+        final defenderId = command.defenderId ?? state.selectedDefenderId;
+        if (attackerId == null || defenderId == null) {
+          return BattleResultEvent(
+            command: command,
+            logMessage: '대상을 선택해야 합니다.',
+          );
+        }
+        return act(
+          attackerId: attackerId,
+          defenderId: defenderId,
+          action: _actionFor(command.type),
+          command: command,
+        );
+      case BattleCommandType.retreat:
+        return retreat(command: command);
+    }
+  }
+
+  BattleAction _actionFor(BattleCommandType type) => switch (type) {
+    BattleCommandType.attack => BattleAction.attack,
+    BattleCommandType.fire => BattleAction.fire,
+    BattleCommandType.charge => BattleAction.charge,
+    BattleCommandType.cooperate => BattleAction.cooperate,
+    BattleCommandType.information => BattleAction.information,
+    BattleCommandType.wait => BattleAction.wait,
+    _ => BattleAction.wait,
+  };
+
+  BattleResultEvent attack() {
+    if (state.finished) {
+      return BattleResultEvent(
+        command: const BattleCommand.action(
+          type: BattleCommandType.attack,
+          attackerId: '',
+          defenderId: '',
+        ),
+        finished: true,
+        winner: state.winner,
+      );
+    }
     final commanderModifier =
         (0.12 + state.commanderWar / 1000) * state.terrain.attackModifier;
     final attackerDamage = (state.attackerSoldiers * commanderModifier)
@@ -24,14 +89,40 @@ class BattleEngine {
     _syncUnits(state.attackerUnits, state.attackerSoldiers);
     _syncUnits(state.defenderUnits, state.defenderSoldiers);
     _advanceDay();
+    return BattleResultEvent(
+      command: const BattleCommand.action(
+        type: BattleCommandType.attack,
+        attackerId: '',
+        defenderId: '',
+      ),
+      damage: attackerDamage,
+      attackerSoldiersLost: defenderDamage,
+      finished: state.finished,
+      winner: state.winner,
+      logMessage: '공격이 실행되었습니다.',
+    );
   }
 
-  void act({
+  BattleResultEvent act({
     required String attackerId,
     required String defenderId,
     required BattleAction action,
+    BattleCommand? command,
   }) {
-    if (state.finished) return;
+    final eventCommand =
+        command ??
+        BattleCommand.action(
+          type: _commandTypeFor(action),
+          attackerId: attackerId,
+          defenderId: defenderId,
+        );
+    if (state.finished) {
+      return BattleResultEvent(
+        command: eventCommand,
+        finished: true,
+        winner: state.winner,
+      );
+    }
     final attacker = state.attackerUnits
         .where((u) => u.officerId == attackerId)
         .firstOrNull;
@@ -42,8 +133,13 @@ class BattleEngine {
         defender == null ||
         attacker.soldiers <= 0 ||
         defender.soldiers <= 0) {
-      return;
+      return BattleResultEvent(
+        command: eventCommand,
+        logMessage: '유효하지 않은 부대입니다.',
+      );
     }
+    final attackerBefore = attacker.soldiers;
+    final defenderMoraleBefore = state.defenderMorale;
     final base = switch (action) {
       BattleAction.attack =>
         attacker.soldiers * .14 * state.terrain.attackModifier,
@@ -95,7 +191,32 @@ class BattleEngine {
       (sum, u) => sum + u.soldiers,
     );
     _advanceDay();
+    return BattleResultEvent(
+      command: eventCommand,
+      attackerId: attackerId,
+      defenderId: defenderId,
+      damage: damage,
+      attackerSoldiersLost: attackerBefore - attacker.soldiers,
+      moraleDelta: state.defenderMorale - defenderMoraleBefore,
+      fireApplied: action == BattleAction.fire,
+      informationRevealed: action == BattleAction.information,
+      finished: state.finished,
+      winner: state.winner,
+      logMessage: _logFor(action, damage),
+    );
   }
+
+  BattleCommandType _commandTypeFor(BattleAction action) => switch (action) {
+    BattleAction.attack => BattleCommandType.attack,
+    BattleAction.fire => BattleCommandType.fire,
+    BattleAction.charge => BattleCommandType.charge,
+    BattleAction.cooperate => BattleCommandType.cooperate,
+    BattleAction.information => BattleCommandType.information,
+    BattleAction.wait => BattleCommandType.wait,
+  };
+
+  String _logFor(BattleAction action, int damage) =>
+      '${action.name} 실행 · 피해 $damage';
 
   bool moveUnit(String unitId, int row, int column) {
     if (state.finished || row < 0 || row > 4 || column < 0 || column > 5) {
@@ -114,6 +235,7 @@ class BattleEngine {
     if (occupied) return false;
     unit.row = row;
     unit.column = column;
+    state.selectedAttackerId = unitId;
     _advanceDay();
     return true;
   }
@@ -178,9 +300,22 @@ class BattleEngine {
                 1,
       );
 
-  void retreat() {
-    if (state.finished) return;
+  BattleResultEvent retreat({BattleCommand? command}) {
+    final eventCommand = command ?? const BattleCommand.retreat();
+    if (state.finished) {
+      return BattleResultEvent(
+        command: eventCommand,
+        finished: true,
+        winner: state.winner,
+      );
+    }
     state.finished = true;
     state.winner = 'defender';
+    return BattleResultEvent(
+      command: eventCommand,
+      finished: true,
+      winner: state.winner,
+      logMessage: '공격군이 퇴각했습니다.',
+    );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:codex_strategy/core/game_engine.dart';
 import 'package:codex_strategy/core/game_command.dart';
 import 'package:codex_strategy/battle/battle_engine.dart';
+import 'package:codex_strategy/battle/battle_command.dart';
 import 'package:codex_strategy/battle/battle_state.dart';
 import 'package:codex_strategy/data/demo_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
@@ -545,5 +546,54 @@ void main() {
       battle.moveUnit(unit.officerId, originalRow - 3, originalColumn),
       isFalse,
     );
+  });
+
+  test('B0 전투 명령은 선택 상태와 이동 가능 칸을 갱신한다', () {
+    final engine = createEngine();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    final unit = battle!.state.attackerUnits.first;
+
+    final selection = battle.execute(
+      BattleCommand.selectAttacker(unit.officerId),
+    );
+    expect(selection.hasEffect, isFalse);
+    expect(battle.state.selectedAttackerId, unit.officerId);
+    expect(battle.state.movementCells, isNotEmpty);
+    expect(
+      battle.state.movementCells,
+      contains(BattleCell(unit.row - 1, unit.column)),
+    );
+  });
+
+  test('B0 행동 명령은 BattleResultEvent로 연출 데이터를 반환한다', () {
+    final engine = createEngine();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    final attacker = battle!.state.attackerUnits.first;
+    final defender = battle.state.defenderUnits.first;
+
+    final event = battle.execute(
+      BattleCommand.action(
+        type: BattleCommandType.fire,
+        attackerId: attacker.officerId,
+        defenderId: defender.officerId,
+      ),
+    );
+
+    expect(event.command.type, BattleCommandType.fire);
+    expect(event.damage, greaterThan(0));
+    expect(event.fireApplied, isTrue);
+    expect(event.moraleDelta, lessThan(0));
+    expect(event.logMessage, isNotEmpty);
+    expect(defender.burning, isTrue);
   });
 }
