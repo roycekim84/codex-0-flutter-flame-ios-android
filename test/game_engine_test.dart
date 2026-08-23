@@ -540,6 +540,7 @@ void main() {
     }
     expect(battle.state.finished, isTrue);
     expect(battle.state.winner, 'defender');
+    expect(battle.state.finishReason, '보급 고갈');
   });
 
   test('전투 부대는 한 칸씩만 이동하고 점유 칸으로 이동할 수 없다', () {
@@ -611,6 +612,8 @@ void main() {
     expect(event.fireApplied, isTrue);
     expect(event.moraleDelta, lessThan(0));
     expect(event.logMessage, isNotEmpty);
+    expect(event.logMessage, contains('→'));
+    expect(event.logMessage, contains('피해'));
     expect(defender.burning, isTrue);
   });
 

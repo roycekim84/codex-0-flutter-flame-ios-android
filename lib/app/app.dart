@@ -7310,6 +7310,17 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 7),
+                    Center(
+                      child: Text(
+                        '종료 원인 · ${battle.finishReason ?? '전투 종료'}',
+                        style: const TextStyle(
+                          color: Color(0xffd6a85d),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 18),
                     Container(
                       padding: const EdgeInsets.all(13),

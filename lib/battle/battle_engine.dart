@@ -483,6 +483,12 @@ class BattleEngine {
         state.day > 8 ||
         state.supplyShortageDays >= 3) {
       state.finished = true;
+      state.finishReason = switch (true) {
+        _ when state.defenderSoldiers <= 0 => '적군 전멸',
+        _ when state.attackerSoldiers <= 0 => '아군 전멸',
+        _ when state.supplyShortageDays >= 3 => '보급 고갈',
+        _ => '전투 제한일 종료',
+      };
       state.winner = state.attackerSoldiers > state.defenderSoldiers
           ? 'attacker'
           : 'defender';
@@ -510,6 +516,7 @@ class BattleEngine {
     }
     state.finished = true;
     state.winner = 'defender';
+    state.finishReason = '공격군의 자발적 퇴각';
     _record('공격군 퇴각');
     return BattleResultEvent(
       command: eventCommand,

@@ -76,6 +76,7 @@ class BattleState {
   final List<String> battleLog = [];
   bool finished = false;
   String? winner;
+  String? finishReason;
   BattleTurnPhase turnPhase = BattleTurnPhase.attacker;
   final Set<String> actedUnitIds = <String>{};
   String? selectedAttackerId;
