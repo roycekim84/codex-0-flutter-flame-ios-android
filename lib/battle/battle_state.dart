@@ -3,6 +3,8 @@ import 'battle_command.dart';
 
 enum BattleOfficerResult { escaped, captured, dead }
 
+enum BattleTurnPhase { attacker, defender }
+
 class BattleOfficerOutcome {
   BattleOfficerOutcome({
     required this.officerId,
@@ -70,9 +72,13 @@ class BattleState {
   final List<String> battleLog = [];
   bool finished = false;
   String? winner;
+  BattleTurnPhase turnPhase = BattleTurnPhase.attacker;
+  final Set<String> actedUnitIds = <String>{};
   String? selectedAttackerId;
   String? selectedDefenderId;
   bool get attackerWon => winner == 'attacker';
+  bool get isAttackerTurn => turnPhase == BattleTurnPhase.attacker;
+  String get phaseLabel => isAttackerTurn ? '아군 턴' : '적군 턴';
 
   BattleUnit? get selectedAttacker =>
       _unitById(attackerUnits, selectedAttackerId);
@@ -81,13 +87,25 @@ class BattleState {
 
   List<BattleCell> get movementCells {
     final unit = selectedAttacker;
-    if (unit == null || finished || unit.soldiers <= 0) return const [];
+    if (unit == null ||
+        finished ||
+        !isAttackerTurn ||
+        actedUnitIds.contains(unit.officerId) ||
+        unit.soldiers <= 0) {
+      return const [];
+    }
     return _neighbors(unit).where((cell) => !_occupied(cell)).toList();
   }
 
   List<BattleCell> get attackCells {
     final unit = selectedAttacker;
-    if (unit == null || finished || unit.soldiers <= 0) return const [];
+    if (unit == null ||
+        finished ||
+        !isAttackerTurn ||
+        actedUnitIds.contains(unit.officerId) ||
+        unit.soldiers <= 0) {
+      return const [];
+    }
     return _neighbors(unit)
         .where(
           (cell) => defenderUnits.any(

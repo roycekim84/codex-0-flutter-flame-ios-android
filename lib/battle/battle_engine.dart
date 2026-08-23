@@ -11,6 +11,9 @@ class BattleEngine {
   BattleResultEvent execute(BattleCommand command) {
     switch (command.type) {
       case BattleCommandType.selectAttacker:
+        if (!state.isAttackerTurn) {
+          return BattleResultEvent(command: command, logMessage: '적군 턴입니다.');
+        }
         if (!state.attackerUnits.any(
           (unit) => unit.officerId == command.attackerId,
         )) {
@@ -19,10 +22,19 @@ class BattleEngine {
             logMessage: '선택할 수 없는 공격 부대입니다.',
           );
         }
+        if (state.actedUnitIds.contains(command.attackerId)) {
+          return BattleResultEvent(
+            command: command,
+            logMessage: '이미 행동한 부대입니다.',
+          );
+        }
         state.selectedAttackerId = command.attackerId;
         state.selectedDefenderId = null;
         return BattleResultEvent(command: command);
       case BattleCommandType.selectDefender:
+        if (!state.isAttackerTurn) {
+          return BattleResultEvent(command: command, logMessage: '적군 턴입니다.');
+        }
         if (!state.defenderUnits.any(
           (unit) => unit.officerId == command.defenderId,
         )) {
@@ -68,6 +80,8 @@ class BattleEngine {
           action: _actionFor(command.type),
           command: command,
         );
+      case BattleCommandType.endTurn:
+        return endTurn(command: command);
       case BattleCommandType.retreat:
         return retreat(command: command);
     }
@@ -93,6 +107,16 @@ class BattleEngine {
         ),
         finished: true,
         winner: state.winner,
+      );
+    }
+    if (!state.isAttackerTurn) {
+      return BattleResultEvent(
+        command: const BattleCommand.action(
+          type: BattleCommandType.attack,
+          attackerId: '',
+          defenderId: '',
+        ),
+        logMessage: '적군 턴입니다.',
       );
     }
     final commanderModifier =
@@ -143,6 +167,15 @@ class BattleEngine {
         command: eventCommand,
         finished: true,
         winner: state.winner,
+      );
+    }
+    if (!state.isAttackerTurn) {
+      return BattleResultEvent(command: eventCommand, logMessage: '적군 턴입니다.');
+    }
+    if (state.actedUnitIds.contains(attackerId)) {
+      return BattleResultEvent(
+        command: eventCommand,
+        logMessage: '이미 행동한 부대입니다.',
       );
     }
     final attacker = state.attackerUnits
@@ -212,7 +245,7 @@ class BattleEngine {
       0,
       (sum, u) => sum + u.soldiers,
     );
-    _advanceDay();
+    state.actedUnitIds.add(attackerId);
     _record(_logFor(action, damage));
     return BattleResultEvent(
       command: eventCommand,
@@ -228,6 +261,99 @@ class BattleEngine {
       logMessage: _logFor(action, damage),
     );
   }
+
+  /// 플레이어 턴을 닫고 방어군 AI가 한 번 행동한 뒤 하루를 정산한다.
+  BattleResultEvent endTurn({BattleCommand? command}) {
+    final eventCommand = command ?? const BattleCommand.endTurn();
+    if (state.finished) {
+      return BattleResultEvent(
+        command: eventCommand,
+        finished: true,
+        winner: state.winner,
+      );
+    }
+    if (!state.isAttackerTurn) {
+      return BattleResultEvent(
+        command: eventCommand,
+        logMessage: '이미 적군 턴입니다.',
+      );
+    }
+
+    state.turnPhase = BattleTurnPhase.defender;
+    final defenderDamage = _runDefenderTurn();
+    _record(
+      defenderDamage > 0
+          ? '적군 턴 종료 · 반격 피해 $defenderDamage'
+          : '적군 턴 종료 · 적군이 진형을 정비했습니다.',
+    );
+    _advanceDay();
+    return BattleResultEvent(
+      command: eventCommand,
+      damage: defenderDamage,
+      finished: state.finished,
+      winner: state.winner,
+      logMessage: defenderDamage > 0
+          ? '적군 턴이 끝났습니다. 반격 피해 $defenderDamage'
+          : '적군 턴이 끝났습니다. 다음 날이 시작됩니다.',
+    );
+  }
+
+  int _runDefenderTurn() {
+    var totalDamage = 0;
+    for (final defender in state.defenderUnits.where((u) => u.soldiers > 0)) {
+      final target = _nearest(defender, state.attackerUnits);
+      if (target == null) continue;
+      final distance =
+          (defender.row - target.row).abs() +
+          (defender.column - target.column).abs();
+      if (distance <= 1) {
+        final damage = (defender.soldiers * .10)
+            .round()
+            .clamp(1, target.soldiers)
+            .toInt();
+        target.soldiers -= damage;
+        totalDamage += damage;
+      } else {
+        final stepRow = defender.row + (target.row - defender.row).sign;
+        final stepColumn =
+            defender.column + (target.column - defender.column).sign;
+        if (!_occupiedByOther(stepRow, stepColumn, defender)) {
+          defender.row = stepRow.clamp(0, 4);
+          defender.column = stepColumn.clamp(0, 5);
+        }
+      }
+    }
+    state.attackerSoldiers = state.attackerUnits.fold(
+      0,
+      (sum, unit) => sum + unit.soldiers,
+    );
+    return totalDamage;
+  }
+
+  BattleUnit? _nearest(BattleUnit unit, List<BattleUnit> candidates) {
+    final alive = candidates.where((candidate) => candidate.soldiers > 0);
+    BattleUnit? nearest;
+    var distance = 999;
+    for (final candidate in alive) {
+      final next =
+          (unit.row - candidate.row).abs() +
+          (unit.column - candidate.column).abs();
+      if (next < distance) {
+        distance = next;
+        nearest = candidate;
+      }
+    }
+    return nearest;
+  }
+
+  bool _occupiedByOther(int row, int column, BattleUnit self) =>
+      [...state.attackerUnits, ...state.defenderUnits].any(
+        (unit) =>
+            unit != self &&
+            unit.soldiers > 0 &&
+            unit.row == row &&
+            unit.column == column,
+      );
 
   BattleCommandType _commandTypeFor(BattleAction action) => switch (action) {
     BattleAction.attack => BattleCommandType.attack,
@@ -274,7 +400,7 @@ class BattleEngine {
     unit.row = row;
     unit.column = column;
     state.selectedAttackerId = unitId;
-    _advanceDay();
+    state.actedUnitIds.add(unitId);
     _record('${unit.name} 이동 · ${row + 1}-${column + 1}');
     return true;
   }
@@ -295,6 +421,10 @@ class BattleEngine {
 
   void _advanceDay() {
     state.day++;
+    state.turnPhase = BattleTurnPhase.attacker;
+    state.actedUnitIds.clear();
+    state.selectedAttackerId = null;
+    state.selectedDefenderId = null;
     for (final unit in state.defenderUnits.where((u) => u.burning)) {
       final fireDamage = (unit.soldiers * .03).round().clamp(1, unit.soldiers);
       unit.soldiers -= fireDamage;

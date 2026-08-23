@@ -32,7 +32,7 @@ class BattleTopHud extends StatelessWidget {
           child: Column(
             children: [
               const Text(
-                '전투',
+                '아군 턴',
                 style: TextStyle(color: Color(0xfff0d49d), fontSize: 11),
               ),
               Text(
@@ -164,38 +164,72 @@ class BattleCommandBar extends StatelessWidget {
     required this.onAction,
     required this.onRetreat,
     required this.onInfo,
+    required this.onEndTurn,
   });
   final bool disabled;
   final VoidCallback onMove;
   final void Function(BattleAction action) onAction;
   final VoidCallback onRetreat;
   final VoidCallback onInfo;
+  final VoidCallback onEndTurn;
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
     color: const Color(0xff100e0b),
-    child: Row(
+    child: Column(
       children: [
-        _button('이동', Icons.directions_run, disabled ? null : onMove),
-        _button(
-          '공격',
-          Icons.gavel,
-          disabled ? null : () => onAction(BattleAction.attack),
-          selected: true,
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                '아군 턴 · 부대별 1회 행동',
+                style: TextStyle(
+                  color: Color(0xffe8c98f),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: disabled ? null : onEndTurn,
+              icon: const Icon(Icons.hourglass_bottom, size: 16),
+              label: const Text('턴 종료'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                foregroundColor: const Color(0xffffe5ad),
+                side: const BorderSide(color: Color(0xffb38343)),
+              ),
+            ),
+          ],
         ),
-        _button(
-          '책략',
-          Icons.local_fire_department,
-          disabled ? null : () => onAction(BattleAction.fire),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            _button('이동', Icons.directions_run, disabled ? null : onMove),
+            _button(
+              '공격',
+              Icons.gavel,
+              disabled ? null : () => onAction(BattleAction.attack),
+              selected: true,
+            ),
+            _button(
+              '책략',
+              Icons.local_fire_department,
+              disabled ? null : () => onAction(BattleAction.fire),
+            ),
+            _button('정보', Icons.visibility, disabled ? null : onInfo),
+            _button(
+              '대기',
+              Icons.pause,
+              disabled ? null : () => onAction(BattleAction.wait),
+            ),
+            _button('퇴각', Icons.undo, disabled ? null : onRetreat),
+          ],
         ),
-        _button('정보', Icons.visibility, disabled ? null : onInfo),
-        _button(
-          '대기',
-          Icons.pause,
-          disabled ? null : () => onAction(BattleAction.wait),
-        ),
-        _button('퇴각', Icons.undo, disabled ? null : onRetreat),
       ],
     ),
   );

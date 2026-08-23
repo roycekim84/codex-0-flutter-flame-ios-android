@@ -7857,24 +7857,20 @@ class _BattleScreenState extends State<BattleScreen> {
     if (_actionLocked || widget.battle.state.finished) return;
     setState(() => _actionLocked = true);
     late final BattleResultEvent event;
-    if (selectedAttackerId == null || selectedDefenderId == null) {
-      event = widget.battle.attack();
-    } else {
-      event = widget.battle.execute(
-        BattleCommand.action(
-          type: switch (action) {
-            BattleAction.attack => BattleCommandType.attack,
-            BattleAction.fire => BattleCommandType.fire,
-            BattleAction.charge => BattleCommandType.charge,
-            BattleAction.cooperate => BattleCommandType.cooperate,
-            BattleAction.information => BattleCommandType.information,
-            BattleAction.wait => BattleCommandType.wait,
-          },
-          attackerId: selectedAttackerId!,
-          defenderId: selectedDefenderId!,
-        ),
-      );
-    }
+    event = widget.battle.execute(
+      BattleCommand.action(
+        type: switch (action) {
+          BattleAction.attack => BattleCommandType.attack,
+          BattleAction.fire => BattleCommandType.fire,
+          BattleAction.charge => BattleCommandType.charge,
+          BattleAction.cooperate => BattleCommandType.cooperate,
+          BattleAction.information => BattleCommandType.information,
+          BattleAction.wait => BattleCommandType.wait,
+        },
+        attackerId: selectedAttackerId ?? '',
+        defenderId: selectedDefenderId ?? '',
+      ),
+    );
     setState(() {});
     battleGame.refreshBoard();
     await battleGame.playEvent(event);
@@ -7924,6 +7920,18 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     setState(() {});
     battleGame.refreshBoard();
+  }
+
+  Future<void> _endBattleTurn() async {
+    if (_actionLocked || widget.battle.state.finished) return;
+    setState(() => _actionLocked = true);
+    final event = widget.battle.execute(const BattleCommand.endTurn());
+    setState(() {});
+    battleGame.refreshBoard();
+    await battleGame.playEvent(event);
+    if (!mounted) return;
+    setState(() => _actionLocked = false);
+    await _finishIfNeeded();
   }
 
   Future<void> _finishIfNeeded() async {
@@ -8405,10 +8413,11 @@ class _BattleScreenState extends State<BattleScreen> {
                   ),
                 ),
               BattleCommandBar(
-                disabled: battle.finished,
+                disabled: battle.finished || !battle.isAttackerTurn,
                 onMove: _moveSelected,
                 onAction: _act,
                 onInfo: () => _act(BattleAction.information),
+                onEndTurn: _endBattleTurn,
                 onRetreat: () {
                   widget.battle.retreat();
                   _finishIfNeeded();

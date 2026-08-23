@@ -467,8 +467,9 @@ void main() {
       action: BattleAction.information,
     );
     expect(battle.state.informationRevealed, isTrue);
+    final support = battle.state.attackerUnits[1];
     battle.act(
-      attackerId: battle.state.attackerUnits.first.officerId,
+      attackerId: support.officerId,
       defenderId: target.officerId,
       action: BattleAction.cooperate,
     );
@@ -661,5 +662,35 @@ void main() {
     expect(event.logMessage, contains('화공'));
     expect(battle.state.battleLog, hasLength(1));
     expect(battle.state.battleLog.single, contains('화공'));
+  });
+
+  test('전투는 아군 행동과 적군 AI 턴을 거쳐 다음 날로 진행된다', () {
+    final engine = createEngine();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    final current = battle!;
+    final attacker = current.state.attackerUnits.first;
+    final defender = current.state.defenderUnits.first;
+    current.execute(BattleCommand.selectAttacker(attacker.officerId));
+    current.execute(BattleCommand.selectDefender(defender.officerId));
+    current.execute(
+      BattleCommand.action(
+        type: BattleCommandType.attack,
+        attackerId: attacker.officerId,
+        defenderId: defender.officerId,
+      ),
+    );
+    expect(current.state.day, 1);
+    expect(current.state.actedUnitIds, contains(attacker.officerId));
+
+    final end = current.execute(const BattleCommand.endTurn());
+    expect(end.logMessage, contains('적군 턴'));
+    expect(current.state.day, 2);
+    expect(current.state.turnPhase, BattleTurnPhase.attacker);
+    expect(current.state.actedUnitIds, isEmpty);
   });
 }

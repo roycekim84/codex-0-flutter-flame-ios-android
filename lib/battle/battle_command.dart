@@ -10,6 +10,7 @@ enum BattleCommandType {
   cooperate,
   information,
   wait,
+  endTurn,
   retreat,
 }
 
@@ -55,6 +56,8 @@ class BattleCommand {
   }) : this._(type: type, attackerId: attackerId, defenderId: defenderId);
 
   const BattleCommand.wait() : this._(type: BattleCommandType.wait);
+
+  const BattleCommand.endTurn() : this._(type: BattleCommandType.endTurn);
 
   const BattleCommand.retreat() : this._(type: BattleCommandType.retreat);
 }
