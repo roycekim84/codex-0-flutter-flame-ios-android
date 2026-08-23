@@ -11,16 +11,21 @@ import 'terrain.dart';
 
 /// 전투판의 논리 좌표와 Flame 좌표를 한 곳에서 관리한다.
 class BattleMapLayout {
-  static const rows = 5;
-  static const columns = 6;
+  static const rows = BattleState.boardRows;
+  static const columns = BattleState.boardColumns;
   static const boardWidth = 390.0;
   static const boardHeight = 520.0;
+  // Pointy-top hexagons: adjacent columns are sqrt(3)R apart and
+  // adjacent rows are 1.5R apart. These values make the cells tessellate
+  // without the visible gaps of the old presentation grid.
   static const hexRadius = 34.0;
+  static const _columnStep = hexRadius * 1.7320508075688772;
+  static const _rowStep = hexRadius * 1.5;
   static final mapOffset = Vector2.zero();
 
   static Vector2 cellCenter(BattleCell cell) => Vector2(
-    39 + cell.column * 64,
-    66 + cell.row * 82 + (cell.column.isOdd ? 41 : 0),
+    38 + cell.column * _columnStep,
+    34 + cell.row * _rowStep + (cell.column.isOdd ? hexRadius * .75 : 0),
   );
 
   static Vector2 worldCenter(BattleCell cell) => mapOffset + cellCenter(cell);

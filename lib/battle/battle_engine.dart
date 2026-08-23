@@ -326,7 +326,7 @@ class BattleEngine {
         final stepColumn =
             defender.column + (target.column - defender.column).sign;
         if (!_occupiedByOther(stepRow, stepColumn, defender)) {
-          defender.row = stepRow.clamp(0, 4);
+          defender.row = stepRow.clamp(0, BattleState.boardRows - 1);
           defender.column = stepColumn.clamp(0, 5);
         }
       }
@@ -413,14 +413,17 @@ class BattleEngine {
   }
 
   bool moveUnit(String unitId, int row, int column) {
-    if (state.finished || row < 0 || row > 4 || column < 0 || column > 5) {
+    if (state.finished ||
+        row < 0 ||
+        row >= BattleState.boardRows ||
+        column < 0 ||
+        column >= BattleState.boardColumns) {
       return false;
     }
     final unit = state.attackerUnits
         .where((u) => u.officerId == unitId)
         .firstOrNull;
-    if (unit == null ||
-        (unit.row - row).abs() + (unit.column - column).abs() != 1) {
+    if (unit == null || !state.isAdjacent(unit, row, column)) {
       return false;
     }
     final occupied = [...state.attackerUnits, ...state.defenderUnits].any(

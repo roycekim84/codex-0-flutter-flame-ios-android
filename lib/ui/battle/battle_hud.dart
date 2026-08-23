@@ -27,6 +27,7 @@ class BattleTopHud extends StatelessWidget {
           child: _forceCard(
             battle.attackerName,
             battle.attackerSoldiers,
+            '공격군',
             const Color(0xff28527a),
           ),
         ),
@@ -62,6 +63,7 @@ class BattleTopHud extends StatelessWidget {
           child: _forceCard(
             battle.defenderName,
             battle.defenderSoldiers,
+            '방어군',
             const Color(0xff71372e),
           ),
         ),
@@ -69,29 +71,54 @@ class BattleTopHud extends StatelessWidget {
     ),
   );
 
-  Widget _forceCard(String name, int soldiers, Color color) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: _box(color),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Color(0xfffff0d0),
-            fontWeight: FontWeight.w800,
-            fontSize: 14,
-          ),
+  Widget _forceCard(String name, int soldiers, String role, Color color) =>
+      Container(
+        padding: const EdgeInsets.fromLTRB(9, 6, 9, 7),
+        decoration: _box(color),
+        child: Row(
+          children: [
+            Icon(
+              role == '공격군' ? Icons.flag : Icons.shield,
+              size: 18,
+              color: const Color(0xffffd27d),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    role,
+                    style: const TextStyle(
+                      color: Color(0xffffd27d),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xfffff0d0),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    '${_format(soldiers)}명',
+                    style: const TextStyle(
+                      color: Color(0xffffe6b0),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        Text(
-          '${_format(soldiers)}명',
-          style: const TextStyle(color: Color(0xffffe6b0), fontSize: 13),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 class BattleInfoPanel extends StatelessWidget {
@@ -117,24 +144,34 @@ class BattleInfoPanel extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(child: _stat('지형', _terrainLabel(battle.terrain))),
-              Expanded(child: _stat('날씨', '맑음')),
-              Expanded(
-                child: _stat(
-                  '군량',
-                  '${_format(battle.attackerFood)} / ${_format(battle.dailySupplyCost)}',
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xff604a2a)),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Row(
+              children: [
+                Expanded(child: _stat('지형', _terrainLabel(battle.terrain))),
+                _divider(),
+                Expanded(child: _stat('날씨', '맑음')),
+                _divider(),
+                Expanded(
+                  child: _stat(
+                    '군량',
+                    '${_format(battle.attackerFood)} / ${_format(battle.dailySupplyCost)}',
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _stat(
-                  '사기',
-                  '${battle.attackerMorale} / ${battle.defenderMorale}',
-                  warning: shortage,
+                _divider(),
+                Expanded(
+                  child: _stat(
+                    '사기',
+                    '${battle.attackerMorale} / ${battle.defenderMorale}',
+                    warning: shortage,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           if (battle.selectedAttacker != null) ...[
             const SizedBox(height: 3),
@@ -242,7 +279,7 @@ class BattleInfoPanel extends StatelessWidget {
   );
 
   Widget _stat(String label, String value, {bool warning = false}) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Text(
         label,
@@ -260,6 +297,9 @@ class BattleInfoPanel extends StatelessWidget {
       ),
     ],
   );
+
+  Widget _divider() =>
+      Container(height: 30, width: 1, color: const Color(0xff604a2a));
 }
 
 class BattleCommandBar extends StatelessWidget {

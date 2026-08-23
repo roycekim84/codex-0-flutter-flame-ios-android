@@ -119,7 +119,7 @@ class _BattleCaptureScreenState extends State<BattleCaptureScreen> {
         engine.beginBattlePrepared(
           sourceProvinceId: 'p_ash',
           targetProvinceId: 'p_ford',
-      committedSoldiers: 600,
+          committedSoldiers: 600,
           participantOfficerIds: const ['officer_1', 'officer_5'],
           commanderOfficerId: 'officer_1',
         ) ??
@@ -7943,15 +7943,9 @@ class _BattleScreenState extends State<BattleScreen> {
         .firstOrNull;
     if (unit == null) return;
     final cells = <List<int>>[];
-    for (final delta in const [
-      [-1, 0],
-      [1, 0],
-      [0, -1],
-      [0, 1],
-    ]) {
-      final row = unit.row + delta[0];
-      final column = unit.column + delta[1];
-      if (row >= 0 && row < 5 && column >= 0 && column < 6) {
+    for (var row = 0; row < BattleState.boardRows; row++) {
+      for (var column = 0; column < BattleState.boardColumns; column++) {
+        if (!widget.battle.state.isAdjacent(unit, row, column)) continue;
         cells.add([row, column]);
       }
     }

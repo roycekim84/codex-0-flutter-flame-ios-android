@@ -41,6 +41,8 @@ class BattleUnit {
 }
 
 class BattleState {
+  static const boardRows = 9;
+  static const boardColumns = 6;
   BattleState({
     required this.sourceProvinceId,
     required this.targetProvinceId,
@@ -143,15 +145,25 @@ class BattleState {
             BattleCell(unit.row + 1, unit.column),
             BattleCell(unit.row, unit.column - 1),
             BattleCell(unit.row, unit.column + 1),
+            if (unit.column.isEven) ...[
+              BattleCell(unit.row - 1, unit.column - 1),
+              BattleCell(unit.row - 1, unit.column + 1),
+            ] else ...[
+              BattleCell(unit.row + 1, unit.column - 1),
+              BattleCell(unit.row + 1, unit.column + 1),
+            ],
           ]
           .where(
             (cell) =>
                 cell.row >= 0 &&
-                cell.row < 5 &&
+                cell.row < boardRows &&
                 cell.column >= 0 &&
-                cell.column < 6,
+                cell.column < boardColumns,
           )
           .toList();
+
+  bool isAdjacent(BattleUnit unit, int row, int column) =>
+      _neighbors(unit).contains(BattleCell(row, column));
 
   bool _occupied(BattleCell cell) => [...attackerUnits, ...defenderUnits].any(
     (unit) =>
