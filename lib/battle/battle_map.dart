@@ -13,11 +13,14 @@ import 'terrain.dart';
 class BattleMapLayout {
   static const rows = 5;
   static const columns = 6;
-  static final mapOffset = Vector2(8, 48);
+  static const boardWidth = 390.0;
+  static const boardHeight = 520.0;
+  static const hexRadius = 34.0;
+  static final mapOffset = Vector2.zero();
 
   static Vector2 cellCenter(BattleCell cell) => Vector2(
-    35 + cell.column * 58,
-    30 + cell.row * 51 + (cell.column.isOdd ? 25.5 : 0),
+    39 + cell.column * 64,
+    66 + cell.row * 82 + (cell.column.isOdd ? 41 : 0),
   );
 
   static Vector2 worldCenter(BattleCell cell) => mapOffset + cellCenter(cell);
@@ -26,11 +29,14 @@ class BattleMapLayout {
 /// 배경 이미지 위에 투명한 육각 격자와 상호작용 상태를 그린다.
 class BattleMapComponent extends PositionComponent with TapCallbacks {
   BattleMapComponent(this.battle, {this.onCellTap})
-    : super(position: BattleMapLayout.mapOffset, size: Vector2(356, 310));
+    : super(
+        position: BattleMapLayout.mapOffset,
+        size: Vector2(BattleMapLayout.boardWidth, BattleMapLayout.boardHeight),
+      );
 
   final BattleState battle;
   final void Function(BattleCell cell)? onCellTap;
-  static const _radius = 28.5;
+  static const _radius = BattleMapLayout.hexRadius;
 
   @override
   void onTapUp(TapUpEvent event) {

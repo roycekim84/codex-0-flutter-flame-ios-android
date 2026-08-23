@@ -12,7 +12,10 @@ class BattleActionEffectComponent extends PositionComponent {
     required this.battle,
     required this.event,
     required this.onComplete,
-  }) : super(position: BattleMapLayout.mapOffset, size: Vector2(356, 310));
+  }) : super(
+         position: BattleMapLayout.mapOffset,
+         size: Vector2(BattleMapLayout.boardWidth, BattleMapLayout.boardHeight),
+       );
 
   final BattleState battle;
   final BattleResultEvent event;
@@ -26,7 +29,7 @@ class BattleActionEffectComponent extends PositionComponent {
       add(
         TextComponent(
           text: '-${event.damage}',
-          position: Vector2(178, 140),
+          position: Vector2(195, 260),
           anchor: Anchor.center,
           textRenderer: TextPaint(
             style: TextStyle(

@@ -17,7 +17,7 @@ class BattleUnitComponent extends PositionComponent {
     required Vector2 center,
     this.unitType = BattleUnitType.infantry,
   }) : scaleType = _scaleFor(unit.soldiers),
-       super(position: center, anchor: Anchor.center, size: Vector2.all(58));
+       super(position: center, anchor: Anchor.center, size: Vector2.all(76));
 
   final BattleUnit unit;
   final ui.Image image;
@@ -28,14 +28,14 @@ class BattleUnitComponent extends PositionComponent {
   @override
   Future<void> onLoad() async {
     final visualSize = switch (scaleType) {
-      BattleUnitScale.small => 38.0,
-      BattleUnitScale.medium => 47.0,
-      BattleUnitScale.large => 56.0,
+      BattleUnitScale.small => 48.0,
+      BattleUnitScale.medium => 58.0,
+      BattleUnitScale.large => 68.0,
     };
     add(
       SpriteComponent.fromImage(
         image,
-        position: Vector2(29, 24),
+        position: Vector2(38, 31),
         size: Vector2.all(visualSize),
         anchor: Anchor.center,
         paint: Paint()
@@ -52,8 +52,8 @@ class BattleUnitComponent extends PositionComponent {
 
     add(
       RectangleComponent(
-        position: Vector2(5, 45),
-        size: Vector2(48, 14),
+        position: Vector2(7, 55),
+        size: Vector2(62, 18),
         paint: Paint()
           ..color =
               (isAttacker ? const Color(0xff142b42) : const Color(0xff401c1b))
@@ -63,12 +63,12 @@ class BattleUnitComponent extends PositionComponent {
     add(
       TextComponent(
         text: '${_format(unit.soldiers)}${unit.burning ? ' 🔥' : ''}',
-        position: Vector2(29, 47),
+        position: Vector2(38, 56),
         anchor: Anchor.topCenter,
         textRenderer: TextPaint(
           style: const TextStyle(
             color: Color(0xfffff1d2),
-            fontSize: 10,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -77,8 +77,8 @@ class BattleUnitComponent extends PositionComponent {
 
     add(
       RectangleComponent(
-        position: Vector2(17, -5),
-        size: Vector2(24, 19),
+        position: Vector2(19, -10),
+        size: Vector2(38, 24),
         paint: Paint()
           ..color =
               (isAttacker ? const Color(0xff1d4b61) : const Color(0xff762e2d))
@@ -88,12 +88,12 @@ class BattleUnitComponent extends PositionComponent {
     add(
       TextComponent(
         text: unit.name,
-        position: Vector2(29, -2),
+        position: Vector2(38, -7),
         anchor: Anchor.topCenter,
         textRenderer: TextPaint(
           style: const TextStyle(
             color: Color(0xfffff0c7),
-            fontSize: 8,
+            fontSize: 10,
             fontWeight: FontWeight.w700,
           ),
         ),

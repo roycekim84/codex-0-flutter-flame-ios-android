@@ -59,8 +59,8 @@ class BattleGame extends FlameGame {
     add(
       SpriteComponent.fromImage(
         terrainImage,
-        position: Vector2(8, 48),
-        size: Vector2(356, 310),
+        position: BattleMapLayout.mapOffset,
+        size: Vector2(BattleMapLayout.boardWidth, BattleMapLayout.boardHeight),
         paint: Paint()
           ..colorFilter = ColorFilter.mode(
             Colors.white.withValues(alpha: .32),
@@ -92,8 +92,8 @@ class BattleGame extends FlameGame {
           effectsImage,
           srcPosition: Vector2.zero(),
           srcSize: Vector2(341, 437),
-          position: Vector2(150, 172),
-          size: Vector2(78, 92),
+          position: Vector2(156, 214),
+          size: Vector2(92, 116),
           paint: Paint()
             ..colorFilter = ColorFilter.mode(
               Colors.white.withValues(alpha: .88),

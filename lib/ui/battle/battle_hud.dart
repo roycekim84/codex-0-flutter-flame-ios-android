@@ -10,7 +10,7 @@ class BattleTopHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(8, 7, 8, 7),
+    padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
     decoration: const BoxDecoration(
       color: Color(0xff171612),
       border: Border(bottom: BorderSide(color: Color(0xff9c743b))),
@@ -26,7 +26,7 @@ class BattleTopHud extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Container(
-          width: 64,
+          width: 74,
           padding: const EdgeInsets.symmetric(vertical: 5),
           decoration: _box(const Color(0xff332b20)),
           child: Column(
@@ -58,7 +58,7 @@ class BattleTopHud extends StatelessWidget {
   );
 
   Widget _forceCard(String name, int soldiers, Color color) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
     decoration: _box(color),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,13 +68,14 @@ class BattleTopHud extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            color: Colors.white,
+            color: Color(0xfffff0d0),
             fontWeight: FontWeight.w800,
+            fontSize: 14,
           ),
         ),
         Text(
           '${_format(soldiers)}명',
-          style: const TextStyle(color: Color(0xffffe6b0), fontSize: 12),
+          style: const TextStyle(color: Color(0xffffe6b0), fontSize: 13),
         ),
       ],
     ),
@@ -89,7 +90,7 @@ class BattleInfoPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final shortage = battle.supplyShortageDays > 0;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: const BoxDecoration(
         color: Color(0xff171612),
         border: Border(
@@ -139,7 +140,7 @@ class BattleInfoPanel extends StatelessWidget {
     children: [
       Text(
         label,
-        style: const TextStyle(color: Color(0xffb99a65), fontSize: 10),
+        style: const TextStyle(color: Color(0xffb99a65), fontSize: 11),
       ),
       Text(
         value,
@@ -147,7 +148,7 @@ class BattleInfoPanel extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: warning ? const Color(0xffe98d72) : const Color(0xffffe8b4),
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -172,7 +173,7 @@ class BattleCommandBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(6, 6, 6, 5),
+    padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
     color: const Color(0xff100e0b),
     child: Row(
       children: [
@@ -210,7 +211,7 @@ class BattleCommandBar extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 2),
+          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
           backgroundColor: selected
               ? const Color(0xff314d65)
               : const Color(0xff241e16),
@@ -223,8 +224,8 @@ class BattleCommandBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16),
-            Text(label, style: const TextStyle(fontSize: 10)),
+            Icon(icon, size: 19),
+            Text(label, style: const TextStyle(fontSize: 11)),
           ],
         ),
       ),
