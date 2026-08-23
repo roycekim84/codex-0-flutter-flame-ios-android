@@ -1225,6 +1225,7 @@ class _GameScreenState extends State<GameScreen> {
           event: state.lastEvent,
           battleReports: state.lastTurnReports,
           gameOver: state.gameOver,
+          outcome: state.outcome,
           onReplay: _watchAiReport,
         ),
       ),
@@ -2995,6 +2996,7 @@ class _YearSummaryScreen extends StatelessWidget {
     required this.event,
     required this.battleReports,
     required this.gameOver,
+    required this.outcome,
     required this.onReplay,
   });
   final int year, nextMonth, goldDelta, foodDelta, soldierDelta, loyaltyDelta;
@@ -3002,6 +3004,7 @@ class _YearSummaryScreen extends StatelessWidget {
   final String? event;
   final List<AiBattleReport> battleReports;
   final bool gameOver;
+  final String? outcome;
   final ValueChanged<AiBattleReport> onReplay;
 
   @override
@@ -3077,7 +3080,17 @@ class _YearSummaryScreen extends StatelessWidget {
                   ],
                   const SizedBox(height: 18),
                   FilledButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: gameOver
+                        ? () => Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (_) => _GameOverScreen(
+                                victory: outcome == 'VICTORY',
+                                year: year,
+                                forceName: forceName,
+                              ),
+                            ),
+                          )
+                        : () => Navigator.pop(context),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(50),
                       backgroundColor: const Color(0xff76572f),
@@ -3269,6 +3282,178 @@ class _YearSummaryScreen extends StatelessWidget {
               onPressed: () => onReplay(report),
               child: const Text('관전'),
             ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _GameOverScreen extends StatelessWidget {
+  const _GameOverScreen({
+    required this.victory,
+    required this.year,
+    required this.forceName,
+  });
+  final bool victory;
+  final int year;
+  final String forceName;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = victory ? const Color(0xffd6a85d) : const Color(0xffc66f5d);
+    return Scaffold(
+      backgroundColor: const Color(0xff090807),
+      body: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .16,
+            ),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xff382818), Color(0xff181612)],
+                  ),
+                  border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      victory ? Icons.emoji_events : Icons.warning_amber,
+                      color: accent,
+                      size: 26,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        victory ? '천하통일' : '게임 오버',
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 23,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(14, 18, 14, 24),
+                  children: [
+                    Container(
+                      height: 185,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: accent),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.asset(
+                            'assets/images/title_background.png',
+                            fit: BoxFit.cover,
+                          ),
+                          ColoredBox(
+                            color: Colors.black.withValues(alpha: .52),
+                          ),
+                          Center(
+                            child: Icon(
+                              victory ? Icons.emoji_events : Icons.castle,
+                              color: accent,
+                              size: 78,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Center(
+                      child: Text(
+                        victory ? '천하를 통일하였습니다!' : '세력이 멸망하였습니다.',
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        victory
+                            ? '모든 지역을 하나의 깃발 아래 거두었습니다.'
+                            : '더 이상 지배할 영지와 후계 세력이 없습니다.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xffc1ab82),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      padding: const EdgeInsets.all(13),
+                      decoration: BoxDecoration(
+                        color: const Color(0x35231b11),
+                        border: Border.all(color: const Color(0xff6d5230)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Column(
+                        children: [
+                          _line('종료 연도', '$year년'),
+                          _line('통치 세력', forceName),
+                          _line('결과', victory ? '승리' : '패배'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: () =>
+                          Navigator.popUntil(context, (route) => route.isFirst),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xff76572f),
+                        foregroundColor: const Color(0xffffdfa0),
+                        side: const BorderSide(color: Color(0xffc09351)),
+                        minimumSize: const Size.fromHeight(50),
+                      ),
+                      child: const Text('메인 메뉴로'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _line(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 5),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Color(0xffc1ab82))),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Color(0xffffdfa0),
+            fontWeight: FontWeight.w800,
           ),
         ),
       ],
