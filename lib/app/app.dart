@@ -1274,11 +1274,18 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  // ignore: unused_element
   void _showProvinceInfo(ProvinceState province, GameState state) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => _ProvinceDetailScreen(province: province, state: state),
       ),
+    );
+  }
+
+  void _showForceInfo() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => _ForceInfoScreen(state: engine.state)),
     );
   }
 
@@ -1363,7 +1370,7 @@ class _GameScreenState extends State<GameScreen> {
                 },
                 onDiplomacy: _showDiplomacyDialog,
                 onEspionage: _showEspionageDialog,
-                onInfo: () => _showProvinceInfo(selected, state),
+                onInfo: _showForceInfo,
                 onEndMonth: _endMonth,
               ),
             ],
@@ -5315,6 +5322,313 @@ class _DomesticMetric extends StatelessWidget {
         ),
       ),
     ],
+  );
+}
+
+class _ForceInfoScreen extends StatelessWidget {
+  const _ForceInfoScreen({required this.state});
+  final GameState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final force = state.playerForce;
+    final ruler = state.officers.firstWhere((o) => o.id == force.rulerId);
+    final provinces = state.provinces
+        .where((p) => p.ownerForceId == force.id)
+        .toList();
+    final officers = state.officers
+        .where((o) => o.forceId == force.id)
+        .toList();
+    final totalSoldiers = provinces.fold<int>(0, (sum, p) => sum + p.soldiers);
+    final relationRows = state.forces.where((f) => f.id != force.id).map((
+      other,
+    ) {
+      final relation = state.relationTo(other.id);
+      final color = relation >= 30
+          ? const Color(0xff73d18b)
+          : relation <= -30
+          ? const Color(0xffd37b5d)
+          : const Color(0xffd6a85d);
+      return _forceRelationRow(other, relation, color);
+    }).toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xff090807),
+      body: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .12,
+            ),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              _header(context),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
+                  children: [
+                    _identity(force, ruler, provinces.length, officers.length),
+                    const SizedBox(height: 10),
+                    _panel(
+                      '기본 정보',
+                      Column(
+                        children: [
+                          _infoLine('영지 수', '${provinces.length}개'),
+                          _infoLine('총 병력', _formatNumber(totalSoldiers)),
+                          _infoLine('장수 수', '${officers.length}명'),
+                          _infoLine('군주', ruler.name),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _panel(
+                      '외교 관계',
+                      relationRows.isEmpty
+                          ? const Text(
+                              '확인된 세력이 없습니다.',
+                              style: TextStyle(color: Color(0xffc1ab82)),
+                            )
+                          : Column(children: relationRows),
+                    ),
+                    const SizedBox(height: 10),
+                    _panel(
+                      '주요 장수',
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: officers
+                            .take(6)
+                            .map((o) => _officerChip(o))
+                            .toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _panel(
+                      '최근 기록',
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: state.gameLog.reversed
+                            .take(4)
+                            .map(
+                              (log) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 3,
+                                ),
+                                child: Text(
+                                  log,
+                                  style: const TextStyle(
+                                    color: Color(0xffc1ab82),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('닫기'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _header(BuildContext context) => Container(
+    height: 58,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.menu_book, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            '정보 · 세력 정보',
+            style: TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+
+  Widget _identity(
+    ForceState force,
+    OfficerState ruler,
+    int provinceCount,
+    int officerCount,
+  ) => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(
+      color: const Color(0x453d2b17),
+      border: Border.all(color: const Color(0xffa1763c)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        AssetSlice(
+          asset: AssetRepository.forceBannerStrip,
+          index: force.bannerIndex,
+          segments: 3,
+          width: 34,
+          height: 43,
+        ),
+        const SizedBox(width: 9),
+        _GeneratedPortrait(seed: ruler.id, size: 72),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                force.name,
+                style: const TextStyle(
+                  color: Color(0xffffdfa0),
+                  fontSize: 23,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '군주 ${ruler.name}',
+                style: const TextStyle(color: Color(0xffd6a85d), fontSize: 13),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                '$provinceCount개 영지 · 장수 $officerCount명',
+                style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _infoLine(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Color(0xffc1ab82))),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Color(0xffffdfa0),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _forceRelationRow(ForceState other, int relation, Color color) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            AssetSlice(
+              asset: AssetRepository.forceBannerStrip,
+              index: other.bannerIndex,
+              segments: 3,
+              width: 19,
+              height: 25,
+            ),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                other.name,
+                style: const TextStyle(color: Color(0xffe3c480)),
+              ),
+            ),
+            Text(
+              relation >= 30
+                  ? '우호'
+                  : relation <= -30
+                  ? '적대'
+                  : '중립',
+              style: TextStyle(color: color, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(width: 8),
+            Text('$relation', style: TextStyle(color: color)),
+          ],
+        ),
+      );
+
+  Widget _officerChip(OfficerState officer) => Container(
+    width: 86,
+    padding: const EdgeInsets.all(5),
+    decoration: BoxDecoration(
+      color: const Color(0x332c2115),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: Column(
+      children: [
+        _GeneratedPortrait(seed: officer.id, size: 48),
+        const SizedBox(height: 3),
+        Text(
+          officer.name,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Color(0xffe3c480), fontSize: 11),
+        ),
+        Text(
+          '충성 ${officer.loyalty}',
+          style: const TextStyle(color: Color(0xffaa9670), fontSize: 10),
+        ),
+      ],
+    ),
+  );
+
+  Widget _panel(String title, Widget child) => Container(
+    padding: const EdgeInsets.fromLTRB(11, 9, 11, 10),
+    decoration: BoxDecoration(
+      color: const Color(0x35231b11),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xffd6a85d),
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 6),
+        child,
+      ],
+    ),
   );
 }
 
