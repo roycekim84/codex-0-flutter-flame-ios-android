@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
@@ -8,6 +9,7 @@ import '../battle/battle_command.dart';
 import '../battle/battle_map.dart';
 import '../battle/battle_state.dart';
 import 'battle_unit_component.dart';
+import 'battle_action_effect.dart';
 
 class BattleGame extends FlameGame {
   BattleGame(this.battle, {this.onCellTap});
@@ -32,6 +34,21 @@ class BattleGame extends FlameGame {
   void refreshBoard() {
     removeAll(children.toList());
     _drawBoard();
+  }
+
+  Future<void> playEvent(BattleResultEvent event) {
+    if (!event.hasEffect) return Future<void>.value();
+    final completer = Completer<void>();
+    add(
+      BattleActionEffectComponent(
+        battle: battle,
+        event: event,
+        onComplete: () {
+          if (!completer.isCompleted) completer.complete();
+        },
+      ),
+    );
+    return completer.future;
   }
 
   void _drawBoard() {

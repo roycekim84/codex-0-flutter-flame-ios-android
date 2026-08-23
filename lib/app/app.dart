@@ -7756,6 +7756,7 @@ class _BattleScreenState extends State<BattleScreen> {
   String? selectedDefenderId;
   late final BattleGame battleGame;
   bool _resultOpened = false;
+  bool _actionLocked = false;
 
   @override
   void initState() {
@@ -7771,7 +7772,7 @@ class _BattleScreenState extends State<BattleScreen> {
 
   void _onBattleCellTap(BattleCell cell) {
     final battle = widget.battle.state;
-    if (battle.finished) return;
+    if (battle.finished || _actionLocked) return;
     final attacker = battle.attackerUnits
         .where((unit) => unit.row == cell.row && unit.column == cell.column)
         .firstOrNull;
@@ -7817,19 +7818,34 @@ class _BattleScreenState extends State<BattleScreen> {
     battleGame.refreshBoard();
   }
 
-  void _act(BattleAction action) {
+  Future<void> _act(BattleAction action) async {
+    if (_actionLocked || widget.battle.state.finished) return;
+    setState(() => _actionLocked = true);
+    late final BattleResultEvent event;
     if (selectedAttackerId == null || selectedDefenderId == null) {
-      widget.battle.attack();
+      event = widget.battle.attack();
     } else {
-      widget.battle.act(
-        attackerId: selectedAttackerId!,
-        defenderId: selectedDefenderId!,
-        action: action,
+      event = widget.battle.execute(
+        BattleCommand.action(
+          type: switch (action) {
+            BattleAction.attack => BattleCommandType.attack,
+            BattleAction.fire => BattleCommandType.fire,
+            BattleAction.charge => BattleCommandType.charge,
+            BattleAction.cooperate => BattleCommandType.cooperate,
+            BattleAction.information => BattleCommandType.information,
+            BattleAction.wait => BattleCommandType.wait,
+          },
+          attackerId: selectedAttackerId!,
+          defenderId: selectedDefenderId!,
+        ),
       );
     }
     setState(() {});
     battleGame.refreshBoard();
-    _finishIfNeeded();
+    await battleGame.playEvent(event);
+    if (!mounted) return;
+    setState(() => _actionLocked = false);
+    await _finishIfNeeded();
   }
 
   Future<void> _moveSelected() async {
