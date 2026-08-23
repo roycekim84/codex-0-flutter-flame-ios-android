@@ -24,7 +24,7 @@ class BattleMapLayout {
   static final mapOffset = Vector2.zero();
 
   static Vector2 cellCenter(BattleCell cell) => Vector2(
-    38 + cell.column * _columnStep,
+    44 + cell.column * _columnStep,
     34 + cell.row * _rowStep + (cell.column.isOdd ? hexRadius * .75 : 0),
   );
 
