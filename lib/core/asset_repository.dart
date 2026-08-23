@@ -44,6 +44,7 @@ class AssetRepository {
     battleArcherTokenAlpha,
     battleFieldBackground,
     battleEffectsStrip,
+    forceBannerStrip,
   ];
 
   static String flameKey(String assetPath) =>

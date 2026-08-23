@@ -11,6 +11,7 @@ class BattleUnitComponent extends PositionComponent {
   BattleUnitComponent({
     required this.unit,
     required this.image,
+    required this.bannerImage,
     required this.isAttacker,
     required Vector2 center,
     this.isSelected = false,
@@ -20,6 +21,7 @@ class BattleUnitComponent extends PositionComponent {
 
   final BattleUnit unit;
   final ui.Image image;
+  final ui.Image bannerImage;
   final bool isAttacker;
   final bool isSelected;
   final BattleUnitType unitType;
@@ -97,41 +99,39 @@ class BattleUnitComponent extends PositionComponent {
       ),
     );
 
-    final flagColor = isAttacker
-        ? const Color(0xff1d4b61)
-        : const Color(0xff762e2d);
+    // The three transparent banners live in one horizontal strip:
+    // green, red, blue.  Use red for the opposing side and blue for the
+    // player side so a unit remains identifiable even when sprites overlap.
     add(
-      RectangleComponent(
-        position: Vector2(18, -15),
-        size: Vector2(2, 31),
-        paint: Paint()..color = const Color(0xffc69b55),
-      ),
-    );
-    add(
-      RectangleComponent(
-        position: Vector2(17, -15),
-        size: Vector2(50, 26),
+      SpriteComponent.fromImage(
+        bannerImage,
+        srcPosition: Vector2(isAttacker ? 1448 : 724, 0),
+        srcSize: Vector2(724, 724),
+        position: Vector2(41, -15),
+        size: Vector2(24, 34),
+        anchor: Anchor.bottomCenter,
         paint: Paint()
-          ..color = (isSelected ? const Color(0xffffd66e) : flagColor)
-              .withValues(alpha: .98),
+          ..colorFilter = isSelected
+              ? const ColorFilter.mode(Color(0xffffd66e), BlendMode.modulate)
+              : null,
       ),
     );
     add(
       RectangleComponent(
-        position: Vector2(19, -13),
-        size: Vector2(46, 22),
-        paint: Paint()..color = flagColor.withValues(alpha: .98),
+        position: Vector2(6, -15),
+        size: Vector2(70, 17),
+        paint: Paint()..color = const Color(0xff090807).withValues(alpha: .74),
       ),
     );
     add(
       TextComponent(
         text: unit.name,
-        position: Vector2(42, -10),
+        position: Vector2(41, -13),
         anchor: Anchor.topCenter,
         textRenderer: TextPaint(
           style: const TextStyle(
             color: Color(0xfffff0c7),
-            fontSize: 10,
+            fontSize: 9,
             fontWeight: FontWeight.w700,
           ),
         ),

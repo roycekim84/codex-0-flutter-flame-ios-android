@@ -20,6 +20,7 @@ class BattleGame extends FlameGame {
   late ui.Image archerImage;
   late ui.Image terrainImage;
   late ui.Image effectsImage;
+  late ui.Image forceBannerImage;
 
   @override
   Future<void> onLoad() async {
@@ -36,6 +37,7 @@ class BattleGame extends FlameGame {
     archerImage = loaded[2];
     terrainImage = loaded[3];
     effectsImage = loaded[4];
+    forceBannerImage = loaded[5];
     _drawBoard();
   }
 
@@ -86,6 +88,7 @@ class BattleGame extends FlameGame {
             BattleUnitType.infantry => unitImage,
           },
           isAttacker: battle.attackerUnits.contains(unit),
+          bannerImage: forceBannerImage,
           center: center,
           isSelected:
               battle.selectedAttackerId == unit.officerId ||
