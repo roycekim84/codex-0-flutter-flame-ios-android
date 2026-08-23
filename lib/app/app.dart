@@ -860,6 +860,7 @@ class _GameScreenState extends State<GameScreen> {
             await saveRepository.save(engine.state, slot);
           },
           onLoad: (data) {
+            Navigator.of(context).pop();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (_) =>
