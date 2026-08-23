@@ -1244,8 +1244,20 @@ class _GameScreenState extends State<GameScreen> {
     );
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _DomesticScreen(
+        builder: (_) => _DomesticTradeScreen(
+          force: engine.state.playerForce,
           province: province,
+          onTax: () async {
+            if (!mounted) return;
+            Navigator.pop(context);
+            await _dispatch(
+              GameCommand(
+                type: GameCommandType.tax,
+                officerId: selectedOfficerId,
+                provinceId: selectedProvinceId,
+              ),
+            );
+          },
           onCommand: (type) async {
             if (!mounted) return;
             Navigator.pop(context);
@@ -4850,6 +4862,270 @@ class _MoveQuick extends StatelessWidget {
       TextButton(onPressed: onTap, child: Text(label));
 }
 
+class _DomesticTradeScreen extends StatefulWidget {
+  const _DomesticTradeScreen({
+    required this.force,
+    required this.province,
+    required this.onTax,
+    required this.onCommand,
+  });
+  final ForceState force;
+  final ProvinceState province;
+  final VoidCallback onTax;
+  final Future<void> Function(GameCommandType type) onCommand;
+  @override
+  State<_DomesticTradeScreen> createState() => _DomesticTradeScreenState();
+}
+
+class _DomesticTradeScreenState extends State<_DomesticTradeScreen> {
+  double buy = 5000;
+  double sell = 3000;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xff090807),
+    body: SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: const Color(0xff171612),
+          image: const DecorationImage(
+            image: AssetImage(AssetRepository.panelTexture),
+            fit: BoxFit.cover,
+            opacity: .12,
+          ),
+          border: Border.all(color: const Color(0xffb38343), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            _header(context),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
+                children: [
+                  _resourceCard(),
+                  const SizedBox(height: 12),
+                  _tradeCard(),
+                  const SizedBox(height: 12),
+                  _taxCard(),
+                  const SizedBox(height: 16),
+                  OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('닫기'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  Widget _header(BuildContext context) => Container(
+    height: 60,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.storefront, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            '내정 · 군량 거래 / 징세',
+            style: TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+  Widget _resourceCard() => _panel(
+    '현재 자원',
+    Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        _CostMetric(
+          '금',
+          _formatNumber(widget.force.gold),
+          const Color(0xffffdfa0),
+        ),
+        _CostMetric(
+          '군량',
+          _formatNumber(widget.province.food),
+          const Color(0xffe3c480),
+        ),
+        _CostMetric('시장 시세', '1 : 0.9', const Color(0xff73d18b)),
+      ],
+    ),
+  );
+  Widget _tradeCard() => _panel(
+    '군량 거래',
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          '구매',
+          style: TextStyle(
+            color: Color(0xffd6a85d),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _formatNumber(buy.round()),
+              style: const TextStyle(
+                color: Color(0xffffdfa0),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const Text(
+              '지불 금액 4,500',
+              style: TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+            ),
+          ],
+        ),
+        Slider(
+          value: buy,
+          min: 0,
+          max: 10000,
+          divisions: 100,
+          activeColor: const Color(0xffb88645),
+          onChanged: (v) => setState(() => buy = v),
+        ),
+        FilledButton(
+          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('군량 구매 시스템은 시장 엔진 연결 후 적용됩니다.')),
+          ),
+          style: _button(),
+          child: const Text('구매'),
+        ),
+        const Divider(color: Color(0xff6d5230), height: 25),
+        const Text(
+          '판매',
+          style: TextStyle(
+            color: Color(0xffd6a85d),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _formatNumber(sell.round()),
+              style: const TextStyle(
+                color: Color(0xffffdfa0),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const Text(
+              '획득 금액 2,700',
+              style: TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+            ),
+          ],
+        ),
+        Slider(
+          value: sell,
+          min: 0,
+          max: widget.province.food.toDouble().clamp(1, 10000),
+          divisions: 100,
+          activeColor: const Color(0xffb88645),
+          onChanged: (v) => setState(() => sell = v),
+        ),
+        FilledButton(
+          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('군량 판매 시스템은 시장 엔진 연결 후 적용됩니다.')),
+          ),
+          style: _button(),
+          child: const Text('판매'),
+        ),
+      ],
+    ),
+  );
+  Widget _taxCard() => _panel(
+    '징세',
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text('징세 강도', style: TextStyle(color: Color(0xffc1ab82))),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            const Text('약함', style: TextStyle(color: Color(0xff73d18b))),
+            const Text(
+              '보통',
+              style: TextStyle(
+                color: Color(0xffffdfa0),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const Text('강함', style: TextStyle(color: Color(0xffdf8d73))),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          '금 +90   ·   군량 +500   ·   민심 -3',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Color(0xffc1ab82)),
+        ),
+        const SizedBox(height: 10),
+        FilledButton(
+          onPressed: widget.onTax,
+          style: _button(),
+          child: const Text('징세 실행'),
+        ),
+      ],
+    ),
+  );
+  Widget _panel(String title, Widget child) => Container(
+    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+    decoration: BoxDecoration(
+      color: const Color(0x35231b11),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xffd6a85d),
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        child,
+      ],
+    ),
+  );
+  ButtonStyle _button() => FilledButton.styleFrom(
+    backgroundColor: const Color(0xff76572f),
+    foregroundColor: const Color(0xffffdfa0),
+    side: const BorderSide(color: Color(0xffc09351)),
+    minimumSize: const Size.fromHeight(45),
+  );
+}
+
+// Legacy domestic command list retained for alternate layouts.
+// ignore: unused_element
 class _DomesticScreen extends StatelessWidget {
   const _DomesticScreen({required this.province, required this.onCommand});
   final ProvinceState province;
