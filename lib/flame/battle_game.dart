@@ -87,6 +87,9 @@ class BattleGame extends FlameGame {
           },
           isAttacker: battle.attackerUnits.contains(unit),
           center: center,
+          isSelected:
+              battle.selectedAttackerId == unit.officerId ||
+              battle.selectedDefenderId == unit.officerId,
           unitType: unit.type,
         ),
       );
