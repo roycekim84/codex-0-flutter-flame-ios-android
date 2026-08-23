@@ -965,9 +965,10 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showLog() {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (_) => _LogSheet(state: engine.state),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _MonthlyEventReportScreen(state: engine.state),
+      ),
     );
   }
 
@@ -8863,6 +8864,7 @@ class _OfficerDetailDialog extends StatelessWidget {
   );
 }
 
+// ignore: unused_element
 class _LogSheet extends StatelessWidget {
   const _LogSheet({required this.state});
   final GameState state;
@@ -8893,6 +8895,296 @@ class _LogSheet extends StatelessWidget {
           ],
         ),
       ),
+    ),
+  );
+}
+
+class _MonthlyEventReportScreen extends StatelessWidget {
+  const _MonthlyEventReportScreen({required this.state});
+  final GameState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color(0xff090807),
+        body: SafeArea(
+          child: Container(
+            margin: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: const Color(0xff171612),
+              image: const DecorationImage(
+                image: AssetImage(AssetRepository.panelTexture),
+                fit: BoxFit.cover,
+                opacity: .12,
+              ),
+              border: Border.all(color: const Color(0xffb38343), width: 2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                _header(context),
+                Container(
+                  color: const Color(0x332c2115),
+                  child: const TabBar(
+                    indicatorColor: Color(0xffd6a85d),
+                    labelColor: Color(0xffffdfa0),
+                    unselectedLabelColor: Color(0xff9d8967),
+                    tabs: [
+                      Tab(text: '월간 이벤트'),
+                      Tab(text: 'AI 보고'),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: TabBarView(children: [_events(), _aiReports(context)]),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _header(BuildContext context) => Container(
+    height: 58,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.event_note, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            '월간 이벤트 · AI 보고',
+            style: TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+
+  Widget _events() {
+    final logs = state.gameLog.reversed.take(12).toList();
+    final event = state.lastEvent;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
+      children: [
+        _periodCard(
+          '현재 월',
+          '${state.year}년 ${state.month}월',
+          Icons.calendar_month,
+        ),
+        const SizedBox(height: 10),
+        if (event != null)
+          _eventTile(
+            '월말 사건',
+            event,
+            Icons.auto_awesome,
+            const Color(0xffd6a85d),
+          ),
+        if (event != null) const SizedBox(height: 8),
+        if (logs.isEmpty)
+          _empty('아직 기록된 월간 사건이 없습니다.')
+        else
+          ...logs.map(
+            (log) => _eventTile(
+              '게임 기록',
+              log,
+              Icons.article,
+              const Color(0xff9eb8a0),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _aiReports(BuildContext context) {
+    if (state.lastTurnReports.isEmpty) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
+        children: [_empty('이번 달 AI 전투 보고가 없습니다.')],
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
+      children: [
+        _periodCard(
+          'AI 세력 동향',
+          '${state.lastTurnReports.length}건의 전투 보고',
+          Icons.account_tree,
+        ),
+        const SizedBox(height: 10),
+        ...state.lastTurnReports.map(
+          (report) => Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              color: const Color(0x35231b11),
+              border: Border.all(color: const Color(0xff6d5230)),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      report.attackerWon ? Icons.flag : Icons.shield,
+                      color: report.attackerWon
+                          ? const Color(0xffd6a85d)
+                          : const Color(0xff9eb8a0),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        '${report.attackerName} · ${report.targetProvinceName}',
+                        style: const TextStyle(
+                          color: Color(0xffffdfa0),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      report.attackerWon ? '공격 승리' : '방어 성공',
+                      style: TextStyle(
+                        color: report.attackerWon
+                            ? const Color(0xff73d18b)
+                            : const Color(0xffd37b5d),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '방어: ${report.defenderName} · ${report.day}일째 종료',
+                  style: const TextStyle(
+                    color: Color(0xffc1ab82),
+                    fontSize: 12,
+                  ),
+                ),
+                Text(
+                  '병력 ${_formatNumber(report.attackerSoldiers)} : ${_formatNumber(report.defenderSoldiers)}',
+                  style: const TextStyle(
+                    color: Color(0xffc1ab82),
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                OutlinedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AiBattleReplayScreen(report: report),
+                    ),
+                  ),
+                  child: const Text('전투 관전'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _periodCard(String label, String value, IconData icon) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: const Color(0x453d2b17),
+      border: Border.all(color: const Color(0xffa1763c)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, color: const Color(0xffd6a85d), size: 25),
+        const SizedBox(width: 9),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Color(0xffffdfa0),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+
+  Widget _eventTile(String title, String body, IconData icon, Color color) =>
+      Container(
+        margin: const EdgeInsets.only(bottom: 7),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0x35231b11),
+          border: Border.all(color: const Color(0xff6d5230)),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 21),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(color: color, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    body,
+                    style: const TextStyle(
+                      color: Color(0xffc1ab82),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _empty(String text) => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: const Color(0x25231b11),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Text(
+      text,
+      textAlign: TextAlign.center,
+      style: const TextStyle(color: Color(0xffc1ab82)),
     ),
   );
 }
