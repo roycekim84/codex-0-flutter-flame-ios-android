@@ -4,6 +4,8 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import '../core/asset_repository.dart';
+import '../battle/battle_command.dart';
+import '../battle/battle_map.dart';
 import '../battle/battle_state.dart';
 
 class BattleGame extends FlameGame {
@@ -43,6 +45,7 @@ class BattleGame extends FlameGame {
           ),
       ),
     );
+    add(BattleMapComponent(battle));
     add(
       TextComponent(
         text: 'DAY ${battle.day}',
@@ -56,25 +59,14 @@ class BattleGame extends FlameGame {
         ),
       ),
     );
-    for (var row = 0; row < 5; row++) {
-      for (var column = 0; column < 6; column++) {
-        add(
-          RectangleComponent(
-            position: Vector2(12 + column * 62, 58 + row * 62),
-            size: Vector2(58, 58),
-            paint: Paint()
-              ..color = (row + column).isEven
-                  ? const Color(0xff5d765d)
-                  : const Color(0xff4c674f),
-          ),
-        );
-      }
-    }
     for (final unit in [...battle.attackerUnits, ...battle.defenderUnits]) {
+      final center = BattleMapLayout.worldCenter(
+        BattleCell(unit.row, unit.column),
+      );
       add(
         SpriteComponent.fromImage(
           unitImage,
-          position: Vector2(41 + unit.column * 62, 87 + unit.row * 62),
+          position: center,
           size: Vector2.all(48),
           anchor: Anchor.center,
           paint: Paint()
@@ -91,7 +83,7 @@ class BattleGame extends FlameGame {
       add(
         TextComponent(
           text: '${unit.soldiers}${unit.burning ? ' 🔥' : ''}',
-          position: Vector2(22 + unit.column * 62, 78 + unit.row * 62),
+          position: center - Vector2(18, 8),
           textRenderer: TextPaint(
             style: const TextStyle(color: Color(0xffffffff), fontSize: 10),
           ),
