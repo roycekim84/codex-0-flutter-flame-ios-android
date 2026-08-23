@@ -16,6 +16,8 @@ enum GameCommandType {
   infiltrate,
   inciteOfficer,
   spreadRumor,
+  buyFood,
+  sellFood,
   endMonth,
 }
 

@@ -83,6 +83,12 @@ class GameEngine {
       case GameCommandType.spreadRumor:
         final result = spreadRumor(command.provinceId!, command.officerId!);
         if (!result.success) return result;
+      case GameCommandType.buyFood:
+        final result = buyFood(command.provinceId!, command.soldiers ?? 0);
+        if (!result.success) return result;
+      case GameCommandType.sellFood:
+        final result = sellFood(command.provinceId!, command.soldiers ?? 0);
+        if (!result.success) return result;
       case GameCommandType.endMonth:
         endTurn();
         return const CommandResult.success('월말 정산을 완료했습니다.');
@@ -231,6 +237,33 @@ class GameEngine {
       '${province.name} 잠입 · 병력 ${province.soldiers} · 군량 ${province.food} · 금 -80',
     );
     return CommandResult.success('${province.name}의 정보가 공개되었습니다.');
+  }
+
+  CommandResult buyFood(String provinceId, int amount) {
+    final province = _playerProvince(provinceId);
+    if (province == null || amount <= 0) {
+      return const CommandResult.failure('구매할 군량 수량을 확인할 수 없습니다.');
+    }
+    final cost = (amount * .9).round();
+    if (state.playerForce.gold < cost) {
+      return const CommandResult.failure('군량 구매에 필요한 금이 부족합니다.');
+    }
+    state.playerForce.gold -= cost;
+    province.food += amount;
+    state.log('${province.name} 군량 구매 · 군량 +$amount · 금 -$cost');
+    return CommandResult.success('군량 $amount을 구매했습니다.');
+  }
+
+  CommandResult sellFood(String provinceId, int amount) {
+    final province = _playerProvince(provinceId);
+    if (province == null || amount <= 0 || province.food < amount) {
+      return const CommandResult.failure('판매할 군량이 부족합니다.');
+    }
+    final income = (amount * .9).round();
+    province.food -= amount;
+    state.playerForce.gold += income;
+    state.log('${province.name} 군량 판매 · 군량 -$amount · 금 +$income');
+    return CommandResult.success('군량 $amount을 판매했습니다.');
   }
 
   CommandResult inciteOfficer(String targetOfficerId, String officerId) {

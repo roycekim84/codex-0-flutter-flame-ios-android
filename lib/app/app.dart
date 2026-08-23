@@ -1039,6 +1039,8 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.infiltrate => '첩보 · 잠입',
     GameCommandType.inciteOfficer => '첩보 · 이간',
     GameCommandType.spreadRumor => '첩보 · 유언비어',
+    GameCommandType.buyFood => '내정 · 군량 구매',
+    GameCommandType.sellFood => '내정 · 군량 판매',
     GameCommandType.endMonth => '턴 종료',
   };
   String _commandDescription(GameCommandType type) => switch (type) {
@@ -1059,6 +1061,8 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.infiltrate => '적 영지 정보를 공개합니다. 금 80을 사용합니다.',
     GameCommandType.inciteOfficer => '적 장수의 충성도를 낮춥니다. 금 100을 사용합니다.',
     GameCommandType.spreadRumor => '적 영지의 민심을 낮춥니다. 금 80을 사용합니다.',
+    GameCommandType.buyFood => '시장 가격으로 군량을 구매합니다.',
+    GameCommandType.sellFood => '시장 가격으로 군량을 판매합니다.',
     GameCommandType.endMonth => '모든 세력의 명령을 처리하고 다음 달로 넘어갑니다.',
   };
 
@@ -1180,7 +1184,29 @@ class _GameScreenState extends State<GameScreen> {
           onAction: (command) async {
             if (!mounted) return;
             Navigator.pop(context);
+            final wasRevealed =
+                command.provinceId != null &&
+                engine.state.revealedProvinceIds.contains(command.provinceId);
             await _dispatch(command);
+            if (!mounted || command.type != GameCommandType.infiltrate) return;
+            final provinceId = command.provinceId;
+            if (provinceId == null ||
+                wasRevealed ||
+                !engine.state.revealedProvinceIds.contains(provinceId)) {
+              return;
+            }
+            final province = engine.state.provinces.firstWhere(
+              (p) => p.id == provinceId,
+            );
+            final force = engine.state.forces.firstWhere(
+              (f) => f.id == province.ownerForceId,
+            );
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    _EnemyForceInfoScreen(state: engine.state, force: force),
+              ),
+            );
           },
         ),
       ),
@@ -1267,6 +1293,17 @@ class _GameScreenState extends State<GameScreen> {
                 type: type,
                 officerId: selectedOfficerId,
                 provinceId: selectedProvinceId,
+              ),
+            );
+          },
+          onTrade: (type, amount) async {
+            if (!mounted) return;
+            Navigator.pop(context);
+            await _dispatch(
+              GameCommand(
+                type: type,
+                provinceId: selectedProvinceId,
+                soldiers: amount,
               ),
             );
           },
@@ -5059,11 +5096,13 @@ class _DomesticTradeScreen extends StatefulWidget {
     required this.force,
     required this.province,
     required this.onTax,
+    required this.onTrade,
     required this.onCommand,
   });
   final ForceState force;
   final ProvinceState province;
   final VoidCallback onTax;
+  final Future<void> Function(GameCommandType type, int amount) onTrade;
   final Future<void> Function(GameCommandType type) onCommand;
   @override
   State<_DomesticTradeScreen> createState() => _DomesticTradeScreenState();
@@ -5185,9 +5224,9 @@ class _DomesticTradeScreenState extends State<_DomesticTradeScreen> {
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const Text(
-              '지불 금액 4,500',
-              style: TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+            Text(
+              '지불 금액 ${_formatNumber((buy * .9).round())}',
+              style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
             ),
           ],
         ),
@@ -5200,9 +5239,9 @@ class _DomesticTradeScreenState extends State<_DomesticTradeScreen> {
           onChanged: (v) => setState(() => buy = v),
         ),
         FilledButton(
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('군량 구매 시스템은 시장 엔진 연결 후 적용됩니다.')),
-          ),
+          onPressed: buy.round() <= 0
+              ? null
+              : () => widget.onTrade(GameCommandType.buyFood, buy.round()),
           style: _button(),
           child: const Text('구매'),
         ),
@@ -5225,9 +5264,9 @@ class _DomesticTradeScreenState extends State<_DomesticTradeScreen> {
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const Text(
-              '획득 금액 2,700',
-              style: TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+            Text(
+              '획득 금액 ${_formatNumber((sell * .9).round())}',
+              style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
             ),
           ],
         ),
@@ -5240,9 +5279,9 @@ class _DomesticTradeScreenState extends State<_DomesticTradeScreen> {
           onChanged: (v) => setState(() => sell = v),
         ),
         FilledButton(
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('군량 판매 시스템은 시장 엔진 연결 후 적용됩니다.')),
-          ),
+          onPressed: sell.round() <= 0
+              ? null
+              : () => widget.onTrade(GameCommandType.sellFood, sell.round()),
           style: _button(),
           child: const Text('판매'),
         ),
@@ -7184,6 +7223,9 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
   Widget build(BuildContext context) {
     final battle = widget.battle.state;
     final won = battle.attackerWon;
+    final targetProvince = widget.engine.state.provinces.firstWhere(
+      (p) => p.id == battle.targetProvinceId,
+    );
     final prisoners = widget.outcomes
         .where((o) => o.result == BattleOfficerResult.captured)
         .length;
@@ -7257,7 +7299,7 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
                     Center(
                       child: Text(
                         won
-                            ? '${battle.targetProvinceId}을 점령했습니다.'
+                            ? '${targetProvince.name}을 점령했습니다.'
                             : '공격군이 후퇴했습니다.',
                         style: const TextStyle(
                           color: Color(0xffc1ab82),
@@ -7290,6 +7332,11 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
                             '포로',
                             '$prisoners명',
                             const Color(0xffe2bd72),
+                          ),
+                          _CostMetric(
+                            '군량 잔량',
+                            _formatNumber(battle.attackerFood),
+                            const Color(0xffc1ab82),
                           ),
                         ],
                       ),
@@ -7485,7 +7532,17 @@ class _PrisonerManagementScreenState extends State<PrisonerManagementScreen> {
       action,
       widget.provinceId,
     );
-    if (handled) setState(() => remaining.remove(prisoner));
+    if (handled) {
+      setState(() => remaining.remove(prisoner));
+    } else if (action == PrisonerAction.recruit) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('등용에 필요한 금 500이 부족합니다.')));
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('포로 처리를 완료할 수 없습니다.')));
+    }
   }
 
   @override

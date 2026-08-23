@@ -154,6 +154,21 @@ void main() {
     expect(target.publicLoyalty, lessThan(publicLoyaltyBefore));
   });
 
+  test('군량 구매와 판매는 금·군량을 실제로 교환한다', () {
+    final engine = createEngine();
+    final province = engine.state.playerForce.provinceIds
+        .map((id) => engine.state.provinces.firstWhere((p) => p.id == id))
+        .first;
+    final goldBefore = engine.state.playerForce.gold;
+    final foodBefore = province.food;
+    expect(engine.buyFood(province.id, 100).success, isTrue);
+    expect(province.food, foodBefore + 100);
+    expect(engine.state.playerForce.gold, goldBefore - 90);
+    expect(engine.sellFood(province.id, 50).success, isTrue);
+    expect(province.food, foodBefore + 50);
+    expect(engine.state.playerForce.gold, goldBefore - 45);
+  });
+
   test('외교는 선물로 관계를 높이고 동맹을 맺을 수 있다', () {
     final engine = createEngine();
     final officer = engine.state.playerForce.officerIds.first;
