@@ -246,7 +246,15 @@ class BattleEngine {
       (sum, u) => sum + u.soldiers,
     );
     state.actedUnitIds.add(attackerId);
-    _record(_logFor(action, damage));
+    final actionLog = _logFor(
+      action,
+      damage,
+      attackerName: attacker.name,
+      defenderName: defender.name,
+      attackerLoss: attackerBefore - attacker.soldiers,
+      moraleDelta: state.defenderMorale - defenderMoraleBefore,
+    );
+    _record(actionLog);
     return BattleResultEvent(
       command: eventCommand,
       attackerId: attackerId,
@@ -258,7 +266,7 @@ class BattleEngine {
       informationRevealed: action == BattleAction.information,
       finished: state.finished,
       winner: state.winner,
-      logMessage: _logFor(action, damage),
+      logMessage: actionLog,
     );
   }
 
@@ -364,8 +372,30 @@ class BattleEngine {
     BattleAction.wait => BattleCommandType.wait,
   };
 
-  String _logFor(BattleAction action, int damage) =>
-      '${_labelFor(action)} 실행 · 피해 $damage';
+  String _logFor(
+    BattleAction action,
+    int damage, {
+    String? attackerName,
+    String? defenderName,
+    int attackerLoss = 0,
+    int moraleDelta = 0,
+  }) {
+    final subject = attackerName == null
+        ? _labelFor(action)
+        : '$attackerName → ${defenderName ?? '대상'} · ${_labelFor(action)}';
+    final details = <String>[];
+    if (action == BattleAction.information) {
+      details.add('정보 확보');
+    } else if (damage > 0) {
+      details.add('피해 $damage');
+    }
+    if (attackerLoss > 0) details.add('아군 손실 $attackerLoss');
+    if (moraleDelta != 0) {
+      details.add('적 사기 ${moraleDelta > 0 ? '+' : ''}$moraleDelta');
+    }
+    if (details.isEmpty) details.add('변화 없음');
+    return '$subject · ${details.join(' · ')}';
+  }
 
   String _labelFor(BattleAction action) => switch (action) {
     BattleAction.attack => '일반 공격',
