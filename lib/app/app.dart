@@ -851,27 +851,25 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _saveAuto() => saveRepository.save(engine.state, 'AUTO');
 
   Future<void> _showSaveDialog() async {
-    const slots = ['1', '2', '3', '4', '5'];
-    final slot = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: const Text('저장 슬롯'),
-        children: slots
-            .map(
-              (value) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(dialogContext, value),
-                child: Text('슬롯 $value'),
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _SaveLoadScreen(
+          state: engine.state,
+          repository: saveRepository,
+          onSave: (slot) async {
+            await saveRepository.save(engine.state, slot);
+          },
+          onLoad: (data) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) =>
+                    GameScreen(initialState: GameState.fromSaveMap(data)),
               ),
-            )
-            .toList(),
+            );
+          },
+        ),
       ),
     );
-    if (slot == null || !mounted) return;
-    await saveRepository.save(engine.state, slot);
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('슬롯 $slot에 저장했습니다.')));
   }
 
   void _showStartReport() {
@@ -8897,6 +8895,293 @@ class _LogSheet extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _SaveLoadScreen extends StatefulWidget {
+  const _SaveLoadScreen({
+    required this.state,
+    required this.repository,
+    required this.onSave,
+    required this.onLoad,
+  });
+  final GameState state;
+  final SaveRepository repository;
+  final Future<void> Function(String slot) onSave;
+  final void Function(Map<String, dynamic> data) onLoad;
+
+  @override
+  State<_SaveLoadScreen> createState() => _SaveLoadScreenState();
+}
+
+class _SaveLoadScreenState extends State<_SaveLoadScreen> {
+  static const slots = ['AUTO', '1', '2', '3', '4', '5'];
+  final Map<String, Map<String, dynamic>?> saves = {};
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  Future<void> _reload() async {
+    final loaded = <String, Map<String, dynamic>?>{};
+    for (final slot in slots) {
+      loaded[slot] = await widget.repository.load(slot);
+    }
+    if (!mounted) return;
+    setState(() {
+      saves
+        ..clear()
+        ..addAll(loaded);
+      loading = false;
+    });
+  }
+
+  Future<void> _save(String slot) async {
+    await widget.onSave(slot);
+    await _reload();
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$slot 슬롯에 저장했습니다.')));
+  }
+
+  Future<void> _delete(String slot) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('$slot 슬롯 삭제'),
+        content: const Text('이 저장 데이터를 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await widget.repository.delete(slot);
+    await _reload();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xff090807),
+    body: SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: const Color(0xff171612),
+          image: const DecorationImage(
+            image: AssetImage(AssetRepository.panelTexture),
+            fit: BoxFit.cover,
+            opacity: .12,
+          ),
+          border: Border.all(color: const Color(0xffb38343), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            _header(context),
+            Expanded(
+              child: loading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xffd6a85d),
+                      ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
+                      children: [
+                        _currentState(),
+                        const SizedBox(height: 10),
+                        ...slots.map(_slotCard),
+                        const SizedBox(height: 7),
+                        OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('닫기'),
+                        ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _header(BuildContext context) => Container(
+    height: 58,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.save, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            '저장 / 불러오기',
+            style: TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+
+  Widget _currentState() => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(
+      color: const Color(0x453d2b17),
+      border: Border.all(color: const Color(0xffa1763c)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.bookmark, color: Color(0xffd6a85d), size: 25),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '현재 진행 상태',
+                style: TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+              ),
+              Text(
+                '${widget.state.year}년 ${widget.state.month}월 · ${widget.state.playerForce.name}',
+                style: const TextStyle(
+                  color: Color(0xffffdfa0),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          '자동 저장 가능',
+          style: const TextStyle(color: Color(0xff73d18b), fontSize: 11),
+        ),
+      ],
+    ),
+  );
+
+  Widget _slotCard(String slot) {
+    final data = saves[slot];
+    final savedData = data;
+    final exists = savedData != null;
+    final forceName = exists ? _forceName(savedData) : '비어 있음';
+    final date = exists
+        ? '${savedData['year']}년 ${savedData['month']}월'
+        : '저장 데이터 없음';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(10, 9, 8, 9),
+      decoration: BoxDecoration(
+        color: const Color(0x35231b11),
+        border: Border.all(
+          color: slot == 'AUTO'
+              ? const Color(0xffa1763c)
+              : const Color(0xff6d5230),
+        ),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 45,
+            height: 45,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xff3b2a19),
+              border: Border.all(color: const Color(0xff8c6735)),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              slot,
+              style: const TextStyle(
+                color: Color(0xffffdfa0),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  exists ? forceName : '빈 슬롯',
+                  style: const TextStyle(
+                    color: Color(0xffffdfa0),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  date,
+                  style: const TextStyle(
+                    color: Color(0xffc1ab82),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (exists) ...[
+            IconButton(
+              tooltip: '불러오기',
+              onPressed: () => widget.onLoad(savedData),
+              icon: const Icon(Icons.folder_open),
+              color: const Color(0xffd6a85d),
+            ),
+            IconButton(
+              tooltip: '삭제',
+              onPressed: () => _delete(slot),
+              icon: const Icon(Icons.delete_outline),
+              color: const Color(0xffd37b5d),
+            ),
+          ],
+          IconButton(
+            tooltip: '저장',
+            onPressed: () => _save(slot),
+            icon: const Icon(Icons.save),
+            color: const Color(0xff73d18b),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _forceName(Map<String, dynamic> data) {
+    final forces = data['forces'];
+    if (forces is List) {
+      for (final raw in forces) {
+        if (raw is Map && raw['id'] == data['playerForceId']) {
+          return '${raw['name'] ?? '세력'}';
+        }
+      }
+    }
+    return '세력 정보 없음';
+  }
 }
 
 class _MonthlyEventReportScreen extends StatelessWidget {

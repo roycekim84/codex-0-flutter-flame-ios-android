@@ -27,4 +27,9 @@ class SaveRepository {
     final preferences = await SharedPreferences.getInstance();
     return preferences.containsKey('save_$slot');
   }
+
+  Future<void> delete(String slot) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove('save_$slot');
+  }
 }
