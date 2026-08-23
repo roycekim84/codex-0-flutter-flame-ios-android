@@ -130,10 +130,99 @@ class BattleInfoPanel extends StatelessWidget {
               ),
             ),
           ],
+          if (battle.selectedAttacker != null ||
+              battle.selectedDefender != null) ...[
+            const SizedBox(height: 6),
+            _selectionStrip(battle),
+          ],
         ],
       ),
     );
   }
+
+  Widget _selectionStrip(BattleState battle) {
+    final attacker = battle.selectedAttacker;
+    final defender = battle.selectedDefender;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xff211b13),
+        border: Border.all(color: const Color(0xff70552d)),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _unitSummary(
+              attacker,
+              label: '아군',
+              color: const Color(0xff8dbbe1),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Column(
+              children: [
+                Text(
+                  defender == null ? '선택' : 'VS',
+                  style: const TextStyle(
+                    color: Color(0xffc9a76b),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (battle.expectedDamage != null)
+                  Text(
+                    '피해 ${_format(battle.expectedDamage!)}',
+                    style: const TextStyle(
+                      color: Color(0xffffc46b),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _unitSummary(
+              defender,
+              label: '적군',
+              color: const Color(0xffdf9686),
+              alignEnd: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _unitSummary(
+    BattleUnit? unit, {
+    required String label,
+    required Color color,
+    bool alignEnd = false,
+  }) => Column(
+    crossAxisAlignment: alignEnd
+        ? CrossAxisAlignment.end
+        : CrossAxisAlignment.start,
+    children: [
+      Text(
+        unit == null ? '$label · 대상 미선택' : '$label · ${unit.name}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      if (unit != null)
+        Text(
+          '${_unitTypeLabel(unit.type)} · ${_format(unit.soldiers)}명',
+          style: const TextStyle(color: Color(0xffe0c99d), fontSize: 10),
+        ),
+    ],
+  );
 
   Widget _stat(String label, String value, {bool warning = false}) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,6 +410,12 @@ String _terrainLabel(TerrainType terrain) => switch (terrain) {
   TerrainType.mountain => '산악',
   TerrainType.river => '강',
   TerrainType.fort => '성채',
+};
+
+String _unitTypeLabel(BattleUnitType type) => switch (type) {
+  BattleUnitType.infantry => '보병',
+  BattleUnitType.cavalry => '기병',
+  BattleUnitType.archers => '궁병',
 };
 
 String _format(int value) {
