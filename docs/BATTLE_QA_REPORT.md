@@ -7,8 +7,9 @@
 | 항목 | 결과 | 비고 |
 |---|---|---|
 | `flutter analyze` | 통과 | 정적 분석 오류 없음 |
-| `flutter test` | 통과 | 순수 Dart 테스트 39개 |
+| `flutter test` | 통과 | 순수 Dart·위젯 테스트 40개 |
 | `flutter test --coverage` | 통과 | 커버리지 산출 성공 |
+| 전투 HUD 접근성 위젯 테스트 | 통과 | 375×812·390×844, 텍스트 스케일 150% |
 | Flutter Web release build | 통과 | GitHub Pages base href 포함 |
 | Android Debug APK | 통과 | `build/app/outputs/flutter-apk/app-debug.apk` 생성 |
 | iOS Simulator Xcode build | 통과 | `CODE_SIGNING_ALLOWED=NO`로 소스·플러그인 컴파일 확인 |
@@ -31,7 +32,8 @@
 
 - Flutter Web의 자동 DOM 접근성 트리만으로는 Flame 전투판의 실제 픽셀 겹침과 잘림을 판정할 수 없다.
 - 실제 iOS Safari와 Android Chrome 기기에서의 터치 체감, SafeArea, 60fps는 아직 수동 확인 대상이다.
-- 텍스트 크기를 크게 설정한 접근성 모드의 전 화면 회귀 테스트는 아직 없다.
+- 전투 HUD·상태 패널·로그·명령 바는 텍스트 스케일 150% 자동 회귀 테스트를 통과했다.
+  다만 실제 기기의 시스템 글자 크기 설정은 별도 수동 확인이 필요하다.
 - 전투용 고해상도 PNG는 일부 파일이 1~3MB 수준이므로 최초 로딩 성능은 모바일 기기에서 추가 측정이 필요하다.
 - `flutter build ios --no-codesign` 디바이스 패키징은 로컬 Flutter SDK 바이너리에 포함된
   `com.apple.provenance` resource fork 때문에 실패했다. 프로젝트 소스 컴파일은
@@ -40,6 +42,6 @@
 ## 다음 QA 작업
 
 1. 실제 iOS Safari와 Android Chrome에서 전투 진입·부대 선택·명령 연타를 점검한다.
-2. 시스템 글자 크기 125%와 150%에서 HUD·로그·결과 화면의 겹침을 확인한다.
+2. 실제 기기에서 시스템 글자 크기 125%와 150%로 HUD·로그·결과 화면의 겹침을 확인한다.
 3. 전투판 진입 직후 이미지 디코딩 시간과 애니메이션 프레임 드롭을 측정한다.
 4. 위 결과를 바탕으로 P7을 완료 처리하고 P8 회귀 테스트로 이동한다.
