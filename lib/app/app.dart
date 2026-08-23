@@ -86,8 +86,54 @@ class CodexStrategyApp extends StatelessWidget {
         style: TextButton.styleFrom(foregroundColor: const Color(0xffe0b96e)),
       ),
     ),
-    home: const HomeScreen(),
+    home: Uri.base.queryParameters['capture'] == 'battle'
+        ? const BattleCaptureScreen()
+        : const HomeScreen(),
   );
+}
+
+/// Deterministic entry point used by the automated portrait screenshot job.
+/// It keeps capture tests independent from tap coordinates and menu timing.
+class BattleCaptureScreen extends StatefulWidget {
+  const BattleCaptureScreen({super.key});
+
+  @override
+  State<BattleCaptureScreen> createState() => _BattleCaptureScreenState();
+}
+
+class _BattleCaptureScreenState extends State<BattleCaptureScreen> {
+  late final GameEngine engine;
+  late final BattleEngine battle;
+
+  @override
+  void initState() {
+    super.initState();
+    engine = GameEngine(
+      GameState.fromScenario(
+        DemoScenario.create(),
+        selectedForceId: 'force_green',
+      ),
+    );
+    battle =
+        engine.beginBattlePrepared(
+          sourceProvinceId: 'p_ash',
+          targetProvinceId: 'p_ford',
+          committedSoldiers: 1000,
+          participantOfficerIds: const ['officer_1', 'officer_5'],
+          commanderOfficerId: 'officer_1',
+        ) ??
+        (throw StateError('Battle capture fixture could not be created'));
+  }
+
+  @override
+  void dispose() {
+    engine.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      BattleScreen(engine: engine, battle: battle);
 }
 
 Future<void> _loadSavedGame(BuildContext context) async {

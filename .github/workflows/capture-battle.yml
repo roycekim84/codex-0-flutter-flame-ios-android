@@ -1,0 +1,50 @@
+name: Capture battle screen
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Deploy Flutter Web to GitHub Pages]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+
+      - name: Build web
+        run: flutter build web --release --base-href /
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Playwright
+        run: npm install --no-save playwright@1.51.1 && npx playwright install --with-deps chromium
+
+      - name: Serve web build
+        run: python3 -m http.server 8080 --directory build/web > /tmp/flutter-web.log 2>&1 &
+
+      - name: Capture battle screen
+        run: node tooling/capture_battle.mjs
+
+      - name: Upload battle screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: battle-screen-390x844
+          path: artifacts/battle.png
+          if-no-files-found: error
