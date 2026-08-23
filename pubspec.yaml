@@ -87,6 +87,7 @@ flutter:
     - assets/images/battle_unit_token.png
     - assets/images/battle_unit_token_alpha.png
     - assets/images/battle_cavalry_token_alpha.png
+    - assets/images/battle_archer_token_alpha.png
     - assets/images/faction_emblem_strip.png
     - assets/images/force_banner_strip.png
     - assets/images/battle_terrain_overlay.png

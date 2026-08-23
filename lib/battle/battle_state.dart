@@ -5,7 +5,7 @@ enum BattleOfficerResult { escaped, captured, dead }
 
 enum BattleTurnPhase { attacker, defender }
 
-enum BattleUnitType { infantry, cavalry }
+enum BattleUnitType { infantry, cavalry, archers }
 
 class BattleOfficerOutcome {
   BattleOfficerOutcome({
