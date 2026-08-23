@@ -31,7 +31,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Install Playwright
         run: npm install --no-save playwright@1.51.1 && npx playwright install --with-deps chromium
