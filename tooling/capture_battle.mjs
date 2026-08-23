@@ -8,7 +8,7 @@ const page = await browser.newPage({ viewport: { width: 390, height: 844 }, devi
 try {
   await mkdir('artifacts', { recursive: true });
   await page.goto(url, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(8000);
   await page.screenshot({ path: 'artifacts/battle.png', fullPage: false });
   console.log(`Captured ${url} at 390x844`);
 } finally {

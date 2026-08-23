@@ -118,7 +118,7 @@ class _BattleCaptureScreenState extends State<BattleCaptureScreen> {
         engine.beginBattlePrepared(
           sourceProvinceId: 'p_ash',
           targetProvinceId: 'p_ford',
-          committedSoldiers: 1000,
+      committedSoldiers: 600,
           participantOfficerIds: const ['officer_1', 'officer_5'],
           commanderOfficerId: 'officer_1',
         ) ??
