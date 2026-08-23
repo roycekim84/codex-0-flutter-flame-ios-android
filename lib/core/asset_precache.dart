@@ -10,6 +10,7 @@ abstract final class AssetPrecache {
     AssetRepository.worldMapBackground,
     AssetRepository.battleBackground,
     AssetRepository.battleFieldBackground,
+    AssetRepository.battleCavalryTokenAlpha,
     AssetRepository.panelTexture,
     AssetRepository.fortressLarge,
     AssetRepository.fortressMedium,

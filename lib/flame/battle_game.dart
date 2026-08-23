@@ -16,6 +16,7 @@ class BattleGame extends FlameGame {
   final BattleState battle;
   final void Function(BattleCell cell)? onCellTap;
   late ui.Image unitImage;
+  late ui.Image cavalryImage;
   late ui.Image terrainImage;
   late ui.Image effectsImage;
 
@@ -30,8 +31,9 @@ class BattleGame extends FlameGame {
       ),
     );
     unitImage = loaded[0];
-    terrainImage = loaded[1];
-    effectsImage = loaded[2];
+    cavalryImage = loaded[1];
+    terrainImage = loaded[2];
+    effectsImage = loaded[3];
     _drawBoard();
   }
 
@@ -76,9 +78,10 @@ class BattleGame extends FlameGame {
       add(
         BattleUnitComponent(
           unit: unit,
-          image: unitImage,
+          image: unit.type == BattleUnitType.cavalry ? cavalryImage : unitImage,
           isAttacker: battle.attackerUnits.contains(unit),
           center: center,
+          unitType: unit.type,
         ),
       );
     }

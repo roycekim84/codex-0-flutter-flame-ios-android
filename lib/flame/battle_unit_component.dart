@@ -7,8 +7,6 @@ import '../battle/battle_state.dart';
 
 enum BattleUnitScale { small, medium, large }
 
-enum BattleUnitType { infantry, cavalry, spearmen, archers }
-
 class BattleUnitComponent extends PositionComponent {
   BattleUnitComponent({
     required this.unit,

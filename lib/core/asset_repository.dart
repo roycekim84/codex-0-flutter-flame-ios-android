@@ -23,6 +23,8 @@ class AssetRepository {
   static const battleUnitToken = 'assets/images/battle_unit_token.png';
   static const battleUnitTokenAlpha =
       'assets/images/battle_unit_token_alpha.png';
+  static const battleCavalryTokenAlpha =
+      'assets/images/battle_cavalry_token_alpha.png';
   static const factionEmblemStrip = 'assets/images/faction_emblem_strip.png';
   static const forceBannerStrip = 'assets/images/force_banner_strip.png';
   static const battleTerrainOverlay =
@@ -36,6 +38,7 @@ class AssetRepository {
   /// cannot silently drift apart as the battle presentation grows.
   static const battleRendererAssets = <String>[
     battleUnitTokenAlpha,
+    battleCavalryTokenAlpha,
     battleFieldBackground,
     battleEffectsStrip,
   ];

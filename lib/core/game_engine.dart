@@ -430,6 +430,7 @@ class GameEngine {
           intelligence: officer.intelligence,
           row: 3 + i ~/ 3,
           column: i % 3,
+          type: i == 0 ? BattleUnitType.cavalry : BattleUnitType.infantry,
         ),
       );
     }
@@ -450,6 +451,7 @@ class GameEngine {
             intelligence: officer.intelligence,
             row: i ~/ 3,
             column: 3 + i % 3,
+            type: i == 0 ? BattleUnitType.cavalry : BattleUnitType.infantry,
           ),
         );
       }

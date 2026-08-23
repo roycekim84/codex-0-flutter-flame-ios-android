@@ -5,6 +5,8 @@ enum BattleOfficerResult { escaped, captured, dead }
 
 enum BattleTurnPhase { attacker, defender }
 
+enum BattleUnitType { infantry, cavalry }
+
 class BattleOfficerOutcome {
   BattleOfficerOutcome({
     required this.officerId,
@@ -27,12 +29,14 @@ class BattleUnit {
     required this.row,
     required this.column,
     this.morale = 100,
+    this.type = BattleUnitType.infantry,
   });
   final String officerId, name;
   final int war, intelligence;
   int row, column;
   int soldiers;
   int morale;
+  final BattleUnitType type;
   bool burning = false;
 }
 
