@@ -8,7 +8,10 @@
 |---|---|---|
 | `flutter analyze` | 통과 | 정적 분석 오류 없음 |
 | `flutter test` | 통과 | 순수 Dart 테스트 39개 |
+| `flutter test --coverage` | 통과 | 커버리지 산출 성공 |
 | Flutter Web release build | 통과 | GitHub Pages base href 포함 |
+| Android Debug APK | 통과 | `build/app/outputs/flutter-apk/app-debug.apk` 생성 |
+| iOS Simulator Xcode build | 통과 | `CODE_SIGNING_ALLOWED=NO`로 소스·플러그인 컴파일 확인 |
 | `git diff --check` | 통과 | 공백·패치 오류 없음 |
 | 전투 부대 PNG 알파 | 통과 | 보병·기병·궁병 RGBA 확인 |
 | 배포 URL 로드 | 통과 | GitHub Pages 최신 배포 확인 |
@@ -30,6 +33,9 @@
 - 실제 iOS Safari와 Android Chrome 기기에서의 터치 체감, SafeArea, 60fps는 아직 수동 확인 대상이다.
 - 텍스트 크기를 크게 설정한 접근성 모드의 전 화면 회귀 테스트는 아직 없다.
 - 전투용 고해상도 PNG는 일부 파일이 1~3MB 수준이므로 최초 로딩 성능은 모바일 기기에서 추가 측정이 필요하다.
+- `flutter build ios --no-codesign` 디바이스 패키징은 로컬 Flutter SDK 바이너리에 포함된
+  `com.apple.provenance` resource fork 때문에 실패했다. 프로젝트 소스 컴파일은
+  `xcodebuild ... CODE_SIGNING_ALLOWED=NO` Simulator 빌드로 통과했다.
 
 ## 다음 QA 작업
 
