@@ -48,6 +48,7 @@ class CodexStrategyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Realm Ledger',
+    locale: const Locale('ko', 'KR'),
     debugShowCheckedModeBanner: false,
     builder: (context, child) {
       AssetPrecache.schedule(context);
