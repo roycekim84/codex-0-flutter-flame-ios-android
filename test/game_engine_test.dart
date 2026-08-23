@@ -7,10 +7,26 @@ import 'package:codex_strategy/battle/battle_state.dart';
 import 'package:codex_strategy/data/demo_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
 import 'package:codex_strategy/repositories/save_repository.dart';
+import 'package:codex_strategy/core/asset_repository.dart';
 
 void main() {
   GameEngine createEngine() =>
       GameEngine(GameState.fromScenario(DemoScenario.create()));
+
+  test('전투 렌더러는 투명 부대 스프라이트와 공용 레이어를 사용한다', () {
+    expect(
+      AssetRepository.battleRendererAssets,
+      contains(AssetRepository.battleUnitTokenAlpha),
+    );
+    expect(
+      AssetRepository.flameKey(AssetRepository.battleEffectsStrip),
+      'battle_effects_strip.png',
+    );
+    expect(
+      AssetRepository.battleRendererAssets,
+      isNot(contains(AssetRepository.battleUnitToken)),
+    );
+  });
 
   test('개발은 금을 소모하고 토지를 올린다', () {
     final engine = createEngine();

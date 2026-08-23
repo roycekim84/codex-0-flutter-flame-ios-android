@@ -22,9 +22,9 @@ abstract final class AssetPrecache {
     'assets/images/command_icon_6.png',
     AssetRepository.commandIconStrip,
     AssetRepository.factionEmblemStrip,
-    AssetRepository.battleUnitTokenAlpha,
     AssetRepository.forceBannerStrip,
     AssetRepository.eventArtStrip,
+    ...AssetRepository.battleRendererAssets,
   ];
 
   static void schedule(BuildContext context) {

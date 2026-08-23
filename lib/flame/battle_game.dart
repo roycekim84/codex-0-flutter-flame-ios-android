@@ -21,13 +21,17 @@ class BattleGame extends FlameGame {
 
   @override
   Future<void> onLoad() async {
-    unitImage = await images.load('battle_unit_token_alpha.png');
-    terrainImage = await images.load(
-      AssetRepository.battleTerrainOverlay.replaceFirst('assets/images/', ''),
+    // Flame's Images cache owns these decoded images. Loading them together
+    // keeps the first battle frame from decoding each layer serially, and the
+    // same ui.Image references are reused whenever refreshBoard is called.
+    final loaded = await Future.wait(
+      AssetRepository.battleRendererAssets.map(
+        (path) => images.load(AssetRepository.flameKey(path)),
+      ),
     );
-    effectsImage = await images.load(
-      AssetRepository.battleEffectsStrip.replaceFirst('assets/images/', ''),
-    );
+    unitImage = loaded[0];
+    terrainImage = loaded[1];
+    effectsImage = loaded[2];
     _drawBoard();
   }
 

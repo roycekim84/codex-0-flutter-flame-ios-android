@@ -28,6 +28,19 @@ class AssetRepository {
   static const battleEffectsStrip = 'assets/images/battle_effects_strip.png';
   static const eventArtStrip = 'assets/images/event_art_strip.png';
 
+  /// Assets decoded by the Flame battle renderer.
+  ///
+  /// Keep this list in one place so the Flutter precache and Flame loader
+  /// cannot silently drift apart as the battle presentation grows.
+  static const battleRendererAssets = <String>[
+    battleUnitTokenAlpha,
+    battleTerrainOverlay,
+    battleEffectsStrip,
+  ];
+
+  static String flameKey(String assetPath) =>
+      assetPath.replaceFirst('assets/images/', '');
+
   static String officerPortrait(String officerId) {
     const assignments = <String, String>{
       'o_red_01': 'assets/images/officer_portrait_warrior.png',
