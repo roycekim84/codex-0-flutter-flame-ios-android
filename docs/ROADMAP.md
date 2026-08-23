@@ -24,6 +24,7 @@
 - [x] AI 전쟁 보고: 월말 보고 창에 AI 전투 승패·일수·잔여 병력 표시
 - [x] 이미지 에셋 갭 분석 문서: 참고 화면 17개 패널별 생성·적용 자산 목록과 우선순위 (`docs/ASSET_GAP_ANALYSIS.md`)
 - [x] 이미지 에셋 구현 로드맵: 생성·검수·AssetRepository·Flutter/Flame 연결·QA 순서 (`docs/ASSET_IMPLEMENTATION_ROADMAP.md`)
+- [ ] 11·12번 전투 화면 고품질 개선 로드맵: 전술판·부대 스프라이트·HUD·행동 연출·결과 연결 (`docs/BATTLE_SCREEN_ROADMAP.md`)
 
 ## 참고 화면 기반 재정렬
 
