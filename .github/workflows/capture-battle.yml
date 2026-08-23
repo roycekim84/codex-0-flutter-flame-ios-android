@@ -39,6 +39,8 @@ jobs:
         run: python3 -m http.server 8080 --directory build/web > /tmp/flutter-web.log 2>&1 &
 
       - name: Capture battle screen
+        env:
+          CAPTURE_URL: https://roycekim84.github.io/codex-0-flutter-flame-ios-android/?capture=battle&run=${{ github.run_id }}
         run: node tooling/capture_battle.mjs
 
       - name: Upload battle screenshot
