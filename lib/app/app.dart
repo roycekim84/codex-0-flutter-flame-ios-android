@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
 
 import '../battle/battle_engine.dart';
+import '../battle/battle_command.dart';
 import '../battle/battle_state.dart';
 import '../battle/terrain.dart';
 import '../core/game_command.dart';
@@ -15,6 +16,7 @@ import '../repositories/save_repository.dart';
 import '../core/asset_repository.dart';
 import '../core/asset_precache.dart';
 import '../ui/widgets/asset_widgets.dart';
+import '../ui/battle/battle_hud.dart';
 
 String _formatNumber(Object value) {
   final text = '$value';
@@ -7762,6 +7764,8 @@ class _BattleScreenState extends State<BattleScreen> {
         widget.battle.state.attackerUnits.firstOrNull?.officerId;
     selectedDefenderId =
         widget.battle.state.defenderUnits.firstOrNull?.officerId;
+    widget.battle.state.selectedAttackerId = selectedAttackerId;
+    widget.battle.state.selectedDefenderId = selectedDefenderId;
     battleGame = BattleGame(widget.battle.state);
   }
 
@@ -7998,6 +8002,7 @@ class _BattleScreenState extends State<BattleScreen> {
         child: SafeArea(
           child: Column(
             children: [
+              BattleTopHud(battle: battle),
               Expanded(
                 child: Stack(
                   fit: StackFit.expand,
@@ -8011,205 +8016,302 @@ class _BattleScreenState extends State<BattleScreen> {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Text(
-                          '${battle.attackerName}\n${battle.attackerSoldiers}명',
-                          textAlign: TextAlign.center,
-                        ),
-                        const Text('VS'),
-                        Text(
-                          '${battle.defenderName}\n${battle.defenderSoldiers}명',
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '전투 군량 ${battle.attackerFood} · 일일 소모 ${battle.dailySupplyCost} · 사기 ${battle.attackerMorale}'
-                        ' / ${battle.defenderMorale}'
-                        '${battle.informationRevealed ? ' · 정보 확보' : ''}'
-                        '${battle.supplyShortageDays > 0 ? ' · 보급 부족 ${battle.supplyShortageDays}일' : ''}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: battle.supplyShortageDays > 0
-                              ? Colors.red
-                              : null,
-                        ),
+              Offstage(
+                offstage: true,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Text(
+                            '${battle.attackerName}\n${battle.attackerSoldiers}명',
+                            textAlign: TextAlign.center,
+                          ),
+                          const Text('VS'),
+                          Text(
+                            '${battle.defenderName}\n${battle.defenderSoldiers}명',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
-                    ),
-                    if (battle.attackerUnits.isNotEmpty)
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          '출전 부대 · 총대장 ${battle.commanderName} (WAR ${battle.commanderWar})\n${battle.attackerUnits.map((u) => '${u.name} ${u.soldiers}명').join('  ·  ')}',
-                          style: const TextStyle(fontSize: 12),
+                          '전투 군량 ${battle.attackerFood} · 일일 소모 ${battle.dailySupplyCost} · 사기 ${battle.attackerMorale}'
+                          ' / ${battle.defenderMorale}'
+                          '${battle.informationRevealed ? ' · 정보 확보' : ''}'
+                          '${battle.supplyShortageDays > 0 ? ' · 보급 부족 ${battle.supplyShortageDays}일' : ''}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: battle.supplyShortageDays > 0
+                                ? Colors.red
+                                : null,
+                          ),
                         ),
                       ),
-                    if (battle.attackerUnits.isNotEmpty &&
-                        battle.defenderUnits.isNotEmpty)
+                      if (battle.attackerUnits.isNotEmpty)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '출전 부대 · 총대장 ${battle.commanderName} (WAR ${battle.commanderWar})\n${battle.attackerUnits.map((u) => '${u.name} ${u.soldiers}명').join('  ·  ')}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      if (battle.attackerUnits.isNotEmpty &&
+                          battle.defenderUnits.isNotEmpty)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: selectedAttackerId,
+                                items: battle.attackerUnits
+                                    .map(
+                                      (u) => DropdownMenuItem(
+                                        value: u.officerId,
+                                        child: Text('${u.name} ${u.soldiers}'),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: battle.finished
+                                    ? null
+                                    : (id) => setState(
+                                        () => selectedAttackerId = id,
+                                      ),
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 6),
+                              child: Text('→'),
+                            ),
+                            Expanded(
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: selectedDefenderId,
+                                items: battle.defenderUnits
+                                    .map(
+                                      (u) => DropdownMenuItem(
+                                        value: u.officerId,
+                                        child: Text('${u.name} ${u.soldiers}'),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: battle.finished
+                                    ? null
+                                    : (id) => setState(
+                                        () => selectedDefenderId = id,
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (battle.attackerUnits.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: OutlinedButton.icon(
+                            onPressed: battle.finished
+                                ? null
+                                : () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => _BattleUnitDetailScreen(
+                                        battle: battle,
+                                        unit: battle.attackerUnits.firstWhere(
+                                          (u) =>
+                                              u.officerId == selectedAttackerId,
+                                          orElse: () =>
+                                              battle.attackerUnits.first,
+                                        ),
+                                        onAction: (action) {
+                                          Navigator.pop(context);
+                                          _act(action);
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                            icon: const Icon(Icons.shield),
+                            label: const Text('부대 상세 / 특수명령'),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 14),
                       Row(
                         children: [
                           Expanded(
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              value: selectedAttackerId,
-                              items: battle.attackerUnits
-                                  .map(
-                                    (u) => DropdownMenuItem(
-                                      value: u.officerId,
-                                      child: Text('${u.name} ${u.soldiers}'),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: battle.finished
+                            child: FilledButton.icon(
+                              onPressed: battle.finished
                                   ? null
-                                  : (id) =>
-                                        setState(() => selectedAttackerId = id),
+                                  : () => _act(BattleAction.attack),
+                              icon: const Icon(Icons.gavel),
+                              label: const Text('공격'),
                             ),
                           ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 6),
-                            child: Text('→'),
-                          ),
+                          const SizedBox(width: 10),
                           Expanded(
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              value: selectedDefenderId,
-                              items: battle.defenderUnits
-                                  .map(
-                                    (u) => DropdownMenuItem(
-                                      value: u.officerId,
-                                      child: Text('${u.name} ${u.soldiers}'),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: battle.finished
+                            child: FilledButton.tonal(
+                              onPressed: battle.finished
                                   ? null
-                                  : (id) =>
-                                        setState(() => selectedDefenderId = id),
+                                  : () => _act(BattleAction.fire),
+                              child: const Text('화공'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: FilledButton.tonal(
+                              onPressed: battle.finished
+                                  ? null
+                                  : () => _act(BattleAction.charge),
+                              child: const Text('돌격'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: battle.finished
+                                  ? null
+                                  : () => _act(BattleAction.wait),
+                              child: const Text('대기'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: battle.finished ? null : _moveSelected,
+                              child: const Text('이동'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: battle.finished
+                                  ? null
+                                  : () {
+                                      widget.battle.retreat();
+                                      _finishIfNeeded();
+                                    },
+                              icon: const Icon(Icons.undo),
+                              label: const Text('퇴각'),
                             ),
                           ),
                         ],
                       ),
-                    if (battle.attackerUnits.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: OutlinedButton.icon(
-                          onPressed: battle.finished
-                              ? null
-                              : () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => _BattleUnitDetailScreen(
-                                      battle: battle,
-                                      unit: battle.attackerUnits.firstWhere(
-                                        (u) =>
-                                            u.officerId == selectedAttackerId,
-                                        orElse: () =>
-                                            battle.attackerUnits.first,
-                                      ),
-                                      onAction: (action) {
-                                        Navigator.pop(context);
-                                        _act(action);
-                                      },
-                                    ),
-                                  ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.tonal(
+                              onPressed: battle.finished
+                                  ? null
+                                  : () => _act(BattleAction.cooperate),
+                              child: const Text('협공'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: battle.finished
+                                  ? null
+                                  : () => _act(BattleAction.information),
+                              child: const Text('정보'),
+                            ),
+                          ),
+                          const Spacer(flex: 2),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              BattleInfoPanel(battle: battle),
+              if (battle.attackerUnits.isNotEmpty &&
+                  battle.defenderUnits.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 2),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          value: selectedAttackerId,
+                          items: battle.attackerUnits
+                              .map(
+                                (u) => DropdownMenuItem(
+                                  value: u.officerId,
+                                  child: Text('아군 · ${u.name} ${u.soldiers}'),
                                 ),
-                          icon: const Icon(Icons.shield),
-                          label: const Text('부대 상세 / 특수명령'),
+                              )
+                              .toList(),
+                          onChanged: battle.finished
+                              ? null
+                              : (id) {
+                                  setState(() => selectedAttackerId = id);
+                                  if (id != null) {
+                                    widget.battle.execute(
+                                      BattleCommand.selectAttacker(id),
+                                    );
+                                  }
+                                },
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 5),
+                        child: Text('→'),
+                      ),
+                      Expanded(
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          value: selectedDefenderId,
+                          items: battle.defenderUnits
+                              .map(
+                                (u) => DropdownMenuItem(
+                                  value: u.officerId,
+                                  child: Text('적군 · ${u.name} ${u.soldiers}'),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: battle.finished
+                              ? null
+                              : (id) {
+                                  setState(() => selectedDefenderId = id);
+                                  if (id != null) {
+                                    widget.battle.execute(
+                                      BattleCommand.selectDefender(id),
+                                    );
+                                  }
+                                },
                         ),
                       ),
                     ],
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: battle.finished
-                                ? null
-                                : () => _act(BattleAction.attack),
-                            icon: const Icon(Icons.gavel),
-                            label: const Text('공격'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: FilledButton.tonal(
-                            onPressed: battle.finished
-                                ? null
-                                : () => _act(BattleAction.fire),
-                            child: const Text('화공'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: FilledButton.tonal(
-                            onPressed: battle.finished
-                                ? null
-                                : () => _act(BattleAction.charge),
-                            child: const Text('돌격'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: battle.finished
-                                ? null
-                                : () => _act(BattleAction.wait),
-                            child: const Text('대기'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: battle.finished ? null : _moveSelected,
-                            child: const Text('이동'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: battle.finished
-                                ? null
-                                : () {
-                                    widget.battle.retreat();
-                                    _finishIfNeeded();
-                                  },
-                            icon: const Icon(Icons.undo),
-                            label: const Text('퇴각'),
-                          ),
-                        ),
-                      ],
+                  ),
+                ),
+              BattleCommandBar(
+                disabled: battle.finished,
+                onMove: _moveSelected,
+                onAction: _act,
+                onInfo: () => _act(BattleAction.information),
+                onRetreat: () {
+                  widget.battle.retreat();
+                  _finishIfNeeded();
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: battle.finished
+                          ? null
+                          : () => _act(BattleAction.charge),
+                      child: const Text('돌격'),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FilledButton.tonal(
-                            onPressed: battle.finished
-                                ? null
-                                : () => _act(BattleAction.cooperate),
-                            child: const Text('협공'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: battle.finished
-                                ? null
-                                : () => _act(BattleAction.information),
-                            child: const Text('정보'),
-                          ),
-                        ),
-                        const Spacer(flex: 2),
-                      ],
+                    TextButton(
+                      onPressed: battle.finished
+                          ? null
+                          : () => _act(BattleAction.cooperate),
+                      child: const Text('협공'),
                     ),
                   ],
                 ),
