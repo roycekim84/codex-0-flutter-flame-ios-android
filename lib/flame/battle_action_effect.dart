@@ -244,6 +244,61 @@ class BattleActionEffectComponent extends PositionComponent {
             ..strokeCap = ui.StrokeCap.round,
         );
       }
+    } else if (action == BattleCommandType.information) {
+      final direction = defender - attacker;
+      final distance = direction.length;
+      final unitDirection = distance == 0
+          ? Vector2(1, 0)
+          : direction / distance;
+      final perpendicular = Vector2(-unitDirection.y, unitDirection.x);
+      final scanPoint = attacker + direction * progress;
+      final scanPaint = Paint()
+        ..color = const Color(0xff8ed8ff).withValues(alpha: alpha * .9)
+        ..strokeWidth = 3
+        ..strokeCap = ui.StrokeCap.round;
+      canvas.drawLine(
+        Offset(attacker.x, attacker.y),
+        Offset(scanPoint.x, scanPoint.y),
+        scanPaint,
+      );
+      canvas.drawCircle(
+        Offset(scanPoint.x, scanPoint.y),
+        13 + progress * 13,
+        Paint()..color = const Color(0xff69c7ff).withValues(alpha: alpha * .15),
+      );
+      canvas.drawCircle(
+        Offset(scanPoint.x, scanPoint.y),
+        14 + progress * 11,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5
+          ..color = const Color(0xffb8ebff).withValues(alpha: alpha * .8),
+      );
+      for (var i = 0; i < 5; i++) {
+        final offset = (i - 2) * 7.0;
+        final particle = scanPoint + perpendicular * offset;
+        canvas.drawCircle(
+          Offset(particle.x, particle.y),
+          1.8 + (i % 2),
+          Paint()
+            ..color = const Color(
+              0xffd6f4ff,
+            ).withValues(alpha: alpha * (.55 + i * .06)),
+        );
+      }
+      canvas.drawCircle(
+        Offset(defender.x, defender.y),
+        17 + progress * 19,
+        Paint()..color = const Color(0xff6ecbff).withValues(alpha: alpha * .12),
+      );
+      canvas.drawCircle(
+        Offset(defender.x, defender.y),
+        18 + progress * 16,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5
+          ..color = const Color(0xff9ddfff).withValues(alpha: alpha * .75),
+      );
     } else if (action == BattleCommandType.attack) {
       canvas.drawLine(
         Offset(
