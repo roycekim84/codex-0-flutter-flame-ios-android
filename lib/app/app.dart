@@ -5,6 +5,7 @@ import 'package:flame/game.dart';
 
 import '../battle/battle_engine.dart';
 import '../battle/battle_state.dart';
+import '../battle/terrain.dart';
 import '../core/game_command.dart';
 import '../core/game_engine.dart';
 import '../data/demo_scenario.dart';
@@ -7855,6 +7856,35 @@ class _BattleScreenState extends State<BattleScreen> {
                           ),
                         ],
                       ),
+                    if (battle.attackerUnits.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton.icon(
+                          onPressed: battle.finished
+                              ? null
+                              : () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => _BattleUnitDetailScreen(
+                                      battle: battle,
+                                      unit: battle.attackerUnits.firstWhere(
+                                        (u) =>
+                                            u.officerId == selectedAttackerId,
+                                        orElse: () =>
+                                            battle.attackerUnits.first,
+                                      ),
+                                      onAction: (action) {
+                                        Navigator.pop(context);
+                                        _act(action);
+                                      },
+                                    ),
+                                  ),
+                                ),
+                          icon: const Icon(Icons.shield),
+                          label: const Text('부대 상세 / 특수명령'),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 14),
                     Row(
                       children: [
@@ -7948,6 +7978,251 @@ class _BattleScreenState extends State<BattleScreen> {
       ),
     );
   }
+}
+
+class _BattleUnitDetailScreen extends StatelessWidget {
+  const _BattleUnitDetailScreen({
+    required this.battle,
+    required this.unit,
+    required this.onAction,
+  });
+  final BattleState battle;
+  final BattleUnit unit;
+  final void Function(BattleAction action) onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xff090807),
+      body: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: const Color(0xff171612),
+            image: const DecorationImage(
+              image: AssetImage(AssetRepository.panelTexture),
+              fit: BoxFit.cover,
+              opacity: .12,
+            ),
+            border: Border.all(color: const Color(0xffb38343), width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              _header(context),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
+                  children: [
+                    _identity(),
+                    const SizedBox(height: 10),
+                    _panel(
+                      '부대 능력',
+                      Column(
+                        children: [
+                          _line('병력', _formatNumber(unit.soldiers)),
+                          _line('사기', '${unit.morale}'),
+                          _line('무력 WAR', '${unit.war}'),
+                          _line('지력 INT', '${unit.intelligence}'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _panel(
+                      '장비 / 상태',
+                      Column(
+                        children: [
+                          _line('무기', '기본 무기'),
+                          _line('군마', '보유'),
+                          _line('방어', '기본 갑옷'),
+                          _line('지형', _terrainLabel(battle.terrain)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _panel(
+                      '특수명령',
+                      Column(
+                        children: [
+                          _command(
+                            '화공',
+                            Icons.local_fire_department,
+                            BattleAction.fire,
+                          ),
+                          _command('돌격', Icons.bolt, BattleAction.charge),
+                          _command(
+                            '협공',
+                            Icons.group_work,
+                            BattleAction.cooperate,
+                          ),
+                          _command('대기', Icons.pause, BattleAction.wait),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => onAction(BattleAction.information),
+                      icon: const Icon(Icons.visibility),
+                      label: const Text('정보'),
+                    ),
+                    const SizedBox(height: 6),
+                    OutlinedButton.icon(
+                      onPressed: () => onAction(BattleAction.wait),
+                      icon: const Icon(Icons.undo),
+                      label: const Text('퇴각'),
+                    ),
+                    const SizedBox(height: 6),
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('닫기'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _header(BuildContext context) => Container(
+    height: 58,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(colors: [Color(0xff382818), Color(0xff181612)]),
+      border: Border(bottom: BorderSide(color: Color(0xffbd8b45))),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.shield, color: Color(0xffd9af65), size: 25),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            '전투 · 부대 상세',
+            style: TextStyle(
+              color: Color(0xffffdfa0),
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.close),
+          color: const Color(0xffffdfa0),
+        ),
+      ],
+    ),
+  );
+
+  Widget _identity() => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(
+      color: const Color(0x453d2b17),
+      border: Border.all(color: const Color(0xffa1763c)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        _GeneratedPortrait(seed: unit.officerId, size: 82),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                unit.name,
+                style: const TextStyle(
+                  color: Color(0xffffdfa0),
+                  fontSize: 23,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${battle.attackerName} · ${battle.commanderName.isEmpty ? '출전 부대' : '총대장 ${battle.commanderName}'}',
+                style: const TextStyle(color: Color(0xffd6a85d), fontSize: 12),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '전투 ${battle.day}일째',
+                style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _command(String label, IconData icon, BattleAction action) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: () => onAction(action),
+        icon: Icon(icon, size: 18),
+        label: Text(label),
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xff76572f),
+          foregroundColor: const Color(0xffffdfa0),
+          side: const BorderSide(color: Color(0xffc09351)),
+          minimumSize: const Size.fromHeight(42),
+        ),
+      ),
+    ),
+  );
+
+  Widget _line(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Color(0xffc1ab82))),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Color(0xffffdfa0),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _panel(String title, Widget child) => Container(
+    padding: const EdgeInsets.fromLTRB(11, 9, 11, 10),
+    decoration: BoxDecoration(
+      color: const Color(0x35231b11),
+      border: Border.all(color: const Color(0xff6d5230)),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xffd6a85d),
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 6),
+        child,
+      ],
+    ),
+  );
+
+  String _terrainLabel(TerrainType terrain) => switch (terrain) {
+    TerrainType.plain => '평원',
+    TerrainType.forest => '숲',
+    TerrainType.mountain => '산지',
+    TerrainType.river => '강',
+    TerrainType.fort => '성',
+  };
 }
 
 class _OfficerListScreen extends StatefulWidget {
