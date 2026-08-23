@@ -132,19 +132,48 @@ class BattleActionEffectComponent extends PositionComponent {
           ..color = const Color(0xffffc276).withValues(alpha: alpha),
       );
     } else if (action == BattleCommandType.cooperate) {
-      final paint = Paint()
-        ..color = const Color(0xfff1ca65).withValues(alpha: alpha)
-        ..strokeWidth = 3;
-      canvas.drawLine(
-        Offset(attacker.x, attacker.y),
-        Offset(defender.x, defender.y),
-        paint,
-      );
+      final support = _cooperatorCenter(defender, event.attackerId);
+      final supportPoint =
+          support ??
+          Vector2(
+            attacker.x + (defender.x - attacker.x) * .18,
+            attacker.y + (defender.y - attacker.y) * .18,
+          );
+      final linePaint = Paint()
+        ..color = const Color(0xfff1ca65).withValues(alpha: alpha * .88)
+        ..strokeWidth = 3
+        ..strokeCap = ui.StrokeCap.round;
+      final supportPaint = Paint()
+        ..color = const Color(0xff8fc8ff).withValues(alpha: alpha * .88)
+        ..strokeWidth = 3
+        ..strokeCap = ui.StrokeCap.round;
+      _drawActionLine(canvas, attacker, defender, progress, linePaint);
+      _drawActionLine(canvas, supportPoint, defender, progress, supportPaint);
+      final impact = Offset(defender.x, defender.y);
       canvas.drawCircle(
-        Offset(defender.x, defender.y),
-        18 + progress * 10,
+        impact,
+        20 + progress * 18,
         Paint()..color = const Color(0xffffdc72).withValues(alpha: alpha * .2),
       );
+      for (var i = 0; i < 4; i++) {
+        final angle = math.pi / 4 + i * math.pi / 2;
+        final inner = 17 + progress * 10;
+        final outer = inner + 14 * (1 - progress);
+        canvas.drawLine(
+          Offset(
+            defender.x + math.cos(angle) * inner,
+            defender.y + math.sin(angle) * inner,
+          ),
+          Offset(
+            defender.x + math.cos(angle) * outer,
+            defender.y + math.sin(angle) * outer,
+          ),
+          Paint()
+            ..color = const Color(0xffffedaf).withValues(alpha: alpha * .9)
+            ..strokeWidth = 2.5
+            ..strokeCap = ui.StrokeCap.round,
+        );
+      }
     } else if (action == BattleCommandType.attack) {
       canvas.drawLine(
         Offset(
@@ -202,5 +231,31 @@ class BattleActionEffectComponent extends PositionComponent {
     return unit == null
         ? Vector2(178, 150)
         : BattleMapLayout.cellCenter(BattleCell(unit.row, unit.column));
+  }
+
+  Vector2? _cooperatorCenter(Vector2 defender, String? primaryId) {
+    final candidates = battle.attackerUnits
+        .where((unit) => unit.officerId != primaryId && unit.soldiers > 0)
+        .toList();
+    if (candidates.isEmpty) return null;
+    candidates.sort((a, b) {
+      final aCenter = BattleMapLayout.cellCenter(BattleCell(a.row, a.column));
+      final bCenter = BattleMapLayout.cellCenter(BattleCell(b.row, b.column));
+      return (aCenter - defender).length.compareTo((bCenter - defender).length);
+    });
+    final unit = candidates.first;
+    return BattleMapLayout.cellCenter(BattleCell(unit.row, unit.column));
+  }
+
+  void _drawActionLine(
+    ui.Canvas canvas,
+    Vector2 from,
+    Vector2 to,
+    double progress,
+    Paint paint,
+  ) {
+    final head = from + (to - from) * progress;
+    final tail = from + (to - from) * (progress * .72);
+    canvas.drawLine(Offset(tail.x, tail.y), Offset(head.x, head.y), paint);
   }
 }
