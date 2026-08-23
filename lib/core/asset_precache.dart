@@ -9,6 +9,7 @@ abstract final class AssetPrecache {
     AssetRepository.scenarioThumbnailStrip,
     AssetRepository.worldMapBackground,
     AssetRepository.battleBackground,
+    AssetRepository.battleFieldBackground,
     AssetRepository.panelTexture,
     AssetRepository.fortressLarge,
     AssetRepository.fortressMedium,

@@ -8115,7 +8115,7 @@ class _BattleScreenState extends State<BattleScreen> {
                   fit: StackFit.expand,
                   children: [
                     Image.asset(
-                      'assets/images/battle_background.png',
+                      AssetRepository.battleFieldBackground,
                       fit: BoxFit.cover,
                     ),
                     Container(color: Colors.black.withValues(alpha: .28)),
@@ -10029,7 +10029,7 @@ class _AiBattleReplayScreenState extends State<AiBattleReplayScreen> {
                   fit: StackFit.expand,
                   children: [
                     Image.asset(
-                      'assets/images/battle_background.png',
+                      AssetRepository.battleFieldBackground,
                       fit: BoxFit.cover,
                     ),
                     Container(color: Colors.black.withValues(alpha: .28)),

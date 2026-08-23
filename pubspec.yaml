@@ -78,6 +78,7 @@ flutter:
     - assets/images/command_icon_5.png
     - assets/images/command_icon_6.png
     - assets/images/battle_background.png
+    - assets/images/battle_field_background_v2.png
     - assets/images/officer_portrait_warrior.png
     - assets/images/officer_portrait_strategist.png
     - assets/images/officer_portrait_governor.png

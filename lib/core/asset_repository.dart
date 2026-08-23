@@ -16,6 +16,8 @@ class AssetRepository {
   static String commandIcon(int index) =>
       'assets/images/command_icon_${index.clamp(0, 6)}.png';
   static const battleBackground = 'assets/images/battle_background.png';
+  static const battleFieldBackground =
+      'assets/images/battle_field_background_v2.png';
   static const panelTexture = 'assets/images/panel_texture.png';
   static const commandIconStrip = 'assets/images/command_icon_strip.png';
   static const battleUnitToken = 'assets/images/battle_unit_token.png';
@@ -34,7 +36,7 @@ class AssetRepository {
   /// cannot silently drift apart as the battle presentation grows.
   static const battleRendererAssets = <String>[
     battleUnitTokenAlpha,
-    battleTerrainOverlay,
+    battleFieldBackground,
     battleEffectsStrip,
   ];
 
