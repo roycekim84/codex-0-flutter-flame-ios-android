@@ -25,7 +25,6 @@ abstract final class AssetPrecache {
     'assets/images/command_icon_6.png',
     AssetRepository.commandIconStrip,
     AssetRepository.factionEmblemStrip,
-    AssetRepository.forceBannerStrip,
     AssetRepository.eventArtStrip,
     ...AssetRepository.battleRendererAssets,
   ];
