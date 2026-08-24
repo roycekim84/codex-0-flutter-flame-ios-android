@@ -30,9 +30,9 @@ class BattleUnitComponent extends PositionComponent {
   @override
   Future<void> onLoad() async {
     final visualSize = switch (scaleType) {
-      BattleUnitScale.small => 42.0,
-      BattleUnitScale.medium => 50.0,
-      BattleUnitScale.large => 58.0,
+      BattleUnitScale.small => 48.0,
+      BattleUnitScale.medium => 56.0,
+      BattleUnitScale.large => 64.0,
     };
     if (isSelected) {
       add(
@@ -108,7 +108,7 @@ class BattleUnitComponent extends PositionComponent {
         srcPosition: Vector2(isAttacker ? 1448 : 724, 0),
         srcSize: Vector2(724, 724),
         position: Vector2(32, -8),
-        size: Vector2(18, 27),
+        size: Vector2(20, 30),
         anchor: Anchor.bottomCenter,
         paint: Paint()
           ..colorFilter = isSelected
