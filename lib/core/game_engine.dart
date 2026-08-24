@@ -22,17 +22,29 @@ class GameEngine {
     }
     switch (command.type) {
       case GameCommandType.develop:
-        develop(command.provinceId!);
+        if (!develop(command.provinceId!)) {
+          return const CommandResult.failure('개발할 지역 또는 금이 부족합니다.');
+        }
       case GameCommandType.recruit:
-        recruit(command.provinceId!);
+        if (!recruit(command.provinceId!)) {
+          return const CommandResult.failure('징병할 지역 또는 금이 부족합니다.');
+        }
       case GameCommandType.tax:
-        tax(command.provinceId!);
+        if (!tax(command.provinceId!)) {
+          return const CommandResult.failure('징세할 아군 지역을 찾을 수 없습니다.');
+        }
       case GameCommandType.relief:
-        relief(command.provinceId!);
+        if (!relief(command.provinceId!)) {
+          return const CommandResult.failure('시혜할 지역 또는 금이 부족합니다.');
+        }
       case GameCommandType.train:
-        train(command.provinceId!);
+        if (!train(command.provinceId!)) {
+          return const CommandResult.failure('훈련할 지역 또는 금이 부족합니다.');
+        }
       case GameCommandType.fortify:
-        fortify(command.provinceId!);
+        if (!fortify(command.provinceId!)) {
+          return const CommandResult.failure('축성할 지역 또는 금이 부족합니다.');
+        }
       case GameCommandType.search:
         final result = search(command.provinceId!);
         if (!result.success) return result;
@@ -311,55 +323,61 @@ class GameEngine {
     return CommandResult.success('${province.name}의 민심이 흔들렸습니다.');
   }
 
-  void develop(String provinceId) {
+  bool develop(String provinceId) {
     final p = _playerProvince(provinceId);
-    if (p == null || state.playerForce.gold < 100) return;
+    if (p == null || state.playerForce.gold < 100) return false;
     state.playerForce.gold -= 100;
     final before = p.land;
     p.land = (p.land + 5).clamp(0, 100).toInt();
     state.log('${p.name} 개발 실행 · 토지 $before → ${p.land} · 금 -100');
+    return true;
   }
 
-  void recruit(String provinceId) {
+  bool recruit(String provinceId) {
     final p = _playerProvince(provinceId);
-    if (p == null || state.playerForce.gold < 80) return;
+    if (p == null || state.playerForce.gold < 80) return false;
     state.playerForce.gold -= 80;
     final gain = (80 * (0.6 + p.publicLoyalty / 200)).round();
     p.soldiers += gain;
     p.publicLoyalty = (p.publicLoyalty - 1).clamp(0, 100).toInt();
     state.log('${p.name} 징병 · 병력 +$gain · 금 -80');
+    return true;
   }
 
-  void tax(String provinceId) {
+  bool tax(String provinceId) {
     final p = _playerProvince(provinceId);
-    if (p == null) return;
+    if (p == null) return false;
     state.playerForce.gold += 90 + p.land;
     p.publicLoyalty = (p.publicLoyalty - 4).clamp(0, 100).toInt();
     state.log('${p.name} 징세 · 금 +${90 + p.land} · 민심 -4');
+    return true;
   }
 
-  void relief(String provinceId) {
+  bool relief(String provinceId) {
     final p = _playerProvince(provinceId);
-    if (p == null || state.playerForce.gold < 80) return;
+    if (p == null || state.playerForce.gold < 80) return false;
     state.playerForce.gold -= 80;
     p.publicLoyalty = (p.publicLoyalty + 6).clamp(0, 100).toInt();
     state.log('${p.name} 시혜 · 금 -80 · 민심 +6');
+    return true;
   }
 
-  void train(String provinceId) {
+  bool train(String provinceId) {
     final p = _playerProvince(provinceId);
-    if (p == null || state.playerForce.gold < 60) return;
+    if (p == null || state.playerForce.gold < 60) return false;
     state.playerForce.gold -= 60;
     p.training = (p.training + 5).clamp(0, 100).toInt();
     state.log('${p.name} 훈련 · 군사 훈련도 상승 · 금 -60');
+    return true;
   }
 
-  void fortify(String provinceId) {
+  bool fortify(String provinceId) {
     final p = _playerProvince(provinceId);
-    if (p == null || state.playerForce.gold < 120) return;
+    if (p == null || state.playerForce.gold < 120) return false;
     state.playerForce.gold -= 120;
     p.land = (p.land + 2).clamp(0, 100).toInt();
     state.log('${p.name} 축성 · 방어 기반 +2 · 금 -120');
+    return true;
   }
 
   BattleEngine? beginBattle(String targetProvinceId) {

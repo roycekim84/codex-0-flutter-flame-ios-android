@@ -49,6 +49,25 @@ void main() {
     expect(province.publicLoyalty, 64);
   });
 
+  test('실패한 내정 명령은 자원과 장수 행동을 소모하지 않는다', () {
+    final engine = createEngine();
+    final province = engine.state.provinces.first;
+    final officer = province.officerIds.first;
+    engine.state.playerForce.gold = 0;
+
+    final result = engine.dispatch(
+      GameCommand(
+        type: GameCommandType.develop,
+        officerId: officer,
+        provinceId: province.id,
+      ),
+    );
+
+    expect(result.success, isFalse);
+    expect(engine.state.hasActed(officer), isFalse);
+    expect(engine.state.playerForce.gold, 0);
+  });
+
   test('턴 종료는 수입, AI 행동, 월 진행을 처리한다', () {
     final engine = createEngine();
     final gold = engine.state.playerForce.gold;
@@ -241,6 +260,18 @@ void main() {
     expect(restored.forces.first.mapColorValue, 0xff267d70);
     expect(restored.forces[1].bannerIndex, 1);
     expect(restored.provinces.first.floodControl, 25);
+  });
+
+  test('게임 종료 상태도 저장 후 불러오면 결과를 유지한다', () {
+    final state = createEngine().state
+      ..gameOver = true
+      ..outcome = 'VICTORY';
+    final restored = GameState.fromSaveMap(
+      SaveRepository().decode(SaveRepository().encode(state)),
+    );
+
+    expect(restored.gameOver, isTrue);
+    expect(restored.outcome, 'VICTORY');
   });
 
   test('첩보는 적 영지 정보를 공개하고 장수 충성도와 민심을 낮춘다', () {

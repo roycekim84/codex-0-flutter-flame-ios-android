@@ -167,10 +167,24 @@ Future<void> _loadSavedGame(BuildContext context) async {
     ),
   );
   if (selectedSlot == null || !context.mounted) return;
+  late final GameState loadedState;
+  try {
+    loadedState = GameState.fromSaveMap(saves[selectedSlot]!);
+  } catch (_) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('저장 데이터를 불러오지 못했습니다.')));
+    return;
+  }
   Navigator.of(context).pushReplacement(
     MaterialPageRoute(
-      builder: (_) =>
-          GameScreen(initialState: GameState.fromSaveMap(saves[selectedSlot]!)),
+      builder: (_) => loadedState.gameOver
+          ? _GameOverScreen(
+              victory: loadedState.outcome == 'VICTORY',
+              year: loadedState.year,
+              forceName: loadedState.playerForce.name,
+            )
+          : GameScreen(initialState: loadedState),
     ),
   );
 }
@@ -888,8 +902,15 @@ class _GameScreenState extends State<GameScreen> {
             selectedForceId: widget.playerForceId,
           ),
     );
-    selectedProvinceId = engine.state.playerProvinceIds.first;
-    selectedOfficerId = engine.state.provinces.first.officerIds.first;
+    selectedProvinceId = engine.state.playerProvinceIds.firstOrNull;
+    final initialProvince = selectedProvinceId == null
+        ? null
+        : engine.state.provinces.firstWhere(
+            (province) => province.id == selectedProvinceId,
+          );
+    selectedOfficerId =
+        initialProvince?.officerIds.firstOrNull ??
+        engine.state.playerForce.officerIds.firstOrNull;
     engine.addListener(_refresh);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showStartReport();
@@ -909,11 +930,25 @@ class _GameScreenState extends State<GameScreen> {
             await saveRepository.save(engine.state, slot);
           },
           onLoad: (data) {
+            late final GameState loadedState;
+            try {
+              loadedState = GameState.fromSaveMap(data);
+            } catch (_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('저장 데이터를 불러오지 못했습니다.')),
+              );
+              return;
+            }
             Navigator.of(context).pop();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (_) =>
-                    GameScreen(initialState: GameState.fromSaveMap(data)),
+                builder: (_) => loadedState.gameOver
+                    ? _GameOverScreen(
+                        victory: loadedState.outcome == 'VICTORY',
+                        year: loadedState.year,
+                        forceName: loadedState.playerForce.name,
+                      )
+                    : GameScreen(initialState: loadedState),
               ),
             );
           },
