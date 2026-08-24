@@ -3829,6 +3829,8 @@ class _DiplomacyScreenState extends State<_DiplomacyScreen> {
   ForceState get target => widget.targets.firstWhere((f) => f.id == targetId);
   OfficerState get officer =>
       widget.state.officers.firstWhere((o) => o.id == widget.officerId);
+  OfficerState? get targetRuler =>
+      widget.state.officers.where((o) => o.id == target.rulerId).firstOrNull;
   int get targetSoldiers => widget.state.provinces
       .where((p) => p.ownerForceId == target.id)
       .fold(0, (sum, p) => sum + p.soldiers);
@@ -3838,6 +3840,13 @@ class _DiplomacyScreenState extends State<_DiplomacyScreen> {
   Widget build(BuildContext context) {
     final relation = widget.state.relationTo(target.id);
     final allied = widget.state.alliedForceIds.contains(target.id);
+    final relationLabel = allied
+        ? '동맹'
+        : relation >= 20
+        ? '우호'
+        : relation <= -20
+        ? '적대'
+        : '중립';
     return Scaffold(
       backgroundColor: const Color(0xff090807),
       body: SafeArea(
@@ -3952,6 +3961,13 @@ class _DiplomacyScreenState extends State<_DiplomacyScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
+                                  '군주 ${targetRuler?.displayName ?? targetRuler?.name ?? '미상'}',
+                                  style: const TextStyle(
+                                    color: Color(0xffc1ab82),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
                                   '영토 ${target.provinceIds.length}곳 · 장수 ${target.officerIds.length}명',
                                   style: const TextStyle(
                                     color: Color(0xffc1ab82),
@@ -3968,14 +3984,16 @@ class _DiplomacyScreenState extends State<_DiplomacyScreen> {
                                 style: TextStyle(
                                   color: relation >= 20
                                       ? const Color(0xff73d18b)
+                                      : relation <= -20
+                                      ? const Color(0xffe17a5d)
                                       : const Color(0xffe2bd72),
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              const Text(
-                                '관계',
-                                style: TextStyle(
+                              Text(
+                                relationLabel,
+                                style: const TextStyle(
                                   color: Color(0xffa8906b),
                                   fontSize: 11,
                                 ),
@@ -4029,7 +4047,9 @@ class _DiplomacyScreenState extends State<_DiplomacyScreen> {
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            allied ? '현재 동맹 상태' : '군사력과 관계를 바탕으로 외교를 선택하십시오',
+                            allied
+                                ? '동맹 중 · 공동 행동을 준비할 수 있습니다'
+                                : '관계 20 이상이면 동맹을 제안할 수 있습니다',
                             style: const TextStyle(
                               color: Color(0xffc1ab82),
                               fontSize: 11,
@@ -4052,7 +4072,7 @@ class _DiplomacyScreenState extends State<_DiplomacyScreen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              '수행 장수  ${officer.name}\nCHA ${officer.charisma} · INT ${officer.intelligence}',
+                              '수행 장수  ${officer.displayName ?? officer.name}\nCHA ${officer.charisma} · INT ${officer.intelligence}',
                               style: const TextStyle(
                                 color: Color(0xffc1ab82),
                                 fontSize: 12,
@@ -4065,18 +4085,24 @@ class _DiplomacyScreenState extends State<_DiplomacyScreen> {
                     ),
                     const SizedBox(height: 16),
                     FilledButton.icon(
-                      onPressed: () =>
-                          widget.onAction(GameCommandType.giftForce, target.id),
+                      onPressed: widget.state.playerForce.gold >= 100
+                          ? () => widget.onAction(
+                              GameCommandType.giftForce,
+                              target.id,
+                            )
+                          : null,
                       icon: const Icon(Icons.card_giftcard),
                       label: const Text('선물 보내기 · 금 100'),
                       style: _diplomacyButton(),
                     ),
                     const SizedBox(height: 7),
                     FilledButton.icon(
-                      onPressed: () => widget.onAction(
-                        GameCommandType.formAlliance,
-                        target.id,
-                      ),
+                      onPressed: allied || relation < 20
+                          ? null
+                          : () => widget.onAction(
+                              GameCommandType.formAlliance,
+                              target.id,
+                            ),
                       icon: const Icon(Icons.link),
                       label: Text(allied ? '동맹 유지 중' : '동맹 제안'),
                       style: _diplomacyButton(),
