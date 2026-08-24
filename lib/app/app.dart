@@ -891,6 +891,7 @@ class _RulerSelectScreenState extends State<RulerSelectScreen> {
                       builder: (_) => GameScreen(
                         playerForceId: selectedForce['id'] as String,
                         difficultyId: widget.difficultyId,
+                        scenario: widget.scenario,
                       ),
                     ),
                   ),
@@ -1087,11 +1088,13 @@ class GameScreen extends StatefulWidget {
     super.key,
     this.playerForceId,
     this.initialState,
+    this.scenario,
     this.difficultyId = 'balance',
   });
   final String? playerForceId;
   final String difficultyId;
   final GameState? initialState;
+  final Map<String, dynamic>? scenario;
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
@@ -1107,7 +1110,7 @@ class _GameScreenState extends State<GameScreen> {
     engine = GameEngine(
       widget.initialState ??
           GameState.fromScenario(
-            DemoScenario.create(),
+            widget.scenario ?? DemoScenario.create(),
             selectedForceId: widget.playerForceId,
             difficultyId: widget.difficultyId,
           ),
