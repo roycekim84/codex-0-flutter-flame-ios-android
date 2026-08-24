@@ -8,6 +8,7 @@ import 'package:codex_strategy/data/demo_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
 import 'package:codex_strategy/repositories/save_repository.dart';
 import 'package:codex_strategy/core/asset_repository.dart';
+import 'dart:convert';
 import 'dart:math' as math;
 
 void main() {
@@ -251,6 +252,28 @@ void main() {
     expect(restored.forces.first.mapColorValue, 0xff267d70);
     expect(restored.forces[1].bannerIndex, 1);
     expect(restored.provinces.first.floodControl, 25);
+  });
+
+  test('구버전 저장 데이터는 현재 버전으로 마이그레이션된다', () {
+    final state = createEngine().state;
+    final encoded = SaveRepository().encode(state);
+    final legacy = SaveRepository().decode(encoded)..remove('saveVersion');
+
+    final migrated = SaveRepository().decode(jsonEncode(legacy));
+
+    expect(migrated['saveVersion'], SaveRepository.currentSaveVersion);
+    expect(GameState.fromSaveMap(migrated).randomSeed, 42);
+  });
+
+  test('지원하지 않는 미래 저장 버전은 명확한 형식 오류를 낸다', () {
+    final state = createEngine().state;
+    final future = SaveRepository().decode(SaveRepository().encode(state))
+      ..['saveVersion'] = SaveRepository.currentSaveVersion + 1;
+
+    expect(
+      () => SaveRepository().decode(jsonEncode(future)),
+      throwsA(isA<FormatException>()),
+    );
   });
 
   test('게임 종료 상태도 저장 후 불러오면 결과를 유지한다', () {
