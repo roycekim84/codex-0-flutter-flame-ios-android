@@ -1830,9 +1830,9 @@ class _WorldMapHeader extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    AssetSlice(
-                      asset: AssetRepository.forceBannerStrip,
-                      index: force.bannerIndex,
+                    FactionBanner(
+                      bannerAssetId: force.bannerAssetId,
+                      fallbackIndex: force.bannerIndex,
                       segments: 3,
                       width: 23,
                       height: 28,
@@ -2441,9 +2441,9 @@ class _ProvinceNode extends StatelessWidget {
         children: [
           Positioned(
             top: selected ? -10 : -5,
-            child: AssetSlice(
-              asset: AssetRepository.forceBannerStrip,
-              index: force.bannerIndex,
+            child: FactionBanner(
+              bannerAssetId: force.bannerAssetId,
+              fallbackIndex: force.bannerIndex,
               segments: 3,
               width: selected ? 24 : 19,
               height: selected ? 28 : 23,
@@ -2548,9 +2548,9 @@ class _ProvinceDetailPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              AssetSlice(
-                asset: AssetRepository.forceBannerStrip,
-                index: ownerForce.bannerIndex,
+              FactionBanner(
+                bannerAssetId: ownerForce.bannerAssetId,
+                fallbackIndex: ownerForce.bannerIndex,
                 segments: 3,
                 width: 24,
                 height: 30,
@@ -3924,9 +3924,9 @@ class _DiplomacyScreenState extends State<_DiplomacyScreen> {
                       ),
                       child: Row(
                         children: [
-                          AssetSlice(
-                            asset: AssetRepository.forceBannerStrip,
-                            index: target.bannerIndex,
+                          FactionBanner(
+                            bannerAssetId: target.bannerAssetId,
+                            fallbackIndex: target.bannerIndex,
                             segments: 3,
                             size: 58,
                           ),
@@ -6037,9 +6037,9 @@ class _ForceInfoScreen extends StatelessWidget {
     ),
     child: Row(
       children: [
-        AssetSlice(
-          asset: AssetRepository.forceBannerStrip,
-          index: force.bannerIndex,
+        FactionBanner(
+          bannerAssetId: force.bannerAssetId,
+          fallbackIndex: force.bannerIndex,
           segments: 3,
           width: 34,
           height: 43,
@@ -6098,9 +6098,9 @@ class _ForceInfoScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children: [
-            AssetSlice(
-              asset: AssetRepository.forceBannerStrip,
-              index: other.bannerIndex,
+            FactionBanner(
+              bannerAssetId: other.bannerAssetId,
+              fallbackIndex: other.bannerIndex,
               segments: 3,
               width: 19,
               height: 25,
@@ -6262,9 +6262,9 @@ class _EnemyForceInfoScreen extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          AssetSlice(
-                            asset: AssetRepository.forceBannerStrip,
-                            index: force.bannerIndex,
+                          FactionBanner(
+                            bannerAssetId: force.bannerAssetId,
+                            fallbackIndex: force.bannerIndex,
                             segments: 3,
                             width: 34,
                             height: 43,
@@ -6479,9 +6479,9 @@ class _ProvinceDetailScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    AssetSlice(
-                      asset: AssetRepository.forceBannerStrip,
-                      index: force.bannerIndex,
+                    FactionBanner(
+                      bannerAssetId: force.bannerAssetId,
+                      fallbackIndex: force.bannerIndex,
                       segments: 3,
                       width: 24,
                       height: 29,

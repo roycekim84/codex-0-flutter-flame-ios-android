@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:codex_strategy/core/game_brand.dart';
+import 'package:codex_strategy/core/asset_repository.dart';
 import 'package:codex_strategy/data/korea_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
 
@@ -35,5 +36,24 @@ void main() {
     expect(state.forces.first.bannerAssetId, 'banner_silla');
     expect(state.forces.first.capitalProvinceId, 'p_ash');
     expect(state.officers.first.portraitAssetId, 'portrait_officer_1');
+  });
+
+  test('한국 세력 깃발은 독립 투명 PNG 자산으로 매핑된다', () {
+    expect(
+      AssetRepository.factionBanner('banner_silla'),
+      AssetRepository.bannerSilla,
+    );
+    expect(
+      AssetRepository.factionBanner('banner_goguryeo'),
+      AssetRepository.bannerGoguryeo,
+    );
+    expect(
+      AssetRepository.factionBanner('banner_baekje'),
+      AssetRepository.bannerBaekje,
+    );
+    expect(
+      AssetRepository.factionBanner(null),
+      AssetRepository.forceBannerStrip,
+    );
   });
 }

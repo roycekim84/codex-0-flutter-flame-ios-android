@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/asset_repository.dart';
 import '../theme_tokens.dart';
 
 class AssetPanel extends StatelessWidget {
@@ -106,6 +107,48 @@ class AssetSlice extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Renders a dedicated Korean faction banner when one exists and falls back
+/// to the legacy generated strip for generic scenarios.
+class FactionBanner extends StatelessWidget {
+  const FactionBanner({
+    super.key,
+    required this.bannerAssetId,
+    required this.fallbackIndex,
+    required this.segments,
+    this.size = 48,
+    this.width,
+    this.height,
+  });
+
+  final String? bannerAssetId;
+  final int fallbackIndex;
+  final int segments;
+  final double size;
+  final double? width;
+  final double? height;
+
+  @override
+  Widget build(BuildContext context) {
+    final frameWidth = width ?? size;
+    final frameHeight = height ?? size;
+    final asset = AssetRepository.factionBanner(bannerAssetId);
+    if (asset != AssetRepository.forceBannerStrip) {
+      return SizedBox(
+        width: frameWidth,
+        height: frameHeight,
+        child: Image.asset(asset, fit: BoxFit.contain),
+      );
+    }
+    return AssetSlice(
+      asset: asset,
+      index: fallbackIndex,
+      segments: segments,
+      width: frameWidth,
+      height: frameHeight,
     );
   }
 }

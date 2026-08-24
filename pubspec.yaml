@@ -113,6 +113,9 @@ flutter:
     - assets/images/battle_icon_charge.png
     - assets/images/battle_icon_cooperate.png
     - assets/images/personnel_search_art.png
+    - assets/images/korea/factions/banner_silla.png
+    - assets/images/korea/factions/banner_goguryeo.png
+    - assets/images/korea/factions/banner_baekje.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

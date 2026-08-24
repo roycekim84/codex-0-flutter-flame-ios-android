@@ -29,6 +29,10 @@ class AssetRepository {
       'assets/images/battle_archer_token_alpha.png';
   static const factionEmblemStrip = 'assets/images/faction_emblem_strip.png';
   static const forceBannerStrip = 'assets/images/force_banner_strip.png';
+  static const bannerSilla = 'assets/images/korea/factions/banner_silla.png';
+  static const bannerGoguryeo =
+      'assets/images/korea/factions/banner_goguryeo.png';
+  static const bannerBaekje = 'assets/images/korea/factions/banner_baekje.png';
   static const battleTerrainOverlay =
       'assets/images/battle_terrain_overlay.png';
   static const battleEffectsStrip = 'assets/images/battle_effects_strip.png';
@@ -81,4 +85,11 @@ class AssetRepository {
           _ => 'assets/images/officer_portrait_governor.png',
         };
   }
+
+  static String factionBanner(String? bannerAssetId) => switch (bannerAssetId) {
+    'banner_silla' => bannerSilla,
+    'banner_goguryeo' => bannerGoguryeo,
+    'banner_baekje' => bannerBaekje,
+    _ => forceBannerStrip,
+  };
 }
