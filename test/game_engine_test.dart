@@ -495,6 +495,119 @@ void main() {
     expect(battle.state.defenderMorale, lessThan(moraleBefore));
   });
 
+  test('전술 행동은 각각 실행되고 전투 종료 상태를 반영한다', () {
+    final state = BattleState(
+      sourceProvinceId: 'source',
+      targetProvinceId: 'target',
+      attackerName: '아군',
+      defenderName: '적군',
+      attackerSoldiers: 1000,
+      defenderSoldiers: 1000,
+      attackerFood: 5000,
+      attackerUnits: [
+        BattleUnit(
+          officerId: 'a1',
+          name: '돌격대',
+          soldiers: 500,
+          war: 80,
+          intelligence: 50,
+          row: 2,
+          column: 1,
+        ),
+        BattleUnit(
+          officerId: 'a2',
+          name: '책사',
+          soldiers: 500,
+          war: 50,
+          intelligence: 90,
+          row: 3,
+          column: 1,
+        ),
+      ],
+      defenderUnits: [
+        BattleUnit(
+          officerId: 'd1',
+          name: '수비대',
+          soldiers: 1000,
+          war: 60,
+          intelligence: 60,
+          row: 1,
+          column: 2,
+        ),
+      ],
+    );
+    final battle = BattleEngine(state);
+
+    final fire = battle.act(
+      attackerId: 'a2',
+      defenderId: 'd1',
+      action: BattleAction.fire,
+    );
+    expect(fire.fireApplied, isTrue);
+    expect(state.defenderMorale, 92);
+
+    final charge = battle.act(
+      attackerId: 'a1',
+      defenderId: 'd1',
+      action: BattleAction.charge,
+    );
+    expect(charge.damage, greaterThan(0));
+    expect(state.battleLog, hasLength(2));
+    expect(state.finished, isFalse);
+  });
+
+  test('전술 공격으로 병력이 0이 되면 즉시 승패를 확정한다', () {
+    final winState = BattleState(
+      sourceProvinceId: 'source',
+      targetProvinceId: 'target',
+      attackerName: '아군',
+      defenderName: '적군',
+      attackerSoldiers: 1000,
+      defenderSoldiers: 1,
+      attackerUnits: [
+        BattleUnit(
+          officerId: 'a1',
+          name: '공격대',
+          soldiers: 1000,
+          war: 80,
+          intelligence: 50,
+          row: 2,
+          column: 1,
+        ),
+      ],
+      defenderUnits: [
+        BattleUnit(
+          officerId: 'd1',
+          name: '수비대',
+          soldiers: 1,
+          war: 50,
+          intelligence: 50,
+          row: 1,
+          column: 2,
+        ),
+      ],
+    );
+    final win = BattleEngine(
+      winState,
+    ).act(attackerId: 'a1', defenderId: 'd1', action: BattleAction.attack);
+    expect(win.finished, isTrue);
+    expect(win.winner, 'attacker');
+    expect(winState.finishReason, '적군 전멸');
+
+    final retreatState = BattleState(
+      sourceProvinceId: 'source',
+      targetProvinceId: 'target',
+      attackerName: '아군',
+      defenderName: '적군',
+      attackerSoldiers: 100,
+      defenderSoldiers: 100,
+    );
+    final retreat = BattleEngine(retreatState).retreat();
+    expect(retreat.finished, isTrue);
+    expect(retreat.winner, 'defender');
+    expect(retreatState.finishReason, '공격군의 자발적 퇴각');
+  });
+
   test('AI 월별 시뮬레이션은 장기 진행 중 음수 자원을 만들지 않는다', () {
     final engine = createEngine();
     for (var i = 0; i < 1000 && !engine.state.gameOver; i++) {

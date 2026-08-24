@@ -245,6 +245,7 @@ class BattleEngine {
       0,
       (sum, u) => sum + u.soldiers,
     );
+    _finishIfArmyDestroyed();
     state.actedUnitIds.add(attackerId);
     final actionLog = _logFor(
       action,
@@ -415,6 +416,16 @@ class BattleEngine {
     if (message.isEmpty) return;
     state.battleLog.add('[${state.day}일째] $message');
     if (state.battleLog.length > 30) state.battleLog.removeAt(0);
+  }
+
+  void _finishIfArmyDestroyed() {
+    if (state.finished ||
+        (state.attackerSoldiers > 0 && state.defenderSoldiers > 0)) {
+      return;
+    }
+    state.finished = true;
+    state.winner = state.attackerSoldiers > 0 ? 'attacker' : 'defender';
+    state.finishReason = state.defenderSoldiers <= 0 ? '적군 전멸' : '아군 전멸';
   }
 
   bool moveUnit(String unitId, int row, int column) {
