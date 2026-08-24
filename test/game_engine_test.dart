@@ -566,7 +566,7 @@ void main() {
     );
   });
 
-  test('육각 격자는 홀짝 열에 따라 북동·남동 이동을 분리한다', () {
+  test('육각 격자는 동·서와 네 대각선 방향으로 이동한다', () {
     final unit = BattleUnit(
       officerId: 'test',
       name: '테스트 부대',
@@ -586,14 +586,13 @@ void main() {
       attackerUnits: [unit],
     );
 
+    expect(state.isAdjacent(unit, 3, 3), isTrue); // 동
     expect(state.isAdjacent(unit, 2, 3), isTrue); // 북동
-    expect(state.isAdjacent(unit, 3, 3), isTrue); // 남동
-    expect(state.isAdjacent(unit, 4, 3), isFalse);
-
-    unit.column = 3;
-    expect(state.isAdjacent(unit, 3, 2), isTrue); // 북서
-    expect(state.isAdjacent(unit, 4, 2), isTrue); // 남서
-    expect(state.isAdjacent(unit, 2, 2), isFalse);
+    expect(state.isAdjacent(unit, 4, 2), isTrue); // 남동
+    expect(state.isAdjacent(unit, 3, 1), isTrue); // 서
+    expect(state.isAdjacent(unit, 4, 1), isTrue); // 남서
+    expect(state.isAdjacent(unit, 2, 2), isTrue); // 북서
+    expect(state.isAdjacent(unit, 3, 2), isFalse); // 북·남은 없음
   });
 
   test('B0 전투 명령은 선택 상태와 이동 가능 칸을 갱신한다', () {

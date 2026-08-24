@@ -139,24 +139,17 @@ class BattleState {
       ? null
       : units.where((unit) => unit.officerId == id).firstOrNull;
 
-  // Odd-q vertical layout. Every column is shifted by half a cell, so a
-  // horizontal move becomes either north-east/south-east (or west pair),
-  // rather than a single rectangular-grid diagonal.
+  // Pointy-top axial layout. `column` is q and `row` is r. There are no
+  // north/south neighbors: horizontal movement is east/west and the other
+  // four directions are north-east, south-east, south-west, north-west.
   List<BattleCell> _neighbors(BattleUnit unit) =>
       [
-            BattleCell(unit.row - 1, unit.column),
-            BattleCell(unit.row + 1, unit.column),
-            if (unit.column.isEven) ...[
-              BattleCell(unit.row - 1, unit.column - 1), // north-west
-              BattleCell(unit.row, unit.column - 1), // south-west
-              BattleCell(unit.row - 1, unit.column + 1), // north-east
-              BattleCell(unit.row, unit.column + 1), // south-east
-            ] else ...[
-              BattleCell(unit.row, unit.column - 1), // north-west
-              BattleCell(unit.row + 1, unit.column - 1), // south-west
-              BattleCell(unit.row, unit.column + 1), // north-east
-              BattleCell(unit.row + 1, unit.column + 1), // south-east
-            ],
+            BattleCell(unit.row, unit.column + 1), // 동
+            BattleCell(unit.row - 1, unit.column + 1), // 북동
+            BattleCell(unit.row + 1, unit.column), // 남동
+            BattleCell(unit.row, unit.column - 1), // 서
+            BattleCell(unit.row + 1, unit.column - 1), // 남서
+            BattleCell(unit.row - 1, unit.column), // 북서
           ]
           .where(
             (cell) =>
