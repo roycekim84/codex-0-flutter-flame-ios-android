@@ -278,6 +278,27 @@ void main() {
     expect(engine.state.provinces[1].officerIds, contains(officer));
   });
 
+  test('장수 이동 대상은 실제 소속 지역의 인접 아군 성으로만 제한된다', () {
+    final engine = createEngine();
+    final source = engine.state.provinces.first;
+    final officer = source.officerIds.first;
+    final destinations = engine.moveDestinations(officer);
+
+    expect(destinations, isNotEmpty);
+    expect(
+      destinations.every(
+        (province) =>
+            province.ownerForceId == engine.state.playerForceId &&
+            source.adjacentProvinceIds.contains(province.id),
+      ),
+      isTrue,
+    );
+    expect(
+      engine.moveOfficer(officer, destinations.first.id, soldiers: 0),
+      isFalse,
+    );
+  });
+
   test('저장 데이터에 버전과 결정성 seed가 포함된다', () {
     final state = createEngine().state;
     state.playerForce.gold = 1234;

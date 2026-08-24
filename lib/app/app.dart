@@ -1405,13 +1405,9 @@ class _GameScreenState extends State<GameScreen> {
     final selected = engine.state.provinces.firstWhere(
       (p) => p.id == selectedProvinceId,
     );
-    final destinations = engine.state.provinces
-        .where(
-          (p) =>
-              engine.state.isPlayerProvince(p) &&
-              selected.adjacentProvinceIds.contains(p.id),
-        )
-        .toList();
+    final destinations = selectedOfficerId == null
+        ? <ProvinceState>[]
+        : engine.moveDestinations(selectedOfficerId!);
     if (destinations.isEmpty || selectedOfficerId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('이 장수가 이동할 수 있는 인접 아군 지역이 없습니다.')),
@@ -5292,7 +5288,8 @@ class _MilitaryMoveScreenState extends State<_MilitaryMoveScreen> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    widget.officer.name,
+                                    widget.officer.displayName ??
+                                        widget.officer.name,
                                     style: const TextStyle(
                                       color: Color(0xffffdfa0),
                                       fontSize: 18,
@@ -5300,6 +5297,14 @@ class _MilitaryMoveScreenState extends State<_MilitaryMoveScreen> {
                                     ),
                                   ),
                                 ),
+                                if (widget.officer.role != null)
+                                  Text(
+                                    widget.officer.role!,
+                                    style: const TextStyle(
+                                      color: Color(0xffc1ab82),
+                                      fontSize: 11,
+                                    ),
+                                  ),
                                 Text(
                                   '${_formatNumber(soldiers.round())}명',
                                   style: const TextStyle(
@@ -5316,6 +5321,13 @@ class _MilitaryMoveScreenState extends State<_MilitaryMoveScreen> {
                               style: const TextStyle(
                                 color: Color(0xffc9b184),
                                 fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              '${widget.source.name} → ${destination.name} · 인접 성 이동',
+                              style: const TextStyle(
+                                color: Color(0xffd6a85d),
+                                fontSize: 12,
                               ),
                             ),
                             Slider(

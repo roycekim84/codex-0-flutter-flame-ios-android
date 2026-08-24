@@ -705,14 +705,17 @@ class GameEngine {
   }
 
   bool moveOfficer(String officerId, String targetProvinceId, {int? soldiers}) {
-    final officer = state.officers.firstWhere((o) => o.id == officerId);
+    final officer = state.officers.where((o) => o.id == officerId).firstOrNull;
+    if (officer == null || officer.forceId != state.playerForceId) return false;
     final from = _playerProvince(officer.provinceId);
     final target = _playerProvince(targetProvinceId);
     if (from == null ||
         target == null ||
+        !from.officerIds.contains(officer.id) ||
         !from.adjacentProvinceIds.contains(target.id)) {
       return false;
     }
+    if (soldiers != null && soldiers <= 0) return false;
     final transfer = (soldiers ?? 0).clamp(0, from.soldiers).toInt();
     from.soldiers -= transfer;
     target.soldiers += transfer;
@@ -723,6 +726,21 @@ class GameEngine {
       '${officer.name}이(가) ${from.name}에서 ${target.name}(으)로 이동 · 병력 $transfer',
     );
     return true;
+  }
+
+  List<ProvinceState> moveDestinations(String officerId) {
+    final officer = state.officers.where((o) => o.id == officerId).firstOrNull;
+    final source = officer == null ? null : _playerProvince(officer.provinceId);
+    if (source == null || !source.officerIds.contains(officer!.id)) {
+      return const [];
+    }
+    return state.provinces
+        .where(
+          (province) =>
+              state.isPlayerProvince(province) &&
+              source.adjacentProvinceIds.contains(province.id),
+        )
+        .toList();
   }
 
   bool moveFirstOfficerTo(String targetProvinceId) {
