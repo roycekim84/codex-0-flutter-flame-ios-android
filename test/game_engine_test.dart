@@ -537,6 +537,77 @@ void main() {
     );
   });
 
+  test('포로 등용·석방·처형은 소속 목록과 세력 관계를 함께 갱신한다', () {
+    GameEngine setupCaptive() {
+      final engine = createEngine();
+      final officer = engine.state.officers.firstWhere(
+        (o) => o.forceId != engine.state.playerForceId && o.status == 'OFFICER',
+      );
+      officer.status = 'CAPTIVE';
+      final province = engine.state.provinces.firstWhere(
+        (p) => engine.state.isPlayerProvince(p),
+      );
+      officer.provinceId = province.id;
+      final oldForce = engine.state.forces.firstWhere(
+        (f) => f.id == officer.forceId,
+      );
+      oldForce.officerIds.add(officer.id);
+      return engine;
+    }
+
+    final recruited = setupCaptive();
+    final recruitTarget = recruited.state.officers.firstWhere(
+      (o) => o.status == 'CAPTIVE',
+    );
+    final recruitOldForce = recruitTarget.forceId;
+    final recruitRelation = recruited.state.relationTo(recruitOldForce);
+    expect(
+      recruited.handlePrisoner(
+        recruitTarget.id,
+        PrisonerAction.recruit,
+        recruitTarget.provinceId,
+      ),
+      isTrue,
+    );
+    expect(recruitTarget.status, 'OFFICER');
+    expect(recruitTarget.forceId, recruited.state.playerForceId);
+    expect(recruited.state.relationTo(recruitOldForce), recruitRelation - 5);
+
+    final released = setupCaptive();
+    final releaseTarget = released.state.officers.firstWhere(
+      (o) => o.status == 'CAPTIVE',
+    );
+    final releaseOldForce = releaseTarget.forceId;
+    final releaseRelation = released.state.relationTo(releaseOldForce);
+    expect(
+      released.handlePrisoner(
+        releaseTarget.id,
+        PrisonerAction.release,
+        releaseTarget.provinceId,
+      ),
+      isTrue,
+    );
+    expect(releaseTarget.status, 'FREE');
+    expect(released.state.relationTo(releaseOldForce), releaseRelation + 5);
+
+    final executed = setupCaptive();
+    final executeTarget = executed.state.officers.firstWhere(
+      (o) => o.status == 'CAPTIVE',
+    );
+    final executeOldForce = executeTarget.forceId;
+    final executeRelation = executed.state.relationTo(executeOldForce);
+    expect(
+      executed.handlePrisoner(
+        executeTarget.id,
+        PrisonerAction.execute,
+        executeTarget.provinceId,
+      ),
+      isTrue,
+    );
+    expect(executeTarget.status, 'DEAD');
+    expect(executed.state.relationTo(executeOldForce), executeRelation - 25);
+  });
+
   test('내정 명령은 금과 민심을 서로 다른 방향으로 바꾼다', () {
     final engine = createEngine();
     final province = engine.state.provinces.first;

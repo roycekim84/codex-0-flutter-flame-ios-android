@@ -709,15 +709,25 @@ class GameEngine {
         officer.provinceId = province.id;
         officer.loyalty = 45;
         province.officerIds.add(officer.id);
+        if (oldForce != null) {
+          state.setRelation(oldForce.id, state.relationTo(oldForce.id) - 5);
+        }
         state.log('${officer.name} 포로 등용 · 금 -500');
       case PrisonerAction.release:
+        oldForce?.officerIds.remove(officer.id);
         officer.status = 'FREE';
         officer.provinceId = 'free';
+        if (oldForce != null) {
+          state.setRelation(oldForce.id, state.relationTo(oldForce.id) + 5);
+        }
         state.log('${officer.name} 포로 석방');
       case PrisonerAction.execute:
         oldForce?.officerIds.remove(officer.id);
         officer.status = 'DEAD';
         officer.provinceId = 'dead';
+        if (oldForce != null) {
+          state.setRelation(oldForce.id, state.relationTo(oldForce.id) - 25);
+        }
         state.log('${officer.name} 포로 처형');
     }
     return true;

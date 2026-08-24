@@ -8006,7 +8006,17 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
       action,
       widget.battle.state.targetProvinceId,
     );
-    if (handled) setState(() => remainingPrisoners.remove(prisoner));
+    if (handled) {
+      setState(() => remainingPrisoners.remove(prisoner));
+      final label = switch (action) {
+        PrisonerAction.recruit => '등용했습니다',
+        PrisonerAction.release => '석방했습니다',
+        PrisonerAction.execute => '처형했습니다',
+      };
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('${prisoner.name}을(를) $label.')));
+    }
   }
 }
 
@@ -8150,13 +8160,21 @@ class _PrisonerManagementScreenState extends State<PrisonerManagementScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      officer.name,
+                                      officer.displayName ?? officer.name,
                                       style: const TextStyle(
                                         color: Color(0xffffdfa0),
                                         fontSize: 20,
                                         fontWeight: FontWeight.w800,
                                       ),
                                     ),
+                                    if (officer.role != null)
+                                      Text(
+                                        officer.role!,
+                                        style: const TextStyle(
+                                          color: Color(0xffd6a85d),
+                                          fontSize: 11,
+                                        ),
+                                      ),
                                     const SizedBox(height: 7),
                                     Text(
                                       'WAR ${officer.war}  ·  INT ${officer.intelligence}',
@@ -8182,8 +8200,14 @@ class _PrisonerManagementScreenState extends State<PrisonerManagementScreen> {
                             children: [
                               Expanded(
                                 child: FilledButton(
-                                  onPressed: () =>
-                                      _handle(prisoner, PrisonerAction.recruit),
+                                  onPressed:
+                                      widget.engine.state.playerForce.gold >=
+                                          500
+                                      ? () => _handle(
+                                          prisoner,
+                                          PrisonerAction.recruit,
+                                        )
+                                      : null,
                                   style: FilledButton.styleFrom(
                                     backgroundColor: const Color(0xff76572f),
                                     foregroundColor: const Color(0xffffdfa0),
