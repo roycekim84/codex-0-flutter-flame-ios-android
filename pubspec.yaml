@@ -35,6 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flame: ^1.38.0
+  audioplayers: ^6.1.0
   shared_preferences: ^2.5.3
 
 dev_dependencies:
@@ -60,6 +61,11 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/audio/battle_bgm.wav
+    - assets/audio/battle_attack.wav
+    - assets/audio/battle_fire.wav
+    - assets/audio/battle_charge.wav
+    - assets/audio/battle_retreat.wav
     - assets/images/title_background.png
     - assets/images/title_crest.png
     - assets/images/scenario_thumbnail_strip.png

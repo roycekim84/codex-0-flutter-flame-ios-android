@@ -6,6 +6,7 @@ import 'package:flame/game.dart';
 import '../battle/battle_engine.dart';
 import '../battle/battle_command.dart';
 import '../battle/battle_state.dart';
+import '../battle/battle_audio_service.dart';
 import '../battle/terrain.dart';
 import '../core/game_command.dart';
 import '../core/game_engine.dart';
@@ -7903,6 +7904,7 @@ class _BattleScreenState extends State<BattleScreen> {
   @override
   void dispose() {
     _autoBattleRunning = false;
+    unawaited(BattleAudioService.instance.stop());
     super.dispose();
   }
 
@@ -7972,6 +7974,9 @@ class _BattleScreenState extends State<BattleScreen> {
         defenderId: action == BattleAction.wait ? null : selectedDefenderId,
       ),
     );
+    if (event.hasEffect) {
+      unawaited(BattleAudioService.instance.playAction(event.command.type));
+    }
     final state = widget.battle.state;
     if (selectedAttackerId != null &&
         !state.attackerUnits.any(
@@ -8005,6 +8010,7 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   Future<void> _moveSelected() async {
+    unawaited(BattleAudioService.instance.startMusic());
     final unit = widget.battle.state.attackerUnits
         .where((u) => u.officerId == selectedAttackerId)
         .firstOrNull;
@@ -8047,6 +8053,7 @@ class _BattleScreenState extends State<BattleScreen> {
     if (_actionLocked || widget.battle.state.finished) return;
     setState(() => _actionLocked = true);
     final event = widget.battle.execute(const BattleCommand.endTurn());
+    unawaited(BattleAudioService.instance.startMusic());
     setState(() {});
     battleGame.refreshBoard();
     await battleGame.playEvent(event);
@@ -8061,6 +8068,7 @@ class _BattleScreenState extends State<BattleScreen> {
       return;
     }
     if (widget.battle.state.finished) return;
+    unawaited(BattleAudioService.instance.startMusic());
     setState(() => _autoBattleRunning = true);
     _runAutoBattle();
   }
@@ -8198,10 +8206,19 @@ class _BattleScreenState extends State<BattleScreen> {
     await Future<void>.delayed(_autoTurnDelay);
   }
 
+  Future<void> _retreat() async {
+    if (_actionLocked || widget.battle.state.finished) return;
+    await BattleAudioService.instance.playAction(BattleCommandType.retreat);
+    widget.battle.retreat();
+    await _finishIfNeeded();
+  }
+
   Future<void> _finishIfNeeded() async {
     if (!widget.battle.state.finished) return;
     if (_resultOpened) return;
     _resultOpened = true;
+    await BattleAudioService.instance.stop();
+    if (!mounted) return;
     final outcomes = widget.engine.resolveBattle(widget.battle);
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -8595,8 +8612,7 @@ class _BattleScreenState extends State<BattleScreen> {
                                 onPressed: battle.finished
                                     ? null
                                     : () {
-                                        widget.battle.retreat();
-                                        _finishIfNeeded();
+                                        _retreat();
                                       },
                                 icon: const Icon(Icons.undo),
                                 label: const Text('퇴각'),
@@ -8747,8 +8763,7 @@ class _BattleScreenState extends State<BattleScreen> {
                   onAutoSpeedCycle: _cycleAutoBattleSpeed,
                   autoSpeed: _autoBattleSpeed,
                   onRetreat: () {
-                    widget.battle.retreat();
-                    _finishIfNeeded();
+                    _retreat();
                   },
                 ),
                 Container(
