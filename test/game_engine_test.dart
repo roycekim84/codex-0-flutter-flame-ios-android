@@ -463,6 +463,27 @@ void main() {
     expect(battle.state.returnProvinceId, source.id);
   });
 
+  test('전투 결과는 손실을 제외한 잔존 병력만 귀환시킨다', () {
+    final engine = createEngine();
+    final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
+    final before = source.soldiers;
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: source.id,
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    final current = battle!;
+    current.state.attackerSoldiers = 240;
+    current.state.attackerUnits.first.soldiers = 240;
+    current.state.finished = true;
+    current.state.winner = 'defender';
+    engine.resolveBattle(current);
+
+    expect(source.soldiers, before - 360);
+    expect(current.state.returnedSoldiers, 240);
+  });
+
   test('승리 시 잔여 병력이 점령지에 주둔한다', () {
     final engine = createEngine();
     final target = engine.state.provinces.firstWhere((p) => p.id == 'p_crown');

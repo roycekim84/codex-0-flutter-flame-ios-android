@@ -7619,6 +7619,12 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
     final prisoners = widget.outcomes
         .where((o) => o.result == BattleOfficerResult.captured)
         .length;
+    final dead = widget.outcomes
+        .where((o) => o.result == BattleOfficerResult.dead)
+        .length;
+    final escaped = widget.outcomes
+        .where((o) => o.result == BattleOfficerResult.escaped)
+        .length;
     return Scaffold(
       backgroundColor: const Color(0xff090807),
       body: SafeArea(
@@ -7738,6 +7744,70 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
                             '군량 잔량',
                             _formatNumber(battle.attackerFood),
                             const Color(0xffc1ab82),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(13),
+                      decoration: BoxDecoration(
+                        color: won
+                            ? const Color(0x35463a1e)
+                            : const Color(0x353d2118),
+                        border: Border.all(
+                          color: won
+                              ? const Color(0xffa88446)
+                              : const Color(0xff8c4d3e),
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            won ? '점령 결과' : '귀환 결과',
+                            style: const TextStyle(
+                              color: Color(0xffffdfa0),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Text(
+                            won
+                                ? '${targetProvince.name} · ${targetProvince.ownerName} 소유'
+                                : '${battle.returnProvinceId == battle.sourceProvinceId ? '출발 성' : '귀환 성'} · ${targetProvince.name} 방어 성공',
+                            style: const TextStyle(
+                              color: Color(0xffc1ab82),
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _CostMetric(
+                                '아군 잔존',
+                                '${_formatNumber(battle.attackerSoldiers)}명',
+                                const Color(0xff73d18b),
+                              ),
+                              _CostMetric(
+                                '적군 잔존',
+                                '${_formatNumber(battle.defenderSoldiers)}명',
+                                const Color(0xffe4a172),
+                              ),
+                              _CostMetric(
+                                '귀환',
+                                '$escaped명',
+                                const Color(0xff73d18b),
+                              ),
+                              _CostMetric(
+                                '전사',
+                                '$dead명',
+                                const Color(0xffe17a5d),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -7913,7 +7983,7 @@ class _BattleResultScreenState extends State<BattleResultScreen> {
                           ? () => Navigator.pop(context)
                           : null,
                       icon: const Icon(Icons.check),
-                      label: const Text('확인'),
+                      label: const Text('확인 · 지도로'),
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xff76572f),
                         foregroundColor: const Color(0xffffdfa0),

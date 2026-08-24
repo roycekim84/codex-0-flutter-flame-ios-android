@@ -598,7 +598,7 @@ class GameEngine {
       battle.state.outcomes.add(
         BattleOfficerOutcome(
           officerId: officer.id,
-          name: officer.name,
+          name: officer.displayName ?? officer.name,
           result: result,
           soldiers: unit.soldiers,
         ),
@@ -627,7 +627,7 @@ class GameEngine {
       battle.state.outcomes.add(
         BattleOfficerOutcome(
           officerId: officer.id,
-          name: officer.name,
+          name: officer.displayName ?? officer.name,
           result: result,
           soldiers: unit.soldiers,
         ),
@@ -661,6 +661,8 @@ class GameEngine {
       state.log('${target.name} 점령 · 남은 병력 ${target.soldiers}');
     } else {
       target.soldiers = battle.state.defenderSoldiers;
+      // Only survivors return. The committed force was already deducted at
+      // departure, so adding the original commitment would resurrect losses.
       source.soldiers += battle.state.attackerSoldiers;
       battle.state.returnedSoldiers = battle.state.attackerSoldiers;
       battle.state.returnProvinceId = source.id;
