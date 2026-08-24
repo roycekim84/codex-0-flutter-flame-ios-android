@@ -1,5 +1,6 @@
 import 'battle_state.dart';
 import 'battle_command.dart';
+import 'battle_balance.dart';
 import 'terrain.dart';
 
 enum BattleAction { attack, fire, charge, cooperate, information, wait }
@@ -151,10 +152,11 @@ class BattleEngine {
         .round()
         .clamp(1, state.defenderSoldiers)
         .toInt();
-    final defenderDamage = (state.defenderSoldiers * 0.10)
-        .round()
-        .clamp(1, state.attackerSoldiers)
-        .toInt();
+    final defenderDamage =
+        (state.defenderSoldiers * BattleBalance.counterAttackRate)
+            .round()
+            .clamp(1, state.attackerSoldiers)
+            .toInt();
     state.defenderSoldiers -= attackerDamage;
     state.attackerSoldiers -= defenderDamage;
     _syncUnits(state.attackerUnits, state.attackerSoldiers);
@@ -225,22 +227,26 @@ class BattleEngine {
     final defenderMoraleBefore = state.defenderMorale;
     final base = switch (action) {
       BattleAction.attack =>
-        attacker.soldiers * .14 * state.terrain.attackModifier,
+        attacker.soldiers *
+            BattleBalance.normalAttackRate *
+            state.terrain.attackModifier,
       BattleAction.fire =>
         attacker.soldiers *
-            .08 *
+            BattleBalance.fireAttackRate *
             (attacker.intelligence / 70) *
             state.terrain.fireModifier,
       BattleAction.charge =>
         attacker.soldiers *
-            .22 *
+            BattleBalance.chargeAttackRate *
             (attacker.war / 70) *
             state.terrain.attackModifier,
       BattleAction.cooperate =>
         attacker.soldiers *
-            .14 *
+            BattleBalance.normalAttackRate *
             state.terrain.attackModifier *
-            (_hasAdjacentSupport(attacker, defender!) ? 1.35 : 1.0),
+            (_hasAdjacentSupport(attacker, defender!)
+                ? BattleBalance.cooperateBonus
+                : 1.0),
       BattleAction.information => 0,
       BattleAction.wait => 0,
     };
@@ -250,20 +256,25 @@ class BattleEngine {
     defender?.soldiers -= damage;
     if (action == BattleAction.fire) {
       defender!.burning = true;
-      state.defenderMorale = (state.defenderMorale - 8).clamp(0, 100);
+      state.defenderMorale =
+          (state.defenderMorale - BattleBalance.fireMoraleLoss).clamp(0, 100);
     }
     if (action == BattleAction.information) {
       state.informationRevealed = true;
     }
     if (action == BattleAction.charge) {
       attacker.soldiers =
-          (attacker.soldiers - (attacker.soldiers * .05).round())
+          (attacker.soldiers -
+                  (attacker.soldiers * BattleBalance.chargeSelfLossRate)
+                      .round())
               .clamp(0, attacker.soldiers)
               .toInt();
     }
     if (action != BattleAction.wait && action != BattleAction.information) {
       attacker.soldiers =
-          (attacker.soldiers - (defender!.soldiers * .03).round())
+          (attacker.soldiers -
+                  (defender!.soldiers * BattleBalance.unitRetaliationRate)
+                      .round())
               .clamp(0, attacker.soldiers)
               .toInt();
     }
@@ -345,7 +356,7 @@ class BattleEngine {
       final target = _nearest(defender, state.attackerUnits);
       if (target == null) continue;
       if (state.isAdjacent(defender, target.row, target.column)) {
-        final damage = (defender.soldiers * .10)
+        final damage = (defender.soldiers * BattleBalance.counterAttackRate)
             .round()
             .clamp(1, target.soldiers)
             .toInt();
@@ -511,9 +522,14 @@ class BattleEngine {
     state.selectedAttackerId = null;
     state.selectedDefenderId = null;
     for (final unit in state.defenderUnits.where((u) => u.burning)) {
-      final fireDamage = (unit.soldiers * .03).round().clamp(1, unit.soldiers);
+      final fireDamage = (unit.soldiers * BattleBalance.fireOngoingDamageRate)
+          .round()
+          .clamp(1, unit.soldiers);
       unit.soldiers -= fireDamage;
-      unit.morale = (unit.morale - 5).clamp(0, 100);
+      unit.morale = (unit.morale - BattleBalance.fireOngoingMoraleLoss).clamp(
+        0,
+        100,
+      );
     }
     state.defenderSoldiers = state.defenderUnits.fold(
       0,
@@ -525,23 +541,30 @@ class BattleEngine {
     } else {
       state.attackerFood = 0;
       state.supplyShortageDays++;
-      state.attackerMorale = (state.attackerMorale - 12).clamp(0, 100);
-      final desertion = (state.attackerSoldiers * .04).round().clamp(
-        1,
-        state.attackerSoldiers,
-      );
+      state.attackerMorale =
+          (state.attackerMorale - BattleBalance.supplyShortageMoraleLoss).clamp(
+            0,
+            100,
+          );
+      final desertion =
+          (state.attackerSoldiers * BattleBalance.supplyDesertionRate)
+              .round()
+              .clamp(1, state.attackerSoldiers);
       state.attackerSoldiers -= desertion;
       _syncUnits(state.attackerUnits, state.attackerSoldiers);
     }
     if (state.defenderSoldiers <= 0 ||
         state.attackerSoldiers <= 0 ||
-        state.day > 8 ||
-        state.supplyShortageDays >= 3) {
+        state.day > BattleBalance.maxBattleDay ||
+        state.supplyShortageDays >= BattleBalance.maxSupplyShortageDays) {
       state.finished = true;
       state.finishReason = switch (true) {
         _ when state.defenderSoldiers <= 0 => '적군 전멸',
         _ when state.attackerSoldiers <= 0 => '아군 전멸',
-        _ when state.supplyShortageDays >= 3 => '보급 고갈',
+        _
+            when state.supplyShortageDays >=
+                BattleBalance.maxSupplyShortageDays =>
+          '보급 고갈',
         _ => '전투 제한일 종료',
       };
       state.winner = state.attackerSoldiers > state.defenderSoldiers

@@ -165,6 +165,34 @@ void main() {
     );
   });
 
+  test('전투 밸런스 기준선은 병력 비율별 전투 결과를 기록한다', () {
+    const committedValues = [400, 600, 800, 1000];
+    for (final committed in committedValues) {
+      final engine = createEngine();
+      engine.state.playerForce.food = 99999;
+      final battle = engine.beginBattlePrepared(
+        sourceProvinceId: 'p_briar',
+        targetProvinceId: 'p_crown',
+        committedSoldiers: committed,
+      );
+      expect(battle, isNotNull);
+      var actions = 0;
+      while (!battle!.state.finished && actions < 20) {
+        battle.attack();
+        actions++;
+      }
+      expect(battle.state.finished, isTrue);
+      // ignore: avoid_print
+      print(
+        'BATTLE_BALANCE committed=$committed '
+        'defender=1140 result=${battle.state.winner} '
+        'days=${battle.state.day} '
+        'attackerLeft=${battle.state.attackerSoldiers} '
+        'defenderLeft=${battle.state.defenderSoldiers}',
+      );
+    }
+  });
+
   test('AI는 낮은 관계에서 선물 외교를 선택하고 로그를 남긴다', () {
     final engine = createEngine();
     engine.endTurn();
