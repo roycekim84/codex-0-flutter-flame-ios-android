@@ -25,6 +25,7 @@
 - [x] 이미지 에셋 갭 분석 문서: 참고 화면 17개 패널별 생성·적용 자산 목록과 우선순위 (`docs/ASSET_GAP_ANALYSIS.md`)
 - [x] 이미지 에셋 구현 로드맵: 생성·검수·AssetRepository·Flutter/Flame 연결·QA 순서 (`docs/ASSET_IMPLEMENTATION_ROADMAP.md`)
 - [ ] 11·12번 전투 화면 고품질 개선 로드맵: 전술판·부대 스프라이트·HUD·행동 연출·결과 연결 (`docs/BATTLE_SCREEN_ROADMAP.md`)
+- [ ] 해동삼국기 한국 삼국시대 테마 전환: 데이터팩·전체 화면·이미지 생성 에셋·QA (`docs/KOREAN_THEME_MIGRATION_ROADMAP.md`)
 
 ## 참고 화면 기반 재정렬
 
