@@ -65,27 +65,30 @@ class KoreaScenario {
       provinces[i]['name'] = provinceNames[i];
     }
 
+    // Keep ruler slots aligned with the three force records: Silla, Goguryeo,
+    // and Baekje. This makes the first portrait batch deterministic and keeps
+    // the historical identity stable when a save is migrated.
     final historicalNames = [
       '선덕여왕',
       '김춘추',
-      '보장왕',
-      '연개소문',
-      '의자왕',
-      '계백',
       '김유신',
       '알천',
+      '김품일',
+      '흠돌',
+      '보장왕',
+      '연개소문',
       '고건무',
       '양만춘',
+      '검모잠',
+      '무력',
+      '의자왕',
+      '계백',
       '성충',
       '흥수',
       '복신',
       '도침',
-      '김품일',
-      '흠돌',
       '구형왕',
-      '무력',
       '장보고',
-      '검모잠',
     ];
     final officers = (scenario['officers'] as List).cast<Map>();
     for (var i = 0; i < officers.length; i++) {

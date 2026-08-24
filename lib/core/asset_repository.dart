@@ -33,6 +33,12 @@ class AssetRepository {
   static const bannerGoguryeo =
       'assets/images/korea/factions/banner_goguryeo.png';
   static const bannerBaekje = 'assets/images/korea/factions/banner_baekje.png';
+  static const portraitOfficer1 =
+      'assets/images/korea/portraits/portrait_officer_1.png';
+  static const portraitOfficer7 =
+      'assets/images/korea/portraits/portrait_officer_7.png';
+  static const portraitOfficer13 =
+      'assets/images/korea/portraits/portrait_officer_13.png';
   static const battleTerrainOverlay =
       'assets/images/battle_terrain_overlay.png';
   static const battleEffectsStrip = 'assets/images/battle_effects_strip.png';
@@ -70,6 +76,12 @@ class AssetRepository {
 
   static String officerPortrait(String officerId) {
     const assignments = <String, String>{
+      'officer_1': portraitOfficer1,
+      'officer_7': portraitOfficer7,
+      'officer_13': portraitOfficer13,
+      'portrait_officer_1': portraitOfficer1,
+      'portrait_officer_7': portraitOfficer7,
+      'portrait_officer_13': portraitOfficer13,
       'o_red_01': 'assets/images/officer_portrait_warrior.png',
       'o_red_02': 'assets/images/officer_portrait_strategist.png',
       'o_red_03': 'assets/images/officer_portrait_governor.png',

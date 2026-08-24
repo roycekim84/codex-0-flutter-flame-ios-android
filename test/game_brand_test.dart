@@ -31,11 +31,27 @@ void main() {
       (scenario['officers'] as List).first['historicalStatus'],
       'historical',
     );
+    final officers = (scenario['officers'] as List).cast<Map>();
+    expect(officers[0]['name'], '선덕여왕');
+    expect(officers[6]['name'], '보장왕');
+    expect(officers[12]['name'], '의자왕');
 
     final state = GameState.fromScenario(scenario);
     expect(state.forces.first.bannerAssetId, 'banner_silla');
     expect(state.forces.first.capitalProvinceId, 'p_ash');
     expect(state.officers.first.portraitAssetId, 'portrait_officer_1');
+    expect(
+      AssetRepository.officerPortrait('officer_1'),
+      AssetRepository.portraitOfficer1,
+    );
+    expect(
+      AssetRepository.officerPortrait('officer_7'),
+      AssetRepository.portraitOfficer7,
+    );
+    expect(
+      AssetRepository.officerPortrait('officer_13'),
+      AssetRepository.portraitOfficer13,
+    );
   });
 
   test('한국 세력 깃발은 독립 투명 PNG 자산으로 매핑된다', () {

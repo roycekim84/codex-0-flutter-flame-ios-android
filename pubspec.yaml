@@ -116,6 +116,9 @@ flutter:
     - assets/images/korea/factions/banner_silla.png
     - assets/images/korea/factions/banner_goguryeo.png
     - assets/images/korea/factions/banner_baekje.png
+    - assets/images/korea/portraits/portrait_officer_1.png
+    - assets/images/korea/portraits/portrait_officer_7.png
+    - assets/images/korea/portraits/portrait_officer_13.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

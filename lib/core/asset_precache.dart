@@ -28,6 +28,9 @@ abstract final class AssetPrecache {
     AssetRepository.bannerSilla,
     AssetRepository.bannerGoguryeo,
     AssetRepository.bannerBaekje,
+    AssetRepository.portraitOfficer1,
+    AssetRepository.portraitOfficer7,
+    AssetRepository.portraitOfficer13,
     AssetRepository.eventArtStrip,
     ...AssetRepository.battleRendererAssets,
   ];
