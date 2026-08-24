@@ -77,21 +77,15 @@ class BattleTopHud extends StatelessWidget {
         decoration: _box(color),
         child: Row(
           children: [
-            Icon(
-              role == '공격군' ? Icons.flag : Icons.shield,
-              size: 18,
-              color: const Color(0xffffd27d),
-            ),
-            const SizedBox(width: 6),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     role,
                     style: const TextStyle(
                       color: Color(0xffffd27d),
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -102,14 +96,14 @@ class BattleTopHud extends StatelessWidget {
                     style: const TextStyle(
                       color: Color(0xfffff0d0),
                       fontWeight: FontWeight.w800,
-                      fontSize: 14,
+                      fontSize: 13,
                     ),
                   ),
                   Text(
                     '${_format(soldiers)}명',
                     style: const TextStyle(
                       color: Color(0xffffe6b0),
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

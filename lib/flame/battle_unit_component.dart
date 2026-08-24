@@ -17,7 +17,7 @@ class BattleUnitComponent extends PositionComponent {
     this.isSelected = false,
     this.unitType = BattleUnitType.infantry,
   }) : scaleType = _scaleFor(unit.soldiers),
-       super(position: center, anchor: Anchor.center, size: Vector2.all(82));
+       super(position: center, anchor: Anchor.center, size: Vector2.all(64));
 
   final BattleUnit unit;
   final ui.Image image;
@@ -30,15 +30,15 @@ class BattleUnitComponent extends PositionComponent {
   @override
   Future<void> onLoad() async {
     final visualSize = switch (scaleType) {
-      BattleUnitScale.small => 48.0,
-      BattleUnitScale.medium => 58.0,
-      BattleUnitScale.large => 68.0,
+      BattleUnitScale.small => 42.0,
+      BattleUnitScale.medium => 50.0,
+      BattleUnitScale.large => 58.0,
     };
     if (isSelected) {
       add(
         CircleComponent(
-          radius: 39,
-          position: Vector2(41, 38),
+          radius: 29,
+          position: Vector2(32, 30),
           anchor: Anchor.center,
           paint: Paint()
             ..style = PaintingStyle.stroke
@@ -50,7 +50,7 @@ class BattleUnitComponent extends PositionComponent {
     add(
       SpriteComponent.fromImage(
         image,
-        position: Vector2(41, 36),
+        position: Vector2(32, 30),
         size: Vector2.all(visualSize),
         anchor: Anchor.center,
         paint: Paint()
@@ -70,8 +70,8 @@ class BattleUnitComponent extends PositionComponent {
         : const Color(0xff401c1b);
     add(
       RectangleComponent(
-        position: Vector2(5, 57),
-        size: Vector2(72, 21),
+        position: Vector2(3, 45),
+        size: Vector2(58, 19),
         paint: Paint()
           ..color = (isSelected ? const Color(0xffffd66e) : panelColor)
               .withValues(alpha: .96),
@@ -79,20 +79,20 @@ class BattleUnitComponent extends PositionComponent {
     );
     add(
       RectangleComponent(
-        position: Vector2(7, 59),
-        size: Vector2(68, 17),
+        position: Vector2(5, 47),
+        size: Vector2(54, 15),
         paint: Paint()..color = panelColor.withValues(alpha: .96),
       ),
     );
     add(
       TextComponent(
         text: '${_format(unit.soldiers)}${unit.burning ? ' 🔥' : ''}',
-        position: Vector2(41, 59),
+        position: Vector2(32, 47),
         anchor: Anchor.topCenter,
         textRenderer: TextPaint(
           style: const TextStyle(
             color: Color(0xfffff1d2),
-            fontSize: 13,
+            fontSize: 11,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -107,8 +107,8 @@ class BattleUnitComponent extends PositionComponent {
         bannerImage,
         srcPosition: Vector2(isAttacker ? 1448 : 724, 0),
         srcSize: Vector2(724, 724),
-        position: Vector2(41, -15),
-        size: Vector2(24, 34),
+        position: Vector2(32, -8),
+        size: Vector2(18, 27),
         anchor: Anchor.bottomCenter,
         paint: Paint()
           ..colorFilter = isSelected
@@ -118,20 +118,20 @@ class BattleUnitComponent extends PositionComponent {
     );
     add(
       RectangleComponent(
-        position: Vector2(6, -15),
-        size: Vector2(70, 17),
+        position: Vector2(4, -8),
+        size: Vector2(56, 14),
         paint: Paint()..color = const Color(0xff090807).withValues(alpha: .74),
       ),
     );
     add(
       TextComponent(
         text: unit.name,
-        position: Vector2(41, -13),
+        position: Vector2(32, -7),
         anchor: Anchor.topCenter,
         textRenderer: TextPaint(
           style: const TextStyle(
             color: Color(0xfffff0c7),
-            fontSize: 9,
+            fontSize: 8,
             fontWeight: FontWeight.w700,
           ),
         ),
