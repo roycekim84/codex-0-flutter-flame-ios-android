@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:codex_strategy/core/game_brand.dart';
+import 'package:codex_strategy/data/korea_scenario.dart';
 
 void main() {
   test('해동삼국기 브랜딩과 시나리오 ID가 공통 상수로 정의된다', () {
@@ -7,5 +8,26 @@ void main() {
     expect(GameBrand.subtitle, '삼국의 유산');
     expect(GameBrand.genericScenarioId, 'generic_prototype');
     expect(GameBrand.koreanScenarioId, 'scenario_korea_642');
+  });
+
+  test('한국 시나리오 데이터팩은 엔진 공용 형식과 한국 데이터를 사용한다', () {
+    final scenario = KoreaScenario.create();
+    expect(scenario['id'], GameBrand.koreanScenarioId);
+    expect(scenario['year'], 642);
+    expect(scenario['forces'], hasLength(3));
+    expect(scenario['provinces'], hasLength(12));
+    expect(scenario['officers'], hasLength(20));
+    expect(
+      (scenario['forces'] as List).map((force) => force['name']),
+      containsAll(<String>['신라', '고구려', '백제']),
+    );
+    expect(
+      (scenario['provinces'] as List).map((province) => province['name']),
+      containsAll(<String>['금성', '평양', '사비', '김해']),
+    );
+    expect(
+      (scenario['officers'] as List).first['historicalStatus'],
+      'historical',
+    );
   });
 }

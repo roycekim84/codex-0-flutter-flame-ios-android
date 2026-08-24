@@ -13,6 +13,7 @@ import '../core/difficulty.dart';
 import '../core/game_engine.dart';
 import '../core/game_brand.dart';
 import '../data/demo_scenario.dart';
+import '../data/korea_scenario.dart';
 import '../flame/battle_game.dart';
 import '../models/game_state.dart';
 import '../repositories/save_repository.dart';
@@ -377,15 +378,23 @@ class ScenarioSelectScreen extends StatefulWidget {
 }
 
 class _ScenarioSelectScreenState extends State<ScenarioSelectScreen> {
-  int selectedIndex = 1;
+  int selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    final scenarios = [
-      ('184년 · 황혼의 반란', '난이도 쉬움 · 6지역 · 3세력', '평화로운 봄의 시작'),
-      ('193년 · 군웅할거', '난이도 보통 · 6지역 · 3세력', '가상의 군웅들이 패권을 다툼'),
-      ('201년 · 북방의 겨울', '난이도 어려움 · 6지역 · 3세력', '산성과 보급선이 핵심'),
-      ('208년 · 강의 전쟁', '난이도 매우 어려움 · 6지역 · 3세력', '강을 둘러싼 최후의 결전'),
+    final scenarios = <(String, String, String, Map<String, dynamic>)>[
+      (
+        '642년 · 삼국의 유산',
+        '한국 삼국시대 · 12지역 · 3세력',
+        '신라·고구려·백제가 패권을 다툼',
+        KoreaScenario.create(),
+      ),
+      (
+        '193년 · 군웅할거',
+        '가상 시나리오 · 12지역 · 3세력',
+        '엔진 회귀 테스트용 군웅전',
+        widget.scenario,
+      ),
     ];
     return Scaffold(
       body: _RealmBackdrop(
@@ -455,10 +464,7 @@ class _ScenarioSelectScreenState extends State<ScenarioSelectScreen> {
                     FilledButton(
                       onPressed: () {
                         final selected = scenarios[selectedIndex];
-                        final selectedScenario =
-                            Map<String, dynamic>.from(widget.scenario)
-                              ..['selectedScenarioId'] =
-                                  'scenario_${selectedIndex + 1}';
+                        final selectedScenario = scenarios[selectedIndex].$4;
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => DifficultySelectScreen(
