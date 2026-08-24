@@ -368,7 +368,7 @@ class BattleCommandBar extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                '$turnLabel · 부대별 1회 행동',
+                turnLabel,
                 style: TextStyle(
                   color: Color(0xffe8c98f),
                   fontSize: 11,

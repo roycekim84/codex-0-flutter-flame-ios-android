@@ -8504,11 +8504,6 @@ class _BattleScreenState extends State<BattleScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      '연계 행동',
-                      style: TextStyle(color: Color(0xff9d8967), fontSize: 10),
-                    ),
-                    const SizedBox(width: 12),
                     TextButton.icon(
                       onPressed: battle.finished
                           ? null
