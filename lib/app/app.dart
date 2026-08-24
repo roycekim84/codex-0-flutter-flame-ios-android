@@ -7080,6 +7080,7 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
   String? sourceId;
   String? commanderId;
   final Set<String> selectedOfficerIds = <String>{};
+  final Map<String, int> soldiersByOfficerId = <String, int>{};
   double committed = 100;
   @override
   void initState() {
@@ -7100,11 +7101,24 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
       committed = (sources.first.soldiers * .65).roundToDouble();
       selectedOfficerIds.addAll(sources.first.officerIds);
       commanderId = sources.first.officerIds.firstOrNull;
+      _rebalanceAllocations();
     }
   }
 
   ProvinceState? get source =>
       sourceId == null ? null : sources.firstWhere((p) => p.id == sourceId);
+
+  void _rebalanceAllocations() {
+    soldiersByOfficerId.clear();
+    final ids = selectedOfficerIds.toList();
+    if (ids.isEmpty) return;
+    final base = committed.round() ~/ ids.length;
+    for (var i = 0; i < ids.length; i++) {
+      soldiersByOfficerId[ids[i]] =
+          base + (i == 0 ? committed.round() - base * ids.length : 0);
+    }
+  }
+
   void _launch() {
     final battle = sourceId == null
         ? null
@@ -7114,6 +7128,7 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
             committedSoldiers: committed.round(),
             participantOfficerIds: selectedOfficerIds.toList(),
             commanderOfficerId: commanderId,
+            soldiersByOfficerId: soldiersByOfficerId,
           );
     if (battle == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -7230,6 +7245,7 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
                                 ..clear()
                                 ..addAll(source!.officerIds);
                               commanderId = source!.officerIds.firstOrNull;
+                              _rebalanceAllocations();
                             });
                           }
                         },
@@ -7252,6 +7268,7 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
                             officer: officer,
                             selected: selectedOfficerIds.contains(id),
                             commander: commanderId == id,
+                            soldiers: soldiersByOfficerId[id] ?? 0,
                             onChanged: (value) {
                               if (value == false &&
                                   selectedOfficerIds.length == 1) {
@@ -7267,7 +7284,9 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
                                     commanderId =
                                         selectedOfficerIds.firstOrNull;
                                   }
+                                  _rebalanceAllocations();
                                 }
+                                _rebalanceAllocations();
                               });
                             },
                           );
@@ -7297,7 +7316,10 @@ class _WarPreparationScreenState extends State<WarPreparationScreen> {
                         current: current,
                         committed: committed,
                         max: max,
-                        onChanged: (value) => setState(() => committed = value),
+                        onChanged: (value) => setState(() {
+                          committed = value;
+                          _rebalanceAllocations();
+                        }),
                       ),
                       const SizedBox(height: 14),
                       _WarCostCard(
@@ -7393,10 +7415,12 @@ class _WarOfficerTile extends StatelessWidget {
     required this.officer,
     required this.selected,
     required this.commander,
+    required this.soldiers,
     required this.onChanged,
   });
   final OfficerState officer;
   final bool selected, commander;
+  final int soldiers;
   final ValueChanged<bool> onChanged;
   @override
   Widget build(BuildContext context) => Container(
@@ -7422,7 +7446,9 @@ class _WarOfficerTile extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        commander ? '총대장 · WAR ${officer.war}' : '출전 가능 · WAR ${officer.war}',
+        commander
+            ? '총대장 · 출전 ${_formatNumber(soldiers)}명 · WAR ${officer.war}'
+            : '출전 ${_formatNumber(soldiers)}명 · WAR ${officer.war}',
         style: TextStyle(
           color: commander ? const Color(0xffe2bd72) : const Color(0xffc1ab82),
           fontSize: 11,

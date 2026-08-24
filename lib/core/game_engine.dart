@@ -454,6 +454,7 @@ class GameEngine {
     required int committedSoldiers,
     List<String>? participantOfficerIds,
     String? commanderOfficerId,
+    Map<String, int>? soldiersByOfficerId,
   }) {
     final source = _playerProvince(sourceProvinceId);
     final target = state.provinces
@@ -475,11 +476,29 @@ class GameEngine {
         ? [source.officerIds.first]
         : participantOfficerIds.where(source.officerIds.contains).toList();
     if (participants.isEmpty) return null;
+    final allocation = <String, int>{};
+    if (soldiersByOfficerId == null) {
+      final base = committedSoldiers ~/ participants.length;
+      for (var i = 0; i < participants.length; i++) {
+        allocation[participants[i]] =
+            base +
+            (i == 0 ? committedSoldiers - base * participants.length : 0);
+      }
+    } else {
+      for (final id in participants) {
+        final amount = soldiersByOfficerId[id] ?? 0;
+        if (amount < 0) return null;
+        allocation[id] = amount;
+      }
+      if (allocation.values.fold(0, (sum, amount) => sum + amount) !=
+          committedSoldiers) {
+        return null;
+      }
+    }
     final commanderId =
         commanderOfficerId != null && participants.contains(commanderOfficerId)
         ? commanderOfficerId
         : participants.first;
-    final base = committedSoldiers ~/ participants.length;
     final units = <BattleUnit>[];
     for (var i = 0; i < participants.length; i++) {
       final officer = state.officers.firstWhere((o) => o.id == participants[i]);
@@ -487,9 +506,7 @@ class GameEngine {
         BattleUnit(
           officerId: officer.id,
           name: officer.name,
-          soldiers:
-              base +
-              (i == 0 ? committedSoldiers - base * participants.length : 0),
+          soldiers: allocation[officer.id]!,
           war: officer.war,
           intelligence: officer.intelligence,
           row: 3 + i ~/ 3,

@@ -666,6 +666,23 @@ void main() {
     );
   });
 
+  test('출병 준비는 장수별 병력 배분을 전투 부대에 그대로 반영한다', () {
+    final engine = createEngine();
+    final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
+    final participants = source.officerIds.take(2).toList();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: source.id,
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 700,
+      participantOfficerIds: participants,
+      soldiersByOfficerId: {participants[0]: 500, participants[1]: 200},
+    );
+
+    expect(battle, isNotNull);
+    expect(battle!.state.attackerUnits[0].soldiers, 500);
+    expect(battle.state.attackerUnits[1].soldiers, 200);
+  });
+
   test('전투 행동은 선택한 부대에 따라 피해와 병력을 갱신한다', () {
     final engine = createEngine();
     final source = engine.state.provinces.firstWhere((p) => p.id == 'p_briar');
