@@ -8021,20 +8021,52 @@ class _BattleScreenState extends State<BattleScreen> {
         await _autoEndTurn();
         continue;
       }
-      final defender = widget.battle.state.defenderUnits
-          .where((unit) => unit.soldiers > 0)
-          .firstOrNull;
+      final defender = _nearestDefender(attacker);
       if (defender == null) break;
 
       widget.battle.execute(BattleCommand.selectAttacker(attacker.officerId));
-      widget.battle.execute(BattleCommand.selectDefender(defender.officerId));
-      final event = widget.battle.execute(
-        BattleCommand.action(
-          type: BattleCommandType.attack,
-          attackerId: attacker.officerId,
-          defenderId: defender.officerId,
-        ),
+      final adjacent = widget.battle.state.isAdjacent(
+        attacker,
+        defender.row,
+        defender.column,
       );
+      late final BattleResultEvent event;
+      if (adjacent) {
+        widget.battle.execute(BattleCommand.selectDefender(defender.officerId));
+        event = widget.battle.execute(
+          BattleCommand.action(
+            type: BattleCommandType.attack,
+            attackerId: attacker.officerId,
+            defenderId: defender.officerId,
+          ),
+        );
+      } else {
+        final movementCells = widget.battle.state.movementCells.toList()
+          ..sort(
+            (a, b) => _cellDistance(
+              a,
+              defender,
+            ).compareTo(_cellDistance(b, defender)),
+          );
+        final destination = movementCells.firstOrNull;
+        if (destination == null) {
+          event = widget.battle.execute(
+            BattleCommand.action(
+              type: BattleCommandType.wait,
+              attackerId: attacker.officerId,
+              defenderId: defender.officerId,
+            ),
+          );
+        } else {
+          event = widget.battle.execute(
+            BattleCommand.move(
+              unitId: attacker.officerId,
+              row: destination.row,
+              column: destination.column,
+            ),
+          );
+        }
+      }
       if (!mounted) return;
       setState(() {
         selectedAttackerId = attacker.officerId;
@@ -8050,6 +8082,23 @@ class _BattleScreenState extends State<BattleScreen> {
       setState(() => _autoBattleRunning = false);
     }
   }
+
+  BattleUnit? _nearestDefender(BattleUnit attacker) {
+    final defenders = widget.battle.state.defenderUnits.where(
+      (unit) => unit.soldiers > 0,
+    );
+    return defenders.isEmpty
+        ? null
+        : defenders.reduce(
+            (a, b) => _distance(attacker, a) <= _distance(attacker, b) ? a : b,
+          );
+  }
+
+  int _distance(BattleUnit a, BattleUnit b) =>
+      (a.row - b.row).abs() + (a.column - b.column).abs();
+
+  int _cellDistance(BattleCell cell, BattleUnit unit) =>
+      (cell.row - unit.row).abs() + (cell.column - unit.column).abs();
 
   Future<void> _autoEndTurn() async {
     if (!mounted || !_autoBattleRunning || widget.battle.state.finished) return;
