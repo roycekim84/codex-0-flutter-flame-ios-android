@@ -493,6 +493,11 @@ void main() {
     );
     expect(target.burning, isTrue);
     expect(battle.state.defenderMorale, lessThan(moraleBefore));
+    final soldiersAfterFire = target.soldiers;
+
+    battle.endTurn();
+    expect(battle.state.day, 2);
+    expect(target.soldiers, lessThan(soldiersAfterFire));
   });
 
   test('전술 행동은 각각 실행되고 전투 종료 상태를 반영한다', () {
@@ -520,8 +525,8 @@ void main() {
           soldiers: 500,
           war: 50,
           intelligence: 90,
-          row: 3,
-          column: 1,
+          row: 2,
+          column: 2,
         ),
       ],
       defenderUnits: [

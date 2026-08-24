@@ -7953,6 +7953,14 @@ class _BattleScreenState extends State<BattleScreen> {
         )) {
       selectedDefenderId = null;
     }
+    if (!event.hasEffect &&
+        action != BattleAction.wait &&
+        event.logMessage.isNotEmpty &&
+        mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(event.logMessage)));
+    }
     setState(() {});
     battleGame.refreshBoard();
     await battleGame.playEvent(event);
