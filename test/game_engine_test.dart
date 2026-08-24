@@ -566,6 +566,36 @@ void main() {
     );
   });
 
+  test('육각 격자는 홀짝 열에 따라 북동·남동 이동을 분리한다', () {
+    final unit = BattleUnit(
+      officerId: 'test',
+      name: '테스트 부대',
+      soldiers: 100,
+      war: 50,
+      intelligence: 50,
+      row: 3,
+      column: 2,
+    );
+    final state = BattleState(
+      sourceProvinceId: 'source',
+      targetProvinceId: 'target',
+      attackerName: '아군',
+      defenderName: '적군',
+      attackerSoldiers: 100,
+      defenderSoldiers: 100,
+      attackerUnits: [unit],
+    );
+
+    expect(state.isAdjacent(unit, 2, 3), isTrue); // 북동
+    expect(state.isAdjacent(unit, 3, 3), isTrue); // 남동
+    expect(state.isAdjacent(unit, 4, 3), isFalse);
+
+    unit.column = 3;
+    expect(state.isAdjacent(unit, 3, 2), isTrue); // 북서
+    expect(state.isAdjacent(unit, 4, 2), isTrue); // 남서
+    expect(state.isAdjacent(unit, 2, 2), isFalse);
+  });
+
   test('B0 전투 명령은 선택 상태와 이동 가능 칸을 갱신한다', () {
     final engine = createEngine();
     final battle = engine.beginBattlePrepared(

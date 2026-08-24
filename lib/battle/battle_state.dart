@@ -139,18 +139,23 @@ class BattleState {
       ? null
       : units.where((unit) => unit.officerId == id).firstOrNull;
 
+  // Odd-q vertical layout. Every column is shifted by half a cell, so a
+  // horizontal move becomes either north-east/south-east (or west pair),
+  // rather than a single rectangular-grid diagonal.
   List<BattleCell> _neighbors(BattleUnit unit) =>
       [
             BattleCell(unit.row - 1, unit.column),
             BattleCell(unit.row + 1, unit.column),
-            BattleCell(unit.row, unit.column - 1),
-            BattleCell(unit.row, unit.column + 1),
             if (unit.column.isEven) ...[
-              BattleCell(unit.row - 1, unit.column - 1),
-              BattleCell(unit.row - 1, unit.column + 1),
+              BattleCell(unit.row - 1, unit.column - 1), // north-west
+              BattleCell(unit.row, unit.column - 1), // south-west
+              BattleCell(unit.row - 1, unit.column + 1), // north-east
+              BattleCell(unit.row, unit.column + 1), // south-east
             ] else ...[
-              BattleCell(unit.row + 1, unit.column - 1),
-              BattleCell(unit.row + 1, unit.column + 1),
+              BattleCell(unit.row, unit.column - 1), // north-west
+              BattleCell(unit.row + 1, unit.column - 1), // south-west
+              BattleCell(unit.row, unit.column + 1), // north-east
+              BattleCell(unit.row + 1, unit.column + 1), // south-east
             ],
           ]
           .where(
@@ -164,6 +169,8 @@ class BattleState {
 
   bool isAdjacent(BattleUnit unit, int row, int column) =>
       _neighbors(unit).contains(BattleCell(row, column));
+
+  List<BattleCell> neighborsOf(BattleUnit unit) => _neighbors(unit);
 
   bool _occupied(BattleCell cell) => [...attackerUnits, ...defenderUnits].any(
     (unit) =>

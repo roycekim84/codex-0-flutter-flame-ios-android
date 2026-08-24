@@ -311,10 +311,7 @@ class BattleEngine {
     for (final defender in state.defenderUnits.where((u) => u.soldiers > 0)) {
       final target = _nearest(defender, state.attackerUnits);
       if (target == null) continue;
-      final distance =
-          (defender.row - target.row).abs() +
-          (defender.column - target.column).abs();
-      if (distance <= 1) {
+      if (state.isAdjacent(defender, target.row, target.column)) {
         final damage = (defender.soldiers * .10)
             .round()
             .clamp(1, target.soldiers)
@@ -322,12 +319,20 @@ class BattleEngine {
         target.soldiers -= damage;
         totalDamage += damage;
       } else {
-        final stepRow = defender.row + (target.row - defender.row).sign;
-        final stepColumn =
-            defender.column + (target.column - defender.column).sign;
-        if (!_occupiedByOther(stepRow, stepColumn, defender)) {
-          defender.row = stepRow.clamp(0, BattleState.boardRows - 1);
-          defender.column = stepColumn.clamp(0, 5);
+        final options = state
+            .neighborsOf(defender)
+            .where((cell) => !_occupiedByOther(cell.row, cell.column, defender))
+            .toList();
+        if (options.isNotEmpty) {
+          options.sort((a, b) {
+            final aDistance =
+                (a.row - target.row).abs() + (a.column - target.column).abs();
+            final bDistance =
+                (b.row - target.row).abs() + (b.column - target.column).abs();
+            return aDistance.compareTo(bDistance);
+          });
+          defender.row = options.first.row;
+          defender.column = options.first.column;
         }
       }
     }
