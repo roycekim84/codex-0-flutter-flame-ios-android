@@ -4974,19 +4974,48 @@ class _OfficerRecruitScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  candidate.name,
+                                  candidate.displayName ?? candidate.name,
                                   style: const TextStyle(
                                     color: Color(0xffffdfa0),
                                     fontSize: 23,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
+                                if (candidate.role != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 3),
+                                    child: Text(
+                                      candidate.role!,
+                                      style: const TextStyle(
+                                        color: Color(0xffd6a85d),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                if (candidate.birthYear != null ||
+                                    candidate.deathYear != null)
+                                  Text(
+                                    '활동 시기 ${candidate.birthYear ?? '?'}~${candidate.deathYear ?? '?'}년',
+                                    style: const TextStyle(
+                                      color: Color(0xffbda783),
+                                      fontSize: 11,
+                                    ),
+                                  ),
                                 const SizedBox(height: 8),
                                 _RecruitStat('WAR', candidate.war),
                                 _RecruitStat('INT', candidate.intelligence),
                                 _RecruitStat('CHA', candidate.charisma),
                                 _RecruitStat('관계', '중립'),
                                 _RecruitStat('충성도', candidate.loyalty),
+                                if (candidate.sourceNote != null)
+                                  Text(
+                                    '고증: ${candidate.sourceNote}',
+                                    style: const TextStyle(
+                                      color: Color(0xff9f8967),
+                                      fontSize: 10,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
