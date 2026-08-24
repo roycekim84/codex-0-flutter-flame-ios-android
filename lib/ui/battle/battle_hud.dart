@@ -423,37 +423,41 @@ class BattleLogPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final logs = battle.battleLog.reversed.take(4).toList().reversed.toList();
+    if (logs.isEmpty) {
+      return Container(
+        height: 30,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        alignment: Alignment.centerLeft,
+        decoration: const BoxDecoration(
+          color: Color(0xff100e0b),
+          border: Border(top: BorderSide(color: Color(0xff4f402a))),
+        ),
+        child: const Text(
+          '전황 기록 없음 · 부대를 선택해 행동을 시작하십시오',
+          style: TextStyle(color: Color(0xff9d8967), fontSize: 10),
+        ),
+      );
+    }
     return Container(
-      constraints: const BoxConstraints(minHeight: 32, maxHeight: 74),
+      constraints: const BoxConstraints(minHeight: 32, maxHeight: 58),
       padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
       decoration: const BoxDecoration(
         color: Color(0xff100e0b),
         border: Border(top: BorderSide(color: Color(0xff4f402a))),
       ),
-      child: logs.isEmpty
-          ? const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '전투 기록이 없습니다.',
-                style: TextStyle(color: Color(0xff9d8967), fontSize: 10),
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: logs
+            .map(
+              (log) => Text(
+                log,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Color(0xffcdb58a), fontSize: 10),
               ),
             )
-          : ListView(
-              padding: EdgeInsets.zero,
-              children: logs
-                  .map(
-                    (log) => Text(
-                      log,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xffcdb58a),
-                        fontSize: 10,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
+            .toList(),
+      ),
     );
   }
 }

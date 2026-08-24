@@ -8387,33 +8387,41 @@ class _BattleScreenState extends State<BattleScreen> {
               BattleLogPanel(battle: battle),
               if (battle.attackerUnits.isNotEmpty &&
                   battle.defenderUnits.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 2),
+                Container(
+                  margin: const EdgeInsets.fromLTRB(8, 4, 8, 2),
+                  padding: const EdgeInsets.fromLTRB(6, 0, 2, 0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xff15120e),
+                    border: Border.all(color: const Color(0xff5e4728)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                   child: Row(
                     children: [
                       Expanded(
-                        child: DropdownButton<String>(
-                          isExpanded: true,
-                          value: selectedAttackerId,
-                          items: battle.attackerUnits
-                              .map(
-                                (u) => DropdownMenuItem(
-                                  value: u.officerId,
-                                  child: Text('아군 · ${u.name} ${u.soldiers}'),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: battle.finished
-                              ? null
-                              : (id) {
-                                  setState(() => selectedAttackerId = id);
-                                  if (id != null) {
-                                    widget.battle.execute(
-                                      BattleCommand.selectAttacker(id),
-                                    );
-                                  }
-                                  battleGame.refreshBoard();
-                                },
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            value: selectedAttackerId,
+                            items: battle.attackerUnits
+                                .map(
+                                  (u) => DropdownMenuItem(
+                                    value: u.officerId,
+                                    child: Text('아군 · ${u.name} ${u.soldiers}'),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: battle.finished
+                                ? null
+                                : (id) {
+                                    setState(() => selectedAttackerId = id);
+                                    if (id != null) {
+                                      widget.battle.execute(
+                                        BattleCommand.selectAttacker(id),
+                                      );
+                                    }
+                                    battleGame.refreshBoard();
+                                  },
+                          ),
                         ),
                       ),
                       const Padding(
@@ -8421,28 +8429,30 @@ class _BattleScreenState extends State<BattleScreen> {
                         child: Text('→'),
                       ),
                       Expanded(
-                        child: DropdownButton<String>(
-                          isExpanded: true,
-                          value: selectedDefenderId,
-                          items: battle.defenderUnits
-                              .map(
-                                (u) => DropdownMenuItem(
-                                  value: u.officerId,
-                                  child: Text('적군 · ${u.name} ${u.soldiers}'),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: battle.finished
-                              ? null
-                              : (id) {
-                                  setState(() => selectedDefenderId = id);
-                                  if (id != null) {
-                                    widget.battle.execute(
-                                      BattleCommand.selectDefender(id),
-                                    );
-                                  }
-                                  battleGame.refreshBoard();
-                                },
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            value: selectedDefenderId,
+                            items: battle.defenderUnits
+                                .map(
+                                  (u) => DropdownMenuItem(
+                                    value: u.officerId,
+                                    child: Text('적군 · ${u.name} ${u.soldiers}'),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: battle.finished
+                                ? null
+                                : (id) {
+                                    setState(() => selectedDefenderId = id);
+                                    if (id != null) {
+                                      widget.battle.execute(
+                                        BattleCommand.selectDefender(id),
+                                      );
+                                    }
+                                    battleGame.refreshBoard();
+                                  },
+                          ),
                         ),
                       ),
                       IconButton(
@@ -8476,22 +8486,44 @@ class _BattleScreenState extends State<BattleScreen> {
                   _finishIfNeeded();
                 },
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+              Container(
+                height: 34,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: const BoxDecoration(
+                  color: Color(0xff100e0b),
+                  border: Border(top: BorderSide(color: Color(0xff4f402a))),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    TextButton(
+                    const Text(
+                      '연계 행동',
+                      style: TextStyle(color: Color(0xff9d8967), fontSize: 10),
+                    ),
+                    const SizedBox(width: 12),
+                    TextButton.icon(
                       onPressed: battle.finished
                           ? null
                           : () => _act(BattleAction.charge),
-                      child: const Text('돌격'),
+                      icon: const Icon(Icons.flash_on, size: 13),
+                      label: const Text('돌격'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xffffd995),
+                        padding: const EdgeInsets.symmetric(horizontal: 7),
+                        textStyle: const TextStyle(fontSize: 11),
+                      ),
                     ),
-                    TextButton(
+                    TextButton.icon(
                       onPressed: battle.finished
                           ? null
                           : () => _act(BattleAction.cooperate),
-                      child: const Text('협공'),
+                      icon: const Icon(Icons.group_work, size: 13),
+                      label: const Text('협공'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xffffd995),
+                        padding: const EdgeInsets.symmetric(horizontal: 7),
+                        textStyle: const TextStyle(fontSize: 11),
+                      ),
                     ),
                   ],
                 ),
