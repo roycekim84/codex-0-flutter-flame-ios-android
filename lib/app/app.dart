@@ -9886,30 +9886,42 @@ class _OfficerDetailDialog extends StatelessWidget {
   const _OfficerDetailDialog({required this.officer});
   final OfficerState officer;
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(officer.name),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _GeneratedPortrait(seed: officer.id, size: 190),
-        const SizedBox(height: 10),
-        Text('상태: ${officer.status}'),
-        Text('소속 지역: ${officer.provinceId}'),
-        const Divider(),
-        Text('WAR  ${officer.war}'),
-        Text('INT  ${officer.intelligence}'),
-        Text('CHA  ${officer.charisma}'),
-        Text('충성도  ${officer.loyalty}'),
-      ],
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('닫기'),
+  Widget build(BuildContext context) {
+    final era = officer.birthYear == null && officer.deathYear == null
+        ? null
+        : '${officer.birthYear ?? '?'}~${officer.deathYear ?? '?'}년';
+    return AlertDialog(
+      title: Text(officer.displayName ?? officer.name),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _GeneratedPortrait(seed: officer.id, size: 190),
+          const SizedBox(height: 10),
+          Text('상태: ${officer.status}'),
+          Text('소속 지역: ${officer.provinceId}'),
+          if (officer.role != null) Text('역할: ${officer.role}'),
+          if (era != null) Text('활동 시기: $era'),
+          if (officer.sourceNote != null)
+            Text(
+              '고증: ${officer.sourceNote}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          const Divider(),
+          Text('WAR  ${officer.war}'),
+          Text('INT  ${officer.intelligence}'),
+          Text('CHA  ${officer.charisma}'),
+          Text('충성도  ${officer.loyalty}'),
+        ],
       ),
-    ],
-  );
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('닫기'),
+        ),
+      ],
+    );
+  }
 }
 
 // ignore: unused_element
