@@ -10,7 +10,11 @@ class AiDecision {
 
 /// AI chooses a small, inspectable action. GameEngine applies the result.
 class AiEngine {
-  AiDecision choose(GameState state, ForceState force) {
+  AiDecision choose(
+    GameState state,
+    ForceState force, {
+    int aggressionBonus = 0,
+  }) {
     final attackThreshold = switch (force.aiPersonality) {
       AiPersonality.aggressive => -20,
       AiPersonality.opportunist => -30,
@@ -18,7 +22,7 @@ class AiEngine {
       AiPersonality.diplomatic => -100,
       AiPersonality.development => -100,
     };
-    if (state.relationTo(force.id) <= attackThreshold) {
+    if (state.relationTo(force.id) <= attackThreshold + aggressionBonus) {
       for (final source in state.provinces.where(
         (p) => p.ownerForceId == force.id && p.soldiers > 300,
       )) {

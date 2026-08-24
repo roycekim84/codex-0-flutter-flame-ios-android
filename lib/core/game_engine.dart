@@ -4,6 +4,7 @@ import '../battle/battle_engine.dart';
 import '../battle/battle_state.dart';
 import '../battle/terrain.dart';
 import 'game_command.dart';
+import 'difficulty.dart';
 
 enum PrisonerAction { recruit, release, execute }
 
@@ -697,9 +698,12 @@ class GameEngine {
   void endTurn() {
     if (state.gameOver) return;
     state.lastTurnReports.clear();
+    final difficulty = DifficultyProfile.byId(state.difficultyId);
     for (final p in state.provinces.where(state.isPlayerProvince)) {
-      state.playerForce.gold += 15 + p.land ~/ 5;
-      state.playerForce.food += 20 + p.land ~/ 3;
+      state.playerForce.gold +=
+          ((15 + p.land ~/ 5) * difficulty.playerIncomeRate).round();
+      state.playerForce.food +=
+          ((20 + p.land ~/ 3) * difficulty.playerIncomeRate).round();
     }
     for (final force in state.forces.where(
       (f) => f.id != state.playerForceId,
@@ -707,13 +711,22 @@ class GameEngine {
       final ownedProvinces = state.provinces
           .where((p) => p.ownerForceId == force.id)
           .toList();
+      for (final p in ownedProvinces) {
+        force.gold += ((12 + p.land ~/ 6) * difficulty.aiIncomeRate).round();
+        force.food += ((18 + p.land ~/ 4) * difficulty.aiIncomeRate).round();
+      }
       if (force.gold >= 80 && ownedProvinces.isNotEmpty) {
         force.gold -= 80;
         final p = ownedProvinces.first;
-        p.soldiers += 45;
-        state.log('${force.name} AI · ${p.name} 병력 +45');
+        final recruited = (45 * difficulty.aiSoldierRate).round();
+        p.soldiers += recruited;
+        state.log('${force.name} AI · ${p.name} 병력 +$recruited');
       }
-      final decision = aiEngine.choose(state, force);
+      final decision = aiEngine.choose(
+        state,
+        force,
+        aggressionBonus: difficulty.aiAggressionBonus,
+      );
       switch (decision.type) {
         case AiDecisionType.gift:
           if (force.gold >= 100) {
@@ -760,7 +773,12 @@ class GameEngine {
 
   void _resolveMonthlyEvent() {
     state.lastEvent = null;
-    if ((state.year + state.month + state.randomSeed) % 4 != 0) return;
+    final eventInterval = DifficultyProfile.byId(
+      state.difficultyId,
+    ).eventInterval;
+    if ((state.year + state.month + state.randomSeed) % eventInterval != 0) {
+      return;
+    }
     final province = state.provinces.where(state.isPlayerProvince).firstOrNull;
     if (province == null) return;
     switch ((state.year + state.month) % 4) {

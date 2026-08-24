@@ -8,6 +8,7 @@ import 'package:codex_strategy/data/demo_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
 import 'package:codex_strategy/repositories/save_repository.dart';
 import 'package:codex_strategy/core/asset_repository.dart';
+import 'package:codex_strategy/core/difficulty.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -80,6 +81,46 @@ void main() {
     expect(aiProvince.soldiers, aiSoldiers + 45);
     expect(engine.state.relationTo('force_red'), 0);
     expect(engine.state.gameLog.last, contains('월말 정산'));
+  });
+
+  test('난이도별 월말 수입과 AI 징병 보정이 실제로 적용된다', () {
+    GameEngine createDifficultyEngine(String difficultyId) => GameEngine(
+      GameState.fromScenario(DemoScenario.create(), difficultyId: difficultyId),
+    );
+
+    final dawn = createDifficultyEngine('dawn');
+    final clash = createDifficultyEngine('clash');
+    final dawnGold = dawn.state.playerForce.gold;
+    final clashGold = clash.state.playerForce.gold;
+    final dawnAiProvince = dawn.state.provinces[2];
+    final clashAiProvince = clash.state.provinces[2];
+    final dawnAiSoldiers = dawnAiProvince.soldiers;
+    final clashAiSoldiers = clashAiProvince.soldiers;
+    for (final force in dawn.state.forces.skip(1)) {
+      force.food = 0;
+    }
+    for (final force in clash.state.forces.skip(1)) {
+      force.food = 0;
+    }
+
+    dawn.endTurn();
+    clash.endTurn();
+
+    expect(
+      dawn.state.playerForce.gold - dawnGold,
+      greaterThan(clash.state.playerForce.gold - clashGold),
+    );
+    expect(dawnAiProvince.soldiers - dawnAiSoldiers, 36);
+    expect(clashAiProvince.soldiers - clashAiSoldiers, 52);
+  });
+
+  test('난이도 프로필은 표준값을 기준으로 순서대로 압박이 증가한다', () {
+    expect(DifficultyProfile.byId('balance').aiAggressionBonus, 0);
+    expect(DifficultyProfile.byId('clash').aiAggressionBonus, greaterThan(0));
+    expect(
+      DifficultyProfile.byId('chaos').eventInterval,
+      lessThan(DifficultyProfile.byId('balance').eventInterval),
+    );
   });
 
   test('월말 이벤트는 결정적인 seed로 발생하고 기록된다', () {
