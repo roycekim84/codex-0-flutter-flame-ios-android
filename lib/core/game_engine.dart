@@ -429,7 +429,9 @@ class GameEngine {
           war: officer.war,
           intelligence: officer.intelligence,
           row: 3 + i ~/ 3,
-          column: i % 3,
+          // Leave one hex between formations so banners and troop counts
+          // remain readable on the narrow portrait battlefield.
+          column: (i % 3) * 2,
           type: switch (i) {
             0 => BattleUnitType.cavalry,
             1 => BattleUnitType.archers,
@@ -454,7 +456,7 @@ class GameEngine {
             war: officer.war,
             intelligence: officer.intelligence,
             row: i ~/ 3,
-            column: 3 + i % 3,
+            column: 1 + (i % 3) * 2,
             type: switch (i) {
               0 => BattleUnitType.cavalry,
               1 => BattleUnitType.archers,
