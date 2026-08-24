@@ -547,6 +547,31 @@ void main() {
     expect(province.officerIds, contains(freeId));
   });
 
+  test('등용 확률은 수행 장수의 매력과 대상 충성도를 반영한다', () {
+    final engine = createEngine();
+    final performer = engine.state.officers.first;
+    final candidate = engine.firstFreeOfficer!;
+    final chance = engine.recruitmentChance(candidate.id, performer.id);
+
+    expect(chance, inInclusiveRange(18, 86));
+    final originalCharisma = performer.charisma;
+    final originalLoyalty = candidate.loyalty;
+    // 능력치는 불변이므로, 서로 다른 대상의 충성도만으로 방향성을 검증한다.
+    candidate.loyalty = 90;
+    final highLoyaltyChance = engine.recruitmentChance(
+      candidate.id,
+      performer.id,
+    );
+    candidate.loyalty = 10;
+    final lowLoyaltyChance = engine.recruitmentChance(
+      candidate.id,
+      performer.id,
+    );
+    expect(lowLoyaltyChance, greaterThan(highLoyaltyChance));
+    expect(performer.charisma, originalCharisma);
+    candidate.loyalty = originalLoyalty;
+  });
+
   test('장수를 태수로 임명하면 지역에 태수 정보가 기록된다', () {
     final engine = createEngine();
     final province = engine.state.provinces.first;

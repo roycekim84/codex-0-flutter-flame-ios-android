@@ -1241,10 +1241,15 @@ class _GameScreenState extends State<GameScreen> {
     final province = engine.state.provinces.firstWhere(
       (p) => p.id == selectedProvinceId,
     );
+    final performer = engine.state.officers.firstWhere(
+      (o) => o.id == selectedOfficerId,
+    );
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => _OfficerRecruitScreen(
           candidate: candidate,
+          performer: performer,
+          chance: engine.recruitmentChance(candidate.id, performer.id),
           provinceName: province.name,
           onRecruit: () async {
             if (!mounted) return;
@@ -4880,11 +4885,15 @@ class _PersonnelSearchScreen extends StatelessWidget {
 class _OfficerRecruitScreen extends StatelessWidget {
   const _OfficerRecruitScreen({
     required this.candidate,
+    required this.performer,
+    required this.chance,
     required this.provinceName,
     required this.onRecruit,
   });
 
   final OfficerState candidate;
+  final OfficerState performer;
+  final int chance;
   final String provinceName;
   final Future<void> Function() onRecruit;
 
@@ -5032,6 +5041,15 @@ class _OfficerRecruitScreen extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '수행 장수  ${performer.displayName ?? performer.name} · CHA ${performer.charisma}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xffbda783),
+                        fontSize: 12,
+                      ),
+                    ),
                     const SizedBox(height: 14),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -5043,10 +5061,10 @@ class _OfficerRecruitScreen extends StatelessWidget {
                         border: Border.all(color: const Color(0xff6d5230)),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          const Text(
                             '등용 확률',
                             style: TextStyle(
                               color: Color(0xffc7ae83),
@@ -5054,9 +5072,13 @@ class _OfficerRecruitScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '72%',
+                            '$chance%',
                             style: TextStyle(
-                              color: Color(0xff6fce8a),
+                              color: chance >= 60
+                                  ? const Color(0xff6fce8a)
+                                  : chance >= 35
+                                  ? const Color(0xffffdfa0)
+                                  : const Color(0xffe58b72),
                               fontSize: 23,
                               fontWeight: FontWeight.w800,
                             ),

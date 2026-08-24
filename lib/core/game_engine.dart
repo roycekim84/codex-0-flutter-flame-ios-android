@@ -53,6 +53,7 @@ class GameEngine {
         final result = recruitOfficer(
           command.targetOfficerId!,
           command.provinceId!,
+          performerId: command.officerId,
         );
         if (!result.success) return result;
       case GameCommandType.rewardOfficer:
@@ -130,7 +131,25 @@ class GameEngine {
     );
   }
 
-  CommandResult recruitOfficer(String officerId, String provinceId) {
+  int recruitmentChance(String candidateId, String performerId) {
+    final candidate = state.officers
+        .where((o) => o.id == candidateId)
+        .firstOrNull;
+    final performer = state.officers
+        .where((o) => o.id == performerId)
+        .firstOrNull;
+    if (candidate == null || performer == null) return 0;
+    return (35 + performer.charisma ~/ 2 - candidate.loyalty ~/ 3).clamp(
+      18,
+      86,
+    );
+  }
+
+  CommandResult recruitOfficer(
+    String officerId,
+    String provinceId, {
+    String? performerId,
+  }) {
     final candidate = state.officers
         .where((o) => o.id == officerId && o.status == 'FREE')
         .firstOrNull;
@@ -142,7 +161,25 @@ class GameEngine {
     if (state.playerForce.gold < cost) {
       return const CommandResult.failure('등용 자금이 부족합니다.');
     }
+    final performer = performerId == null
+        ? null
+        : state.officers.where((o) => o.id == performerId).firstOrNull;
+    if (performerId != null && performer == null) {
+      return const CommandResult.failure('등용을 수행할 장수를 찾을 수 없습니다.');
+    }
     state.playerForce.gold -= cost;
+    if (performer != null) {
+      final chance = recruitmentChance(candidate.id, performer.id);
+      final roll = _recruitmentRoll(candidate.id, performer.id);
+      if (roll > chance) {
+        state.log(
+          '${candidate.name} 등용 실패 · 확률 $chance% · 주사위 $roll · 금 -$cost',
+        );
+        return CommandResult.failure(
+          '${candidate.name}이(가) 등용을 거절했습니다. ($chance%)',
+        );
+      }
+    }
     candidate.forceId = state.playerForceId;
     candidate.status = 'OFFICER';
     candidate.provinceId = province.id;
@@ -151,6 +188,14 @@ class GameEngine {
     province.officerIds.add(candidate.id);
     state.log('${candidate.name} 등용 · 금 -$cost · ${province.name} 배치');
     return CommandResult.success('${candidate.name}을 등용했습니다.');
+  }
+
+  int _recruitmentRoll(String candidateId, String performerId) {
+    var value = state.randomSeed * 31 + state.year * 17 + state.month;
+    for (final code in '$candidateId:$performerId'.codeUnits) {
+      value = (value * 33 + code) & 0x7fffffff;
+    }
+    return value % 100 + 1;
   }
 
   CommandResult appointGovernor(String officerId, String provinceId) {
