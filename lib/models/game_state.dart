@@ -108,6 +108,7 @@ class AiBattleReport {
 class GameState extends ChangeNotifier {
   GameState({
     required this.scenarioId,
+    this.difficultyId = 'balance',
     required this.year,
     required this.month,
     required this.playerForceId,
@@ -125,7 +126,7 @@ class GameState extends ChangeNotifier {
        revealedProvinceIds = revealedProvinceIds ?? {},
        lastTurnReports = lastTurnReports ?? [],
        gameLog = gameLog ?? [];
-  final String scenarioId, playerForceId;
+  final String scenarioId, playerForceId, difficultyId;
   int year, month;
   final List<ForceState> forces;
   final List<ProvinceState> provinces;
@@ -172,6 +173,7 @@ class GameState extends ChangeNotifier {
 
   Map<String, dynamic> toSaveMap() => {
     'scenarioId': scenarioId,
+    'difficultyId': difficultyId,
     'year': year,
     'month': month,
     'playerForceId': playerForceId,
@@ -274,6 +276,7 @@ class GameState extends ChangeNotifier {
         .toList();
     final state = GameState(
       scenarioId: data['scenarioId'],
+      difficultyId: data['difficultyId'] as String? ?? 'balance',
       year: data['year'],
       month: data['month'],
       playerForceId: data['playerForceId'],
@@ -345,6 +348,7 @@ class GameState extends ChangeNotifier {
   static GameState fromScenario(
     Map<String, dynamic> data, {
     String? selectedForceId,
+    String difficultyId = 'balance',
   }) {
     final forces = (data['forces'] as List)
         .map(
@@ -367,6 +371,7 @@ class GameState extends ChangeNotifier {
     final ownerNames = {for (final f in forces) f.id: f.name};
     return GameState(
       scenarioId: data['id'],
+      difficultyId: difficultyId,
       year: data['year'],
       month: data['month'],
       playerForceId: selectedForceId ?? data['playerForceId'],

@@ -288,6 +288,18 @@ void main() {
     expect(restored.outcome, 'VICTORY');
   });
 
+  test('선택한 난이도 ID는 저장 후에도 유지된다', () {
+    final state = GameState.fromScenario(
+      DemoScenario.create(),
+      difficultyId: 'chaos',
+    );
+    final restored = GameState.fromSaveMap(
+      SaveRepository().decode(SaveRepository().encode(state)),
+    );
+
+    expect(restored.difficultyId, 'chaos');
+  });
+
   test('첩보는 적 영지 정보를 공개하고 장수 충성도와 민심을 낮춘다', () {
     final engine = createEngine();
     final actor = engine.state.playerForce.officerIds.first;

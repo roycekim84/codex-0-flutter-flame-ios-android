@@ -9,6 +9,7 @@ import '../battle/battle_state.dart';
 import '../battle/battle_audio_service.dart';
 import '../battle/terrain.dart';
 import '../core/game_command.dart';
+import '../core/difficulty.dart';
 import '../core/game_engine.dart';
 import '../data/demo_scenario.dart';
 import '../flame/battle_game.dart';
@@ -459,7 +460,7 @@ class _ScenarioSelectScreenState extends State<ScenarioSelectScreen> {
                                   'scenario_${selectedIndex + 1}';
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => RulerSelectScreen(
+                            builder: (_) => DifficultySelectScreen(
                               scenario: selectedScenario,
                               scenarioTitle: selected.$1,
                             ),
@@ -589,14 +590,207 @@ class _ScenarioCard extends StatelessWidget {
   );
 }
 
-class RulerSelectScreen extends StatefulWidget {
-  const RulerSelectScreen({
+class DifficultySelectScreen extends StatefulWidget {
+  const DifficultySelectScreen({
     super.key,
     required this.scenario,
     this.scenarioTitle,
   });
   final Map<String, dynamic> scenario;
   final String? scenarioTitle;
+
+  @override
+  State<DifficultySelectScreen> createState() => _DifficultySelectScreenState();
+}
+
+class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
+  int selectedIndex = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = DifficultyProfile.all[selectedIndex];
+    return Scaffold(
+      body: _RealmBackdrop(
+        asset: AssetRepository.titleBackground,
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                    color: const Color(0xffe3c88f),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      '난이도 선택',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xffffe2aa),
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+              if (widget.scenarioTitle != null)
+                Text(
+                  widget.scenarioTitle!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xffc7aa78),
+                    fontSize: 11,
+                  ),
+                ),
+              const SizedBox(height: 8),
+              const Text(
+                '난세의 강도를 선택하십시오',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xffd1bb91), fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              ...DifficultyProfile.all.asMap().entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 9),
+                  child: _DifficultyCard(
+                    profile: entry.value,
+                    selected: entry.key == selectedIndex,
+                    onTap: () => setState(() => selectedIndex = entry.key),
+                  ),
+                ),
+              ),
+              AssetPanel(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    Text(
+                      selected.name,
+                      style: TextStyle(
+                        color: Color(selected.accentValue),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      selected.description,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xffc8b48a),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => RulerSelectScreen(
+                      scenario: widget.scenario,
+                      scenarioTitle: widget.scenarioTitle,
+                      difficultyId: selected.id,
+                    ),
+                  ),
+                ),
+                child: Text('${selected.name}으로 시작'),
+              ),
+              OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('뒤로'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DifficultyCard extends StatelessWidget {
+  const _DifficultyCard({
+    required this.profile,
+    required this.selected,
+    required this.onTap,
+  });
+  final DifficultyProfile profile;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(5),
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Color(
+          profile.accentValue,
+        ).withValues(alpha: selected ? .22 : .08),
+        border: Border.all(
+          color: Color(
+            profile.accentValue,
+          ).withValues(alpha: selected ? 1 : .42),
+          width: selected ? 1.6 : 1,
+        ),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.shield_outlined,
+            color: Color(profile.accentValue),
+            size: 25,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  profile.name,
+                  style: const TextStyle(
+                    color: Color(0xffffdfa0),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  profile.tagline,
+                  style: TextStyle(
+                    color: Color(profile.accentValue),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (selected)
+            Icon(Icons.check_circle, color: Color(profile.accentValue)),
+        ],
+      ),
+    ),
+  );
+}
+
+class RulerSelectScreen extends StatefulWidget {
+  const RulerSelectScreen({
+    super.key,
+    required this.scenario,
+    this.scenarioTitle,
+    this.difficultyId = 'balance',
+  });
+  final Map<String, dynamic> scenario;
+  final String? scenarioTitle;
+  final String difficultyId;
 
   @override
   State<RulerSelectScreen> createState() => _RulerSelectScreenState();
@@ -689,6 +883,7 @@ class _RulerSelectScreenState extends State<RulerSelectScreen> {
                     MaterialPageRoute(
                       builder: (_) => GameScreen(
                         playerForceId: selectedForce['id'] as String,
+                        difficultyId: widget.difficultyId,
                       ),
                     ),
                   ),
@@ -881,8 +1076,14 @@ class _RulerBrief extends StatelessWidget {
 }
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key, this.playerForceId, this.initialState});
+  const GameScreen({
+    super.key,
+    this.playerForceId,
+    this.initialState,
+    this.difficultyId = 'balance',
+  });
   final String? playerForceId;
+  final String difficultyId;
   final GameState? initialState;
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -901,6 +1102,7 @@ class _GameScreenState extends State<GameScreen> {
           GameState.fromScenario(
             DemoScenario.create(),
             selectedForceId: widget.playerForceId,
+            difficultyId: widget.difficultyId,
           ),
     );
     selectedProvinceId = engine.state.playerProvinceIds.firstOrNull;
