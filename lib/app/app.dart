@@ -982,11 +982,13 @@ class _RulerCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      AssetSlice(
-                        asset: AssetRepository.factionEmblemStrip,
-                        index: index % 3,
+                      FactionBanner(
+                        bannerAssetId: force['bannerAssetId'] as String?,
+                        fallbackIndex:
+                            force['bannerIndex'] as int? ?? index % 3,
                         segments: 3,
-                        size: 26,
+                        width: 26,
+                        height: 30,
                       ),
                       const SizedBox(width: 7),
                       Expanded(
@@ -1061,11 +1063,12 @@ class _RulerBrief extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
     child: Row(
       children: [
-        AssetSlice(
-          asset: AssetRepository.factionEmblemStrip,
-          index: 0,
+        FactionBanner(
+          bannerAssetId: force['bannerAssetId'] as String?,
+          fallbackIndex: force['bannerIndex'] as int? ?? 0,
           segments: 3,
-          size: 38,
+          width: 38,
+          height: 42,
         ),
         const SizedBox(width: 9),
         Expanded(
