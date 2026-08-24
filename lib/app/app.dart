@@ -11,6 +11,7 @@ import '../battle/terrain.dart';
 import '../core/game_command.dart';
 import '../core/difficulty.dart';
 import '../core/game_engine.dart';
+import '../core/game_brand.dart';
 import '../data/demo_scenario.dart';
 import '../flame/battle_game.dart';
 import '../models/game_state.dart';
@@ -49,7 +50,7 @@ class CodexStrategyApp extends StatelessWidget {
   const CodexStrategyApp({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Realm Ledger',
+    title: GameBrand.title,
     locale: const Locale('ko', 'KR'),
     debugShowCheckedModeBanner: false,
     builder: (context, child) {
@@ -58,11 +59,11 @@ class CodexStrategyApp extends StatelessWidget {
     },
     theme: ThemeData(
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xff9a7138),
+        seedColor: const Color(GameBrand.bronze),
         brightness: Brightness.dark,
       ),
       useMaterial3: true,
-      scaffoldBackgroundColor: const Color(0xff171612),
+      scaffoldBackgroundColor: const Color(GameBrand.ink),
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xff1d1a15),
         foregroundColor: Color(0xfff1dfb4),
@@ -240,7 +241,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        '군웅의 시대',
+                        GameBrand.title,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.displaySmall
                             ?.copyWith(
@@ -258,7 +259,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'THE THREE REALMS',
+                        GameBrand.subtitle,
                         style: TextStyle(
                           color: Color(0xffd5bd8c),
                           fontSize: 12,
@@ -305,7 +306,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const Spacer(flex: 2),
                       const Text(
-                        'ORIGINAL STRATEGY GAME  ·  193년 1월',
+                        '${GameBrand.englishSubtitle}  ·  ${GameBrand.titlePeriodLabel}',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Color(0xffb29a71),
