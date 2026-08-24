@@ -341,6 +341,8 @@ class BattleCommandBar extends StatelessWidget {
     required this.onRetreat,
     required this.onInfo,
     required this.onEndTurn,
+    this.onAutoToggle,
+    this.autoRunning = false,
   });
   final bool disabled;
   final String turnLabel;
@@ -349,6 +351,8 @@ class BattleCommandBar extends StatelessWidget {
   final VoidCallback onRetreat;
   final VoidCallback onInfo;
   final VoidCallback onEndTurn;
+  final VoidCallback? onAutoToggle;
+  final bool autoRunning;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -376,6 +380,28 @@ class BattleCommandBar extends StatelessWidget {
                 ),
               ),
             ),
+            OutlinedButton.icon(
+              onPressed: battleButtonEnabled(disabled, autoRunning)
+                  ? onAutoToggle
+                  : null,
+              icon: Icon(
+                autoRunning ? Icons.stop_circle_outlined : Icons.autorenew,
+                size: 16,
+              ),
+              label: Text(autoRunning ? '중지' : '자동'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                foregroundColor: autoRunning
+                    ? const Color(0xffffa18f)
+                    : const Color(0xffffe5ad),
+                side: BorderSide(
+                  color: autoRunning
+                      ? const Color(0xffb85b4a)
+                      : const Color(0xff8c6a39),
+                ),
+              ),
+            ),
+            const SizedBox(width: 5),
             OutlinedButton.icon(
               onPressed: disabled ? null : onEndTurn,
               icon: const BattleSpriteIcon(
@@ -466,6 +492,9 @@ class BattleCommandBar extends StatelessWidget {
     ),
   );
 }
+
+bool battleButtonEnabled(bool disabled, bool autoRunning) =>
+    autoRunning || !disabled;
 
 class BattleLogPanel extends StatelessWidget {
   const BattleLogPanel({super.key, required this.battle});

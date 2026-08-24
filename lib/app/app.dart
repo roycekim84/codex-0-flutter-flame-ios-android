@@ -7850,6 +7850,7 @@ class _BattleScreenState extends State<BattleScreen> {
   late final BattleGame battleGame;
   bool _resultOpened = false;
   bool _actionLocked = false;
+  bool _autoBattleRunning = false;
 
   @override
   void initState() {
@@ -7861,6 +7862,12 @@ class _BattleScreenState extends State<BattleScreen> {
     widget.battle.state.selectedAttackerId = selectedAttackerId;
     widget.battle.state.selectedDefenderId = selectedDefenderId;
     battleGame = BattleGame(widget.battle.state, onCellTap: _onBattleCellTap);
+  }
+
+  @override
+  void dispose() {
+    _autoBattleRunning = false;
+    super.dispose();
   }
 
   void _onBattleCellTap(BattleCell cell) {
@@ -7984,6 +7991,74 @@ class _BattleScreenState extends State<BattleScreen> {
     if (!mounted) return;
     setState(() => _actionLocked = false);
     await _finishIfNeeded();
+  }
+
+  void _toggleAutoBattle() {
+    if (_autoBattleRunning) {
+      setState(() => _autoBattleRunning = false);
+      return;
+    }
+    if (widget.battle.state.finished) return;
+    setState(() => _autoBattleRunning = true);
+    _runAutoBattle();
+  }
+
+  Future<void> _runAutoBattle() async {
+    while (mounted && _autoBattleRunning && !widget.battle.state.finished) {
+      if (!widget.battle.state.isAttackerTurn) {
+        await Future<void>.delayed(const Duration(milliseconds: 240));
+        continue;
+      }
+
+      final attacker = widget.battle.state.attackerUnits
+          .where(
+            (unit) =>
+                unit.soldiers > 0 &&
+                !widget.battle.state.actedUnitIds.contains(unit.officerId),
+          )
+          .firstOrNull;
+      if (attacker == null) {
+        await _autoEndTurn();
+        continue;
+      }
+      final defender = widget.battle.state.defenderUnits
+          .where((unit) => unit.soldiers > 0)
+          .firstOrNull;
+      if (defender == null) break;
+
+      widget.battle.execute(BattleCommand.selectAttacker(attacker.officerId));
+      widget.battle.execute(BattleCommand.selectDefender(defender.officerId));
+      final event = widget.battle.execute(
+        BattleCommand.action(
+          type: BattleCommandType.attack,
+          attackerId: attacker.officerId,
+          defenderId: defender.officerId,
+        ),
+      );
+      if (!mounted) return;
+      setState(() {
+        selectedAttackerId = attacker.officerId;
+        selectedDefenderId = defender.officerId;
+      });
+      battleGame.refreshBoard();
+      await battleGame.playEvent(event);
+      await _finishIfNeeded();
+      await Future<void>.delayed(const Duration(milliseconds: 260));
+    }
+
+    if (mounted && _autoBattleRunning && widget.battle.state.finished) {
+      setState(() => _autoBattleRunning = false);
+    }
+  }
+
+  Future<void> _autoEndTurn() async {
+    if (!mounted || !_autoBattleRunning || widget.battle.state.finished) return;
+    final event = widget.battle.execute(const BattleCommand.endTurn());
+    setState(() {});
+    battleGame.refreshBoard();
+    await battleGame.playEvent(event);
+    await _finishIfNeeded();
+    await Future<void>.delayed(const Duration(milliseconds: 420));
   }
 
   Future<void> _finishIfNeeded() async {
@@ -8483,12 +8558,17 @@ class _BattleScreenState extends State<BattleScreen> {
                   ),
                 ),
               BattleCommandBar(
-                disabled: battle.finished || !battle.isAttackerTurn,
+                disabled:
+                    battle.finished ||
+                    !battle.isAttackerTurn ||
+                    _autoBattleRunning,
                 turnLabel: battle.phaseLabel,
                 onMove: _moveSelected,
                 onAction: _act,
                 onInfo: () => _act(BattleAction.information),
                 onEndTurn: _endBattleTurn,
+                onAutoToggle: _toggleAutoBattle,
+                autoRunning: _autoBattleRunning,
                 onRetreat: () {
                   widget.battle.retreat();
                   _finishIfNeeded();
