@@ -23,9 +23,27 @@ class KoreaScenario {
       'force_red': '고구려',
       'force_blue': '백제',
     };
+    final forceMetadata = <String, Map<String, dynamic>>{
+      'force_green': {
+        'bannerAssetId': 'banner_silla',
+        'capitalProvinceId': 'p_ash',
+        'mapColorValue': 0xff3d7d70,
+      },
+      'force_red': {
+        'bannerAssetId': 'banner_goguryeo',
+        'capitalProvinceId': 'p_crown',
+        'mapColorValue': 0xff9b443c,
+      },
+      'force_blue': {
+        'bannerAssetId': 'banner_baekje',
+        'capitalProvinceId': 'p_elm',
+        'mapColorValue': 0xff4b5f8f,
+      },
+    };
     for (final force in (scenario['forces'] as List).cast<Map>()) {
       final id = force['id'] as String;
       force['name'] = forceNames[id] ?? force['name'];
+      force.addAll(forceMetadata[id] ?? const {});
     }
 
     final provinceNames = [

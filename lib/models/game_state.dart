@@ -63,8 +63,11 @@ class ForceState {
     this.aiPersonality = AiPersonality.opportunist,
     this.mapColorValue = 0xff8b7355,
     this.bannerIndex = 0,
+    this.bannerAssetId,
+    this.capitalProvinceId,
   });
   final String id, name, rulerId;
+  final String? bannerAssetId, capitalProvinceId;
   final AiPersonality aiPersonality;
   final List<String> provinceIds, officerIds;
   final int mapColorValue, bannerIndex;
@@ -82,8 +85,12 @@ class OfficerState {
     required this.charisma,
     required this.loyalty,
     required this.status,
+    this.historicalStatus = 'fictional',
+    this.portraitAssetId,
   });
   final String id, name;
+  final String historicalStatus;
+  final String? portraitAssetId;
   String forceId, status;
   String provinceId;
   final int war, intelligence, charisma;
@@ -211,6 +218,8 @@ class GameState extends ChangeNotifier {
             'aiPersonality': f.aiPersonality.name,
             'mapColorValue': f.mapColorValue,
             'bannerIndex': f.bannerIndex,
+            'bannerAssetId': f.bannerAssetId,
+            'capitalProvinceId': f.capitalProvinceId,
           },
         )
         .toList(),
@@ -250,6 +259,8 @@ class GameState extends ChangeNotifier {
             'charisma': o.charisma,
             'loyalty': o.loyalty,
             'status': o.status,
+            'historicalStatus': o.historicalStatus,
+            'portraitAssetId': o.portraitAssetId,
           },
         )
         .toList(),
@@ -271,6 +282,8 @@ class GameState extends ChangeNotifier {
             ),
             mapColorValue: (x['mapColorValue'] as num?)?.toInt() ?? 0xff8b7355,
             bannerIndex: (x['bannerIndex'] as num?)?.toInt() ?? 0,
+            bannerAssetId: x['bannerAssetId'] as String?,
+            capitalProvinceId: x['capitalProvinceId'] as String?,
           ),
         )
         .toList();
@@ -335,6 +348,8 @@ class GameState extends ChangeNotifier {
               charisma: x['charisma'],
               loyalty: x['loyalty'],
               status: x['status'],
+              historicalStatus: x['historicalStatus'] as String? ?? 'fictional',
+              portraitAssetId: x['portraitAssetId'] as String?,
             ),
           )
           .toList(),
@@ -365,6 +380,8 @@ class GameState extends ChangeNotifier {
             ),
             mapColorValue: (x['mapColorValue'] as num?)?.toInt() ?? 0xff8b7355,
             bannerIndex: (x['bannerIndex'] as num?)?.toInt() ?? 0,
+            bannerAssetId: x['bannerAssetId'] as String?,
+            capitalProvinceId: x['capitalProvinceId'] as String?,
           ),
         )
         .toList();
@@ -420,6 +437,8 @@ class GameState extends ChangeNotifier {
               charisma: x['charisma'],
               loyalty: x['loyalty'],
               status: x['status'],
+              historicalStatus: x['historicalStatus'] as String? ?? 'fictional',
+              portraitAssetId: x['portraitAssetId'] as String?,
             ),
           )
           .toList(),

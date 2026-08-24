@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:codex_strategy/core/game_brand.dart';
 import 'package:codex_strategy/data/korea_scenario.dart';
+import 'package:codex_strategy/models/game_state.dart';
 
 void main() {
   test('해동삼국기 브랜딩과 시나리오 ID가 공통 상수로 정의된다', () {
@@ -29,5 +30,10 @@ void main() {
       (scenario['officers'] as List).first['historicalStatus'],
       'historical',
     );
+
+    final state = GameState.fromScenario(scenario);
+    expect(state.forces.first.bannerAssetId, 'banner_silla');
+    expect(state.forces.first.capitalProvinceId, 'p_ash');
+    expect(state.officers.first.portraitAssetId, 'portrait_officer_1');
   });
 }
