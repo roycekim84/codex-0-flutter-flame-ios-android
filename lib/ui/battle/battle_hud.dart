@@ -343,6 +343,8 @@ class BattleCommandBar extends StatelessWidget {
     required this.onEndTurn,
     this.onAutoToggle,
     this.autoRunning = false,
+    this.onAutoSpeedCycle,
+    this.autoSpeed = 1,
   });
   final bool disabled;
   final String turnLabel;
@@ -353,6 +355,8 @@ class BattleCommandBar extends StatelessWidget {
   final VoidCallback onEndTurn;
   final VoidCallback? onAutoToggle;
   final bool autoRunning;
+  final VoidCallback? onAutoSpeedCycle;
+  final int autoSpeed;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -380,6 +384,18 @@ class BattleCommandBar extends StatelessWidget {
                 ),
               ),
             ),
+            OutlinedButton(
+              onPressed: battleButtonEnabled(disabled, autoRunning)
+                  ? onAutoSpeedCycle
+                  : null,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
+                foregroundColor: const Color(0xffffe5ad),
+                side: const BorderSide(color: Color(0xff8c6a39)),
+              ),
+              child: Text('$autoSpeed배'),
+            ),
+            const SizedBox(width: 5),
             OutlinedButton.icon(
               onPressed: battleButtonEnabled(disabled, autoRunning)
                   ? onAutoToggle

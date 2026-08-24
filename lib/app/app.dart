@@ -7851,6 +7851,7 @@ class _BattleScreenState extends State<BattleScreen> {
   bool _resultOpened = false;
   bool _actionLocked = false;
   bool _autoBattleRunning = false;
+  int _autoBattleSpeed = 1;
 
   @override
   void initState() {
@@ -8003,10 +8004,36 @@ class _BattleScreenState extends State<BattleScreen> {
     _runAutoBattle();
   }
 
+  void _cycleAutoBattleSpeed() {
+    setState(() {
+      _autoBattleSpeed = switch (_autoBattleSpeed) {
+        1 => 2,
+        2 => 4,
+        _ => 1,
+      };
+    });
+  }
+
+  Duration get _autoStepDelay => Duration(
+    milliseconds: switch (_autoBattleSpeed) {
+      1 => 260,
+      2 => 130,
+      _ => 55,
+    },
+  );
+
+  Duration get _autoTurnDelay => Duration(
+    milliseconds: switch (_autoBattleSpeed) {
+      1 => 420,
+      2 => 210,
+      _ => 90,
+    },
+  );
+
   Future<void> _runAutoBattle() async {
     while (mounted && _autoBattleRunning && !widget.battle.state.finished) {
       if (!widget.battle.state.isAttackerTurn) {
-        await Future<void>.delayed(const Duration(milliseconds: 240));
+        await Future<void>.delayed(_autoStepDelay);
         continue;
       }
 
@@ -8075,7 +8102,7 @@ class _BattleScreenState extends State<BattleScreen> {
       battleGame.refreshBoard();
       await battleGame.playEvent(event);
       await _finishIfNeeded();
-      await Future<void>.delayed(const Duration(milliseconds: 260));
+      await Future<void>.delayed(_autoStepDelay);
     }
 
     if (mounted && _autoBattleRunning && widget.battle.state.finished) {
@@ -8107,7 +8134,7 @@ class _BattleScreenState extends State<BattleScreen> {
     battleGame.refreshBoard();
     await battleGame.playEvent(event);
     await _finishIfNeeded();
-    await Future<void>.delayed(const Duration(milliseconds: 420));
+    await Future<void>.delayed(_autoTurnDelay);
   }
 
   Future<void> _finishIfNeeded() async {
@@ -8618,6 +8645,8 @@ class _BattleScreenState extends State<BattleScreen> {
                 onEndTurn: _endBattleTurn,
                 onAutoToggle: _toggleAutoBattle,
                 autoRunning: _autoBattleRunning,
+                onAutoSpeedCycle: _cycleAutoBattleSpeed,
+                autoSpeed: _autoBattleSpeed,
                 onRetreat: () {
                   widget.battle.retreat();
                   _finishIfNeeded();
