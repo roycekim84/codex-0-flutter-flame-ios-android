@@ -75,7 +75,10 @@ class BattleGame extends FlameGame {
       ),
     );
     add(BattleMapComponent(battle, onCellTap: onCellTap));
-    for (final unit in [...battle.attackerUnits, ...battle.defenderUnits]) {
+    for (final unit in [
+      ...battle.attackerUnits,
+      ...battle.defenderUnits,
+    ].where((unit) => unit.soldiers > 0)) {
       final center = BattleMapLayout.worldCenter(
         BattleCell(unit.row, unit.column),
       );

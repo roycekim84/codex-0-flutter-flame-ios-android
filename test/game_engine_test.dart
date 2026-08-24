@@ -788,6 +788,28 @@ void main() {
     );
   });
 
+  test('대기는 적 부대 선택 없이도 해당 부대의 행동을 소비한다', () {
+    final engine = createEngine();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    final current = battle!;
+    final attacker = current.state.attackerUnits.first;
+    final event = current.execute(
+      BattleCommand.action(
+        type: BattleCommandType.wait,
+        attackerId: attacker.officerId,
+      ),
+    );
+
+    expect(event.logMessage, contains('대기'));
+    expect(current.state.actedUnitIds, contains(attacker.officerId));
+    expect(event.damage, 0);
+  });
+
   test('B4 선택 명령은 범위와 예상 피해를 제공하고 잘못된 선택을 거부한다', () {
     final engine = createEngine();
     final battle = engine.beginBattlePrepared(

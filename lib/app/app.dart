@@ -7934,9 +7934,25 @@ class _BattleScreenState extends State<BattleScreen> {
           BattleAction.wait => BattleCommandType.wait,
         },
         attackerId: selectedAttackerId ?? '',
-        defenderId: selectedDefenderId ?? '',
+        defenderId: action == BattleAction.wait ? null : selectedDefenderId,
       ),
     );
+    final state = widget.battle.state;
+    if (selectedAttackerId != null &&
+        !state.attackerUnits.any(
+          (unit) => unit.officerId == selectedAttackerId && unit.soldiers > 0,
+        )) {
+      selectedAttackerId = state.attackerUnits
+          .where((unit) => unit.soldiers > 0)
+          .firstOrNull
+          ?.officerId;
+    }
+    if (selectedDefenderId != null &&
+        !state.defenderUnits.any(
+          (unit) => unit.officerId == selectedDefenderId && unit.soldiers > 0,
+        )) {
+      selectedDefenderId = null;
+    }
     setState(() {});
     battleGame.refreshBoard();
     await battleGame.playEvent(event);
@@ -7950,12 +7966,14 @@ class _BattleScreenState extends State<BattleScreen> {
         .where((u) => u.officerId == selectedAttackerId)
         .firstOrNull;
     if (unit == null) return;
-    final cells = <List<int>>[];
-    for (var row = 0; row < BattleState.boardRows; row++) {
-      for (var column = 0; column < BattleState.boardColumns; column++) {
-        if (!widget.battle.state.isAdjacent(unit, row, column)) continue;
-        cells.add([row, column]);
-      }
+    final cells = widget.battle.state.movementCells
+        .map((cell) => [cell.row, cell.column])
+        .toList();
+    if (cells.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이동 가능한 칸이 없습니다.')));
+      return;
     }
     final target = await showDialog<List<int>>(
       context: context,
@@ -8569,6 +8587,7 @@ class _BattleScreenState extends State<BattleScreen> {
                             isExpanded: true,
                             value: selectedAttackerId,
                             items: battle.attackerUnits
+                                .where((u) => u.soldiers > 0)
                                 .map(
                                   (u) => DropdownMenuItem(
                                     value: u.officerId,
@@ -8604,6 +8623,7 @@ class _BattleScreenState extends State<BattleScreen> {
                             isExpanded: true,
                             value: selectedDefenderId,
                             items: battle.defenderUnits
+                                .where((u) => u.soldiers > 0)
                                 .map(
                                   (u) => DropdownMenuItem(
                                     value: u.officerId,

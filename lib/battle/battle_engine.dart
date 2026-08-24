@@ -15,7 +15,7 @@ class BattleEngine {
           return BattleResultEvent(command: command, logMessage: '적군 턴입니다.');
         }
         if (!state.attackerUnits.any(
-          (unit) => unit.officerId == command.attackerId,
+          (unit) => unit.officerId == command.attackerId && unit.soldiers > 0,
         )) {
           return BattleResultEvent(
             command: command,
@@ -68,7 +68,9 @@ class BattleEngine {
       case BattleCommandType.wait:
         final attackerId = command.attackerId ?? state.selectedAttackerId;
         final defenderId = command.defenderId ?? state.selectedDefenderId;
-        if (attackerId == null || defenderId == null) {
+        final action = _actionFor(command.type);
+        if (attackerId == null ||
+            (action != BattleAction.wait && defenderId == null)) {
           return BattleResultEvent(
             command: command,
             logMessage: '대상을 선택해야 합니다.',
@@ -80,7 +82,6 @@ class BattleEngine {
         final defender = state.defenderUnits
             .where((unit) => unit.officerId == defenderId)
             .firstOrNull;
-        final action = _actionFor(command.type);
         final needsAdjacentTarget = switch (action) {
           BattleAction.attack ||
           BattleAction.fire ||
@@ -176,7 +177,7 @@ class BattleEngine {
 
   BattleResultEvent act({
     required String attackerId,
-    required String defenderId,
+    String? defenderId,
     required BattleAction action,
     BattleCommand? command,
   }) {
@@ -206,13 +207,15 @@ class BattleEngine {
     final attacker = state.attackerUnits
         .where((u) => u.officerId == attackerId)
         .firstOrNull;
-    final defender = state.defenderUnits
-        .where((u) => u.officerId == defenderId)
-        .firstOrNull;
+    final defender = defenderId == null
+        ? null
+        : state.defenderUnits
+              .where((u) => u.officerId == defenderId)
+              .firstOrNull;
     if (attacker == null ||
-        defender == null ||
         attacker.soldiers <= 0 ||
-        defender.soldiers <= 0) {
+        (action != BattleAction.wait &&
+            (defender == null || defender.soldiers <= 0))) {
       return BattleResultEvent(
         command: eventCommand,
         logMessage: '유효하지 않은 부대입니다.',
@@ -237,14 +240,16 @@ class BattleEngine {
         attacker.soldiers *
             .14 *
             state.terrain.attackModifier *
-            (_hasAdjacentSupport(attacker, defender) ? 1.35 : 1.0),
+            (_hasAdjacentSupport(attacker, defender!) ? 1.35 : 1.0),
       BattleAction.information => 0,
       BattleAction.wait => 0,
     };
-    final damage = base.round().clamp(0, defender.soldiers).toInt();
-    defender.soldiers -= damage;
+    final damage = defender == null
+        ? 0
+        : base.round().clamp(0, defender.soldiers).toInt();
+    defender?.soldiers -= damage;
     if (action == BattleAction.fire) {
-      defender.burning = true;
+      defender!.burning = true;
       state.defenderMorale = (state.defenderMorale - 8).clamp(0, 100);
     }
     if (action == BattleAction.information) {
@@ -258,7 +263,7 @@ class BattleEngine {
     }
     if (action != BattleAction.wait && action != BattleAction.information) {
       attacker.soldiers =
-          (attacker.soldiers - (defender.soldiers * .03).round())
+          (attacker.soldiers - (defender!.soldiers * .03).round())
               .clamp(0, attacker.soldiers)
               .toInt();
     }
@@ -272,14 +277,16 @@ class BattleEngine {
     );
     _finishIfArmyDestroyed();
     state.actedUnitIds.add(attackerId);
-    final actionLog = _logFor(
-      action,
-      damage,
-      attackerName: attacker.name,
-      defenderName: defender.name,
-      attackerLoss: attackerBefore - attacker.soldiers,
-      moraleDelta: state.defenderMorale - defenderMoraleBefore,
-    );
+    final actionLog = action == BattleAction.wait
+        ? '${attacker.name} 대기'
+        : _logFor(
+            action,
+            damage,
+            attackerName: attacker.name,
+            defenderName: defender!.name,
+            attackerLoss: attackerBefore - attacker.soldiers,
+            moraleDelta: state.defenderMorale - defenderMoraleBefore,
+          );
     _record(actionLog);
     return BattleResultEvent(
       command: eventCommand,

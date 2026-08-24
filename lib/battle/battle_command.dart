@@ -52,7 +52,7 @@ class BattleCommand {
   const BattleCommand.action({
     required BattleCommandType type,
     required String attackerId,
-    required String defenderId,
+    String? defenderId,
   }) : this._(type: type, attackerId: attackerId, defenderId: defenderId);
 
   const BattleCommand.wait() : this._(type: BattleCommandType.wait);
