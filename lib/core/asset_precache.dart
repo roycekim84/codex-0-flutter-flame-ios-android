@@ -31,6 +31,9 @@ abstract final class AssetPrecache {
     AssetRepository.portraitOfficer1,
     AssetRepository.portraitOfficer7,
     AssetRepository.portraitOfficer13,
+    AssetRepository.portraitOfficer3,
+    AssetRepository.portraitOfficer8,
+    AssetRepository.portraitOfficer14,
     AssetRepository.eventArtStrip,
     ...AssetRepository.battleRendererAssets,
   ];

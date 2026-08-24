@@ -39,6 +39,12 @@ class AssetRepository {
       'assets/images/korea/portraits/portrait_officer_7.png';
   static const portraitOfficer13 =
       'assets/images/korea/portraits/portrait_officer_13.png';
+  static const portraitOfficer3 =
+      'assets/images/korea/portraits/portrait_officer_3.png';
+  static const portraitOfficer8 =
+      'assets/images/korea/portraits/portrait_officer_8.png';
+  static const portraitOfficer14 =
+      'assets/images/korea/portraits/portrait_officer_14.png';
   static const battleTerrainOverlay =
       'assets/images/battle_terrain_overlay.png';
   static const battleEffectsStrip = 'assets/images/battle_effects_strip.png';
@@ -79,9 +85,15 @@ class AssetRepository {
       'officer_1': portraitOfficer1,
       'officer_7': portraitOfficer7,
       'officer_13': portraitOfficer13,
+      'officer_3': portraitOfficer3,
+      'officer_8': portraitOfficer8,
+      'officer_14': portraitOfficer14,
       'portrait_officer_1': portraitOfficer1,
       'portrait_officer_7': portraitOfficer7,
       'portrait_officer_13': portraitOfficer13,
+      'portrait_officer_3': portraitOfficer3,
+      'portrait_officer_8': portraitOfficer8,
+      'portrait_officer_14': portraitOfficer14,
       'o_red_01': 'assets/images/officer_portrait_warrior.png',
       'o_red_02': 'assets/images/officer_portrait_strategist.png',
       'o_red_03': 'assets/images/officer_portrait_governor.png',

@@ -52,6 +52,18 @@ void main() {
       AssetRepository.officerPortrait('officer_13'),
       AssetRepository.portraitOfficer13,
     );
+    expect(
+      AssetRepository.officerPortrait('officer_3'),
+      AssetRepository.portraitOfficer3,
+    );
+    expect(
+      AssetRepository.officerPortrait('officer_8'),
+      AssetRepository.portraitOfficer8,
+    );
+    expect(
+      AssetRepository.officerPortrait('officer_14'),
+      AssetRepository.portraitOfficer14,
+    );
   });
 
   test('한국 세력 깃발은 독립 투명 PNG 자산으로 매핑된다', () {
