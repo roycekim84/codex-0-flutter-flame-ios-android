@@ -18,14 +18,14 @@ class BattleMapLayout {
   // Pointy-top hexagons: adjacent columns are sqrt(3)R apart and
   // adjacent rows are 1.5R apart. These values make the cells tessellate
   // without the visible gaps of the old presentation grid.
-  static const hexRadius = 24.0;
+  static const hexRadius = 21.5;
   static const _columnStep = hexRadius * 1.7320508075688772;
   static const _rowStep = hexRadius * 1.5;
   static final mapOffset = Vector2.zero();
 
   static Vector2 cellCenter(BattleCell cell) => Vector2(
-    20 + _columnStep * (cell.column + cell.row / 2),
-    74 + _rowStep * cell.row,
+    24 + _columnStep * (cell.column + cell.row / 2),
+    66 + _rowStep * cell.row,
   );
 
   static Vector2 worldCenter(BattleCell cell) => mapOffset + cellCenter(cell);

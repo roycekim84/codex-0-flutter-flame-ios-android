@@ -8378,6 +8378,7 @@ class _BattleScreenState extends State<BattleScreen> {
                                 isExpanded: true,
                                 value: selectedAttackerId,
                                 items: battle.attackerUnits
+                                    .where((u) => u.soldiers > 0)
                                     .map(
                                       (u) => DropdownMenuItem(
                                         value: u.officerId,
@@ -8387,9 +8388,17 @@ class _BattleScreenState extends State<BattleScreen> {
                                     .toList(),
                                 onChanged: battle.finished
                                     ? null
-                                    : (id) => setState(
-                                        () => selectedAttackerId = id,
-                                      ),
+                                    : (id) {
+                                        if (id == null) return;
+                                        widget.battle.execute(
+                                          BattleCommand.selectAttacker(id),
+                                        );
+                                        setState(() {
+                                          selectedAttackerId = id;
+                                          selectedDefenderId = null;
+                                        });
+                                        battleGame.refreshBoard();
+                                      },
                               ),
                             ),
                             const Padding(
@@ -8401,6 +8410,7 @@ class _BattleScreenState extends State<BattleScreen> {
                                 isExpanded: true,
                                 value: selectedDefenderId,
                                 items: battle.defenderUnits
+                                    .where((u) => u.soldiers > 0)
                                     .map(
                                       (u) => DropdownMenuItem(
                                         value: u.officerId,
@@ -8410,9 +8420,14 @@ class _BattleScreenState extends State<BattleScreen> {
                                     .toList(),
                                 onChanged: battle.finished
                                     ? null
-                                    : (id) => setState(
-                                        () => selectedDefenderId = id,
-                                      ),
+                                    : (id) {
+                                        if (id == null) return;
+                                        widget.battle.execute(
+                                          BattleCommand.selectDefender(id),
+                                        );
+                                        setState(() => selectedDefenderId = id);
+                                        battleGame.refreshBoard();
+                                      },
                               ),
                             ),
                           ],

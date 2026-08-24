@@ -740,6 +740,8 @@ void main() {
     expect(battle, isNotNull);
     final attacker = battle!.state.attackerUnits.first;
     final defender = battle.state.defenderUnits.first;
+    attacker.row = defender.row;
+    attacker.column = defender.column - 1;
 
     final event = battle.execute(
       BattleCommand.action(
@@ -759,6 +761,33 @@ void main() {
     expect(defender.burning, isTrue);
   });
 
+  test('전투 명령은 비인접 공격과 적군 턴 이동을 거부한다', () {
+    final engine = createEngine();
+    final battle = engine.beginBattlePrepared(
+      sourceProvinceId: 'p_briar',
+      targetProvinceId: 'p_crown',
+      committedSoldiers: 600,
+    );
+    expect(battle, isNotNull);
+    final current = battle!;
+    final attacker = current.state.attackerUnits.first;
+    final defender = current.state.defenderUnits.first;
+    final invalidAttack = current.execute(
+      BattleCommand.action(
+        type: BattleCommandType.attack,
+        attackerId: attacker.officerId,
+        defenderId: defender.officerId,
+      ),
+    );
+    expect(invalidAttack.logMessage, contains('인접한 적'));
+
+    current.state.turnPhase = BattleTurnPhase.defender;
+    expect(
+      current.moveUnit(attacker.officerId, attacker.row, attacker.column + 1),
+      isFalse,
+    );
+  });
+
   test('B4 선택 명령은 범위와 예상 피해를 제공하고 잘못된 선택을 거부한다', () {
     final engine = createEngine();
     final battle = engine.beginBattlePrepared(
@@ -769,6 +798,8 @@ void main() {
     expect(battle, isNotNull);
     final attacker = battle!.state.attackerUnits.first;
     final defender = battle.state.defenderUnits.first;
+    attacker.row = defender.row;
+    attacker.column = defender.column - 1;
 
     final invalid = battle.execute(
       const BattleCommand.selectAttacker('missing'),
@@ -795,6 +826,8 @@ void main() {
     expect(battle, isNotNull);
     final attacker = battle!.state.attackerUnits.first;
     final defender = battle.state.defenderUnits.first;
+    attacker.row = defender.row;
+    attacker.column = defender.column - 1;
     battle.execute(BattleCommand.selectAttacker(attacker.officerId));
     battle.execute(BattleCommand.selectDefender(defender.officerId));
     final event = battle.execute(
@@ -820,6 +853,8 @@ void main() {
     final current = battle!;
     final attacker = current.state.attackerUnits.first;
     final defender = current.state.defenderUnits.first;
+    attacker.row = defender.row;
+    attacker.column = defender.column - 1;
     current.execute(BattleCommand.selectAttacker(attacker.officerId));
     current.execute(BattleCommand.selectDefender(defender.officerId));
     current.execute(

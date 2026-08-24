@@ -36,7 +36,7 @@ class BattleEngine {
           return BattleResultEvent(command: command, logMessage: '적군 턴입니다.');
         }
         if (!state.defenderUnits.any(
-          (unit) => unit.officerId == command.defenderId,
+          (unit) => unit.officerId == command.defenderId && unit.soldiers > 0,
         )) {
           return BattleResultEvent(
             command: command,
@@ -74,10 +74,35 @@ class BattleEngine {
             logMessage: '대상을 선택해야 합니다.',
           );
         }
+        final attacker = state.attackerUnits
+            .where((unit) => unit.officerId == attackerId)
+            .firstOrNull;
+        final defender = state.defenderUnits
+            .where((unit) => unit.officerId == defenderId)
+            .firstOrNull;
+        final action = _actionFor(command.type);
+        final needsAdjacentTarget = switch (action) {
+          BattleAction.attack ||
+          BattleAction.fire ||
+          BattleAction.charge ||
+          BattleAction.cooperate => true,
+          BattleAction.information || BattleAction.wait => false,
+        };
+        if (needsAdjacentTarget &&
+            (attacker == null ||
+                defender == null ||
+                !state.isAdjacent(attacker, defender.row, defender.column))) {
+          return BattleResultEvent(
+            command: command,
+            attackerId: attackerId,
+            defenderId: defenderId,
+            logMessage: '인접한 적 부대만 공격할 수 있습니다.',
+          );
+        }
         return act(
           attackerId: attackerId,
           defenderId: defenderId,
-          action: _actionFor(command.type),
+          action: action,
           command: command,
         );
       case BattleCommandType.endTurn:
@@ -430,6 +455,7 @@ class BattleEngine {
 
   bool moveUnit(String unitId, int row, int column) {
     if (state.finished ||
+        !state.isAttackerTurn ||
         row < 0 ||
         row >= BattleState.boardRows ||
         column < 0 ||
@@ -439,7 +465,10 @@ class BattleEngine {
     final unit = state.attackerUnits
         .where((u) => u.officerId == unitId)
         .firstOrNull;
-    if (unit == null || !state.isAdjacent(unit, row, column)) {
+    if (unit == null ||
+        unit.soldiers <= 0 ||
+        state.actedUnitIds.contains(unitId) ||
+        !state.isAdjacent(unit, row, column)) {
       return false;
     }
     final occupied = [...state.attackerUnits, ...state.defenderUnits].any(
@@ -519,9 +548,7 @@ class BattleEngine {
         (unit) =>
             unit != attacker &&
             unit.soldiers > 0 &&
-            (unit.row - defender.row).abs() +
-                    (unit.column - defender.column).abs() <=
-                1,
+            state.isAdjacent(unit, defender.row, defender.column),
       );
 
   BattleResultEvent retreat({BattleCommand? command}) {

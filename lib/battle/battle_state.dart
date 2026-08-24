@@ -128,7 +128,11 @@ class BattleState {
   int? get expectedDamage {
     final attacker = selectedAttacker;
     final defender = selectedDefender;
-    if (attacker == null || defender == null) return null;
+    if (attacker == null ||
+        defender == null ||
+        !isAdjacent(attacker, defender.row, defender.column)) {
+      return null;
+    }
     return (attacker.soldiers * .14 * terrain.attackModifier)
         .round()
         .clamp(0, defender.soldiers)

@@ -102,20 +102,28 @@ class BattleGame extends FlameGame {
       ...battle.defenderUnits,
     ].any((unit) => unit.burning);
     if (hasFire) {
-      add(
-        SpriteComponent.fromImage(
-          effectsImage,
-          srcPosition: Vector2.zero(),
-          srcSize: Vector2(341, 437),
-          position: Vector2(156, 214),
-          size: Vector2(92, 116),
-          paint: Paint()
-            ..colorFilter = ColorFilter.mode(
-              Colors.white.withValues(alpha: .88),
-              BlendMode.modulate,
-            ),
-        ),
-      );
+      for (final unit in [
+        ...battle.attackerUnits,
+        ...battle.defenderUnits,
+      ].where((unit) => unit.burning && unit.soldiers > 0)) {
+        final center = BattleMapLayout.worldCenter(
+          BattleCell(unit.row, unit.column),
+        );
+        add(
+          SpriteComponent.fromImage(
+            effectsImage,
+            srcPosition: Vector2.zero(),
+            srcSize: Vector2(341, 437),
+            position: center - Vector2(46, 58),
+            size: Vector2(92, 116),
+            paint: Paint()
+              ..colorFilter = ColorFilter.mode(
+                Colors.white.withValues(alpha: .88),
+                BlendMode.modulate,
+              ),
+          ),
+        );
+      }
     }
   }
 }
