@@ -8406,7 +8406,11 @@ class _BattleScreenState extends State<BattleScreen> {
                                 .map(
                                   (u) => DropdownMenuItem(
                                     value: u.officerId,
-                                    child: Text('아군 · ${u.name} ${u.soldiers}'),
+                                    child: Text(
+                                      '아군 · ${u.name}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 )
                                 .toList(),
@@ -8437,7 +8441,11 @@ class _BattleScreenState extends State<BattleScreen> {
                                 .map(
                                   (u) => DropdownMenuItem(
                                     value: u.officerId,
-                                    child: Text('적군 · ${u.name} ${u.soldiers}'),
+                                    child: Text(
+                                      '적군 · ${u.name}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 )
                                 .toList(),
