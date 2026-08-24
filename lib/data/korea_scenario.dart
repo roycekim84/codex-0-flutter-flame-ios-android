@@ -89,6 +89,10 @@ class KoreaScenario {
       '도침',
       '구형왕',
       '장보고',
+      '김법민',
+      '김인문',
+      '을지문덕',
+      '흑치상지',
     ];
     final officers = (scenario['officers'] as List).cast<Map>();
     for (var i = 0; i < officers.length; i++) {
@@ -96,6 +100,60 @@ class KoreaScenario {
       officers[i]['historicalStatus'] = 'historical';
       officers[i]['portraitAssetId'] = 'portrait_officer_${i + 1}';
     }
+    officers.addAll([
+      {
+        'id': 'officer_21',
+        'name': '김법민',
+        'forceId': 'free',
+        'provinceId': 'free',
+        'war': 82,
+        'intelligence': 76,
+        'charisma': 84,
+        'loyalty': 0,
+        'status': 'FREE',
+        'historicalStatus': 'historical',
+        'portraitAssetId': 'portrait_officer_21',
+      },
+      {
+        'id': 'officer_22',
+        'name': '김인문',
+        'forceId': 'free',
+        'provinceId': 'free',
+        'war': 68,
+        'intelligence': 88,
+        'charisma': 86,
+        'loyalty': 0,
+        'status': 'FREE',
+        'historicalStatus': 'historical',
+        'portraitAssetId': 'portrait_officer_22',
+      },
+      {
+        'id': 'officer_23',
+        'name': '을지문덕',
+        'forceId': 'free',
+        'provinceId': 'free',
+        'war': 91,
+        'intelligence': 96,
+        'charisma': 72,
+        'loyalty': 0,
+        'status': 'FREE',
+        'historicalStatus': 'historical',
+        'portraitAssetId': 'portrait_officer_23',
+      },
+      {
+        'id': 'officer_24',
+        'name': '흑치상지',
+        'forceId': 'free',
+        'provinceId': 'free',
+        'war': 88,
+        'intelligence': 74,
+        'charisma': 79,
+        'loyalty': 0,
+        'status': 'FREE',
+        'historicalStatus': 'historical',
+        'portraitAssetId': 'portrait_officer_24',
+      },
+    ]);
     return scenario;
   }
 }

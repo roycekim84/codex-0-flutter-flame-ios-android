@@ -18,7 +18,7 @@ void main() {
     expect(scenario['year'], 642);
     expect(scenario['forces'], hasLength(3));
     expect(scenario['provinces'], hasLength(12));
-    expect(scenario['officers'], hasLength(20));
+    expect(scenario['officers'], hasLength(24));
     expect(
       (scenario['forces'] as List).map((force) => force['name']),
       containsAll(<String>['신라', '고구려', '백제']),
@@ -119,6 +119,22 @@ void main() {
     expect(
       AssetRepository.officerPortrait('officer_20'),
       AssetRepository.portraitOfficer20,
+    );
+    expect(
+      AssetRepository.officerPortrait('officer_21'),
+      AssetRepository.portraitOfficer21,
+    );
+    expect(
+      AssetRepository.officerPortrait('officer_22'),
+      AssetRepository.portraitOfficer22,
+    );
+    expect(
+      AssetRepository.officerPortrait('officer_23'),
+      AssetRepository.portraitOfficer23,
+    );
+    expect(
+      AssetRepository.officerPortrait('officer_24'),
+      AssetRepository.portraitOfficer24,
     );
   });
 

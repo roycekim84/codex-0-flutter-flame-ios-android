@@ -136,6 +136,10 @@ flutter:
     - assets/images/korea/portraits/portrait_officer_18.png
     - assets/images/korea/portraits/portrait_officer_19.png
     - assets/images/korea/portraits/portrait_officer_20.png
+    - assets/images/korea/portraits/portrait_officer_21.png
+    - assets/images/korea/portraits/portrait_officer_22.png
+    - assets/images/korea/portraits/portrait_officer_23.png
+    - assets/images/korea/portraits/portrait_officer_24.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
