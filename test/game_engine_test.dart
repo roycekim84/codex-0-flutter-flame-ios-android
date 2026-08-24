@@ -8,6 +8,7 @@ import 'package:codex_strategy/data/demo_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
 import 'package:codex_strategy/repositories/save_repository.dart';
 import 'package:codex_strategy/core/asset_repository.dart';
+import 'dart:math' as math;
 
 void main() {
   GameEngine createEngine() =>
@@ -98,6 +99,70 @@ void main() {
     }
     defeatEngine.endTurn();
     expect(defeatEngine.state.outcome, 'DEFEAT');
+  });
+
+  test('최단 통일 시뮬레이션은 연속 출병으로 승리 화면 조건까지 도달한다', () {
+    final stopwatch = Stopwatch()..start();
+    final engine = createEngine();
+    final player = engine.state.playerForce;
+    player.food = 99999;
+    for (final force in engine.state.forces.where((force) => force != player)) {
+      force.food = 0;
+      force.gold = 0;
+    }
+
+    var battles = 0;
+    while (!engine.state.gameOver &&
+        engine.state.playerProvinceIds.length < engine.state.provinces.length &&
+        battles < 20) {
+      final source = engine.state.provinces
+          .where(engine.state.isPlayerProvince)
+          .where((province) => province.soldiers >= 100)
+          .where(
+            (province) => engine.state.provinces.any(
+              (target) =>
+                  !engine.state.isPlayerProvince(target) &&
+                  province.adjacentProvinceIds.contains(target.id),
+            ),
+          )
+          .firstOrNull;
+      expect(source, isNotNull);
+      final target = engine.state.provinces.firstWhere(
+        (province) =>
+            !engine.state.isPlayerProvince(province) &&
+            source!.adjacentProvinceIds.contains(province.id),
+      );
+      target.soldiers = 1;
+      final battle = engine.beginBattlePrepared(
+        sourceProvinceId: source!.id,
+        targetProvinceId: target.id,
+        committedSoldiers: math.max(100, math.min(source.soldiers, 600)),
+      );
+      expect(battle, isNotNull);
+      battle!.state.attackerUnits.first.row =
+          battle.state.defenderUnits.first.row;
+      battle.state.attackerUnits.first.column =
+          battle.state.defenderUnits.first.column - 1;
+      battle.act(
+        attackerId: battle.state.attackerUnits.first.officerId,
+        defenderId: battle.state.defenderUnits.first.officerId,
+        action: BattleAction.attack,
+      );
+      expect(battle.state.finished, isTrue);
+      engine.resolveBattle(battle);
+      battles++;
+    }
+    engine.endTurn();
+    stopwatch.stop();
+
+    expect(engine.state.outcome, 'VICTORY');
+    expect(battles, 8);
+    // 실제 플레이 시간과 분리된 엔진 처리 시간도 기록해 회귀를 감시한다.
+    // ignore: avoid_print
+    print(
+      'FAST_UNIFICATION battles=$battles months=${engine.state.month} '
+      'elapsedMs=${stopwatch.elapsedMilliseconds}',
+    );
   });
 
   test('AI는 낮은 관계에서 선물 외교를 선택하고 로그를 남긴다', () {
