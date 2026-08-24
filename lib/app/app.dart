@@ -5467,7 +5467,7 @@ class _DomesticTradeScreenState extends State<_DomesticTradeScreen> {
         const SizedBox(width: 8),
         const Expanded(
           child: Text(
-            '내정 · 군량 거래 / 징세',
+            '내정 · 농정 / 군량 거래',
             style: TextStyle(
               color: Color(0xffffdfa0),
               fontSize: 18,
@@ -5484,21 +5484,21 @@ class _DomesticTradeScreenState extends State<_DomesticTradeScreen> {
     ),
   );
   Widget _resourceCard() => _panel(
-    '현재 자원',
+    '${widget.province.name} 자원',
     Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _CostMetric(
-          '금',
+          '국고',
           _formatNumber(widget.force.gold),
           const Color(0xffffdfa0),
         ),
         _CostMetric(
-          '군량',
+          '창고 군량',
           _formatNumber(widget.province.food),
           const Color(0xffe3c480),
         ),
-        _CostMetric('시장 시세', '1 : 0.9', const Color(0xff73d18b)),
+        _CostMetric('시장 시세', '군량 1 : 금 0.9', const Color(0xff73d18b)),
       ],
     ),
   );
