@@ -7,7 +7,7 @@
 | 항목 | 결과 | 비고 |
 |---|---|---|
 | `flutter analyze` | 통과 | 정적 분석 오류 없음 |
-| `flutter test` | 통과 | 순수 Dart·위젯 테스트 40개 |
+| `flutter test` | 통과 | 순수 Dart·위젯 테스트 50개 |
 | `flutter test --coverage` | 통과 | 커버리지 산출 성공 |
 | 전투 HUD 접근성 위젯 테스트 | 통과 | 375×812·390×844, 텍스트 스케일 150% |
 | Flutter Web release build | 통과 | GitHub Pages base href 포함 |
@@ -38,6 +38,17 @@
 - `flutter build ios --no-codesign` 디바이스 패키징은 로컬 Flutter SDK 바이너리에 포함된
   `com.apple.provenance` resource fork 때문에 실패했다. 프로젝트 소스 컴파일은
   `xcodebuild ... CODE_SIGNING_ALLOWED=NO` Simulator 빌드로 통과했다.
+
+## 최신 장기 실행 계측
+
+AI 월별 시뮬레이션 1,000개월 회귀 테스트에 실행 시간 계측을 추가했다. 테스트는 매월
+모든 세력의 금·군량·병력·민심 범위를 검증하며, 5초를 안정성 상한으로 사용한다.
+이 기준은 개발 머신의 순수 Dart 엔진 회귀용이며, 실제 iOS/Android 60fps와 초기
+이미지 디코딩 시간은 실기기 측정으로 별도 확인해야 한다.
+
+현재 전투 사운드 파일은 아직 저장소에 포함하지 않았다. 따라서 사운드 재생 코드는
+추가하지 않고, 행동별 Flame 연출과 상태 이벤트를 유지한 채 전용 효과음 에셋 도입
+단계에서 연결한다.
 
 ## 다음 QA 작업
 

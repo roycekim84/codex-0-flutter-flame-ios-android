@@ -121,7 +121,6 @@ void main() {
   });
 
   test('최단 통일 시뮬레이션은 연속 출병으로 승리 화면 조건까지 도달한다', () {
-    final stopwatch = Stopwatch()..start();
     final engine = createEngine();
     final player = engine.state.playerForce;
     player.food = 99999;
@@ -172,16 +171,8 @@ void main() {
       battles++;
     }
     engine.endTurn();
-    stopwatch.stop();
-
     expect(engine.state.outcome, 'VICTORY');
     expect(battles, 8);
-    // 실제 플레이 시간과 분리된 엔진 처리 시간도 기록해 회귀를 감시한다.
-    // ignore: avoid_print
-    print(
-      'FAST_UNIFICATION battles=$battles months=${engine.state.month} '
-      'elapsedMs=${stopwatch.elapsedMilliseconds}',
-    );
   });
 
   test('전투 밸런스 기준선은 병력 비율별 전투 결과를 기록한다', () {
@@ -739,6 +730,7 @@ void main() {
 
   test('AI 월별 시뮬레이션은 장기 진행 중 음수 자원을 만들지 않는다', () {
     final engine = createEngine();
+    final stopwatch = Stopwatch()..start();
     for (var i = 0; i < 1000 && !engine.state.gameOver; i++) {
       engine.endTurn();
       for (final force in engine.state.forces) {
@@ -750,6 +742,8 @@ void main() {
         expect(province.publicLoyalty, inInclusiveRange(0, 100));
       }
     }
+    stopwatch.stop();
+    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)));
   });
 
   test('전투는 매일 군량을 소모하고 보급 부족 시 사기를 낮춘다', () {
