@@ -95,8 +95,159 @@ class KoreaScenario {
       '흑치상지',
     ];
     final officers = (scenario['officers'] as List).cast<Map>();
+    const historicalDetails = <String, Map<String, dynamic>>{
+      '선덕여왕': {
+        'birthYear': 606,
+        'deathYear': 647,
+        'role': '신라 군주',
+        'sourceNote': '삼국사기 신라본기',
+      },
+      '김춘추': {
+        'birthYear': 603,
+        'deathYear': 661,
+        'role': '신라 외교관',
+        'sourceNote': '삼국사기 신라본기',
+      },
+      '김유신': {
+        'birthYear': 595,
+        'deathYear': 673,
+        'role': '신라 총사령관',
+        'sourceNote': '삼국사기 김유신 열전',
+      },
+      '알천': {
+        'birthYear': null,
+        'deathYear': null,
+        'role': '신라 장군',
+        'sourceNote': '삼국사기 신라본기',
+      },
+      '김품일': {
+        'birthYear': null,
+        'deathYear': null,
+        'role': '신라 장군',
+        'sourceNote': '삼국사기 신라본기',
+      },
+      '흠돌': {
+        'birthYear': null,
+        'deathYear': 681,
+        'role': '신라 귀족 장군',
+        'sourceNote': '삼국사기 신문왕본기',
+      },
+      '보장왕': {
+        'birthYear': null,
+        'deathYear': 682,
+        'role': '고구려 군주',
+        'sourceNote': '삼국사기 고구려본기',
+      },
+      '연개소문': {
+        'birthYear': 601,
+        'deathYear': 666,
+        'role': '고구려 대막리지',
+        'sourceNote': '삼국사기 개소문 열전',
+      },
+      '고건무': {
+        'birthYear': null,
+        'deathYear': null,
+        'role': '고구려 장군',
+        'sourceNote': '삼국사기 고구려본기',
+      },
+      '양만춘': {
+        'birthYear': null,
+        'deathYear': null,
+        'role': '고구려 성주',
+        'sourceNote': '삼국사기 고구려본기',
+      },
+      '검모잠': {
+        'birthYear': null,
+        'deathYear': 670,
+        'role': '고구려 부흥군 지휘관',
+        'sourceNote': '삼국사기 고구려본기',
+      },
+      '무력': {
+        'birthYear': null,
+        'deathYear': null,
+        'role': '고구려 변경 장군',
+        'sourceNote': '고구려 관련 사료 기록',
+      },
+      '의자왕': {
+        'birthYear': 599,
+        'deathYear': 660,
+        'role': '백제 군주',
+        'sourceNote': '삼국사기 백제본기',
+      },
+      '계백': {
+        'birthYear': null,
+        'deathYear': 660,
+        'role': '백제 장군',
+        'sourceNote': '삼국사기 계백 열전',
+      },
+      '성충': {
+        'birthYear': null,
+        'deathYear': null,
+        'role': '백제 좌평',
+        'sourceNote': '삼국사기 백제본기',
+      },
+      '흥수': {
+        'birthYear': null,
+        'deathYear': null,
+        'role': '백제 좌평',
+        'sourceNote': '삼국사기 백제본기',
+      },
+      '복신': {
+        'birthYear': null,
+        'deathYear': 663,
+        'role': '백제 부흥군 지휘관',
+        'sourceNote': '삼국사기 백제본기',
+      },
+      '도침': {
+        'birthYear': null,
+        'deathYear': 661,
+        'role': '백제 부흥군 승려 지휘관',
+        'sourceNote': '삼국사기 백제본기',
+      },
+      '구형왕': {
+        'birthYear': null,
+        'deathYear': null,
+        'role': '가야계 군주',
+        'sourceNote': '삼국사기 신라본기',
+      },
+      '장보고': {
+        'birthYear': null,
+        'deathYear': 846,
+        'role': '해상 지휘관',
+        'sourceNote': '삼국사기 장보고 열전',
+      },
+      '김법민': {
+        'birthYear': 626,
+        'deathYear': 681,
+        'role': '신라 왕자·장군',
+        'sourceNote': '삼국사기 문무왕본기',
+      },
+      '김인문': {
+        'birthYear': 629,
+        'deathYear': 694,
+        'role': '신라 외교관·장군',
+        'sourceNote': '삼국사기 김인문 열전',
+      },
+      '을지문덕': {
+        'birthYear': null,
+        'deathYear': null,
+        'role': '고구려 전략가',
+        'sourceNote': '삼국사기 을지문덕 열전',
+      },
+      '흑치상지': {
+        'birthYear': 630,
+        'deathYear': 689,
+        'role': '백제 장군',
+        'sourceNote': '구당서 흑치상지 열전',
+      },
+    };
     for (var i = 0; i < officers.length; i++) {
+      final name = historicalNames[i];
+      final details = historicalDetails[name]!;
       officers[i]['name'] = historicalNames[i];
+      officers[i]['historicalName'] = name;
+      officers[i]['displayName'] = name;
+      officers[i].addAll(details);
       officers[i]['historicalStatus'] = 'historical';
       officers[i]['portraitAssetId'] = 'portrait_officer_${i + 1}';
     }
@@ -113,6 +264,12 @@ class KoreaScenario {
         'status': 'FREE',
         'historicalStatus': 'historical',
         'portraitAssetId': 'portrait_officer_21',
+        'historicalName': '김법민',
+        'displayName': '김법민',
+        'birthYear': 626,
+        'deathYear': 681,
+        'role': '신라 왕자·장군',
+        'sourceNote': '삼국사기 문무왕본기',
       },
       {
         'id': 'officer_22',
@@ -126,6 +283,12 @@ class KoreaScenario {
         'status': 'FREE',
         'historicalStatus': 'historical',
         'portraitAssetId': 'portrait_officer_22',
+        'historicalName': '김인문',
+        'displayName': '김인문',
+        'birthYear': 629,
+        'deathYear': 694,
+        'role': '신라 외교관·장군',
+        'sourceNote': '삼국사기 김인문 열전',
       },
       {
         'id': 'officer_23',
@@ -139,6 +302,12 @@ class KoreaScenario {
         'status': 'FREE',
         'historicalStatus': 'historical',
         'portraitAssetId': 'portrait_officer_23',
+        'historicalName': '을지문덕',
+        'displayName': '을지문덕',
+        'birthYear': null,
+        'deathYear': null,
+        'role': '고구려 전략가',
+        'sourceNote': '삼국사기 을지문덕 열전',
       },
       {
         'id': 'officer_24',
@@ -152,6 +321,12 @@ class KoreaScenario {
         'status': 'FREE',
         'historicalStatus': 'historical',
         'portraitAssetId': 'portrait_officer_24',
+        'historicalName': '흑치상지',
+        'displayName': '흑치상지',
+        'birthYear': 630,
+        'deathYear': 689,
+        'role': '백제 장군',
+        'sourceNote': '구당서 흑치상지 열전',
       },
     ]);
     return scenario;

@@ -87,10 +87,17 @@ class OfficerState {
     required this.status,
     this.historicalStatus = 'fictional',
     this.portraitAssetId,
+    this.historicalName,
+    this.displayName,
+    this.birthYear,
+    this.deathYear,
+    this.role,
+    this.sourceNote,
   });
   final String id, name;
   final String historicalStatus;
-  final String? portraitAssetId;
+  final String? portraitAssetId, historicalName, displayName, role, sourceNote;
+  final int? birthYear, deathYear;
   String forceId, status;
   String provinceId;
   final int war, intelligence, charisma;
@@ -261,6 +268,12 @@ class GameState extends ChangeNotifier {
             'status': o.status,
             'historicalStatus': o.historicalStatus,
             'portraitAssetId': o.portraitAssetId,
+            'historicalName': o.historicalName,
+            'displayName': o.displayName,
+            'birthYear': o.birthYear,
+            'deathYear': o.deathYear,
+            'role': o.role,
+            'sourceNote': o.sourceNote,
           },
         )
         .toList(),
@@ -350,6 +363,12 @@ class GameState extends ChangeNotifier {
               status: x['status'],
               historicalStatus: x['historicalStatus'] as String? ?? 'fictional',
               portraitAssetId: x['portraitAssetId'] as String?,
+              historicalName: x['historicalName'] as String?,
+              displayName: x['displayName'] as String?,
+              birthYear: (x['birthYear'] as num?)?.toInt(),
+              deathYear: (x['deathYear'] as num?)?.toInt(),
+              role: x['role'] as String?,
+              sourceNote: x['sourceNote'] as String?,
             ),
           )
           .toList(),
@@ -439,6 +458,12 @@ class GameState extends ChangeNotifier {
               status: x['status'],
               historicalStatus: x['historicalStatus'] as String? ?? 'fictional',
               portraitAssetId: x['portraitAssetId'] as String?,
+              historicalName: x['historicalName'] as String?,
+              displayName: x['displayName'] as String?,
+              birthYear: (x['birthYear'] as num?)?.toInt(),
+              deathYear: (x['deathYear'] as num?)?.toInt(),
+              role: x['role'] as String?,
+              sourceNote: x['sourceNote'] as String?,
             ),
           )
           .toList(),

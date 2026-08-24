@@ -40,6 +40,10 @@ void main() {
     expect(state.forces.first.bannerAssetId, 'banner_silla');
     expect(state.forces.first.capitalProvinceId, 'p_ash');
     expect(state.officers.first.portraitAssetId, 'portrait_officer_1');
+    expect(state.officers.first.historicalName, '선덕여왕');
+    expect(state.officers.first.role, '신라 군주');
+    expect(state.officers[20].historicalName, '김법민');
+    expect(state.officers[20].sourceNote, contains('문무왕'));
     expect(
       AssetRepository.officerPortrait('officer_1'),
       AssetRepository.portraitOfficer1,
@@ -136,6 +140,18 @@ void main() {
       AssetRepository.officerPortrait('officer_24'),
       AssetRepository.portraitOfficer24,
     );
+  });
+
+  test('한국 장수의 역사 메타데이터는 저장과 복원에서 유지된다', () {
+    final state = GameState.fromScenario(KoreaScenario.create());
+    final restored = GameState.fromSaveMap(state.toSaveMap());
+    final officer = restored.officers.firstWhere((o) => o.id == 'officer_24');
+    expect(officer.historicalName, '흑치상지');
+    expect(officer.displayName, '흑치상지');
+    expect(officer.role, '백제 장군');
+    expect(officer.birthYear, 630);
+    expect(officer.deathYear, 689);
+    expect(officer.sourceNote, contains('구당서'));
   });
 
   test('한국 세력 깃발은 독립 투명 PNG 자산으로 매핑된다', () {

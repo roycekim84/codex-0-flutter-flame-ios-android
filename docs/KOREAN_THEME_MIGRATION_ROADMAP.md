@@ -57,10 +57,10 @@ UI가 바뀌어도 UI가 GameState를 직접 수정하지 않는 구조는 유�
 - [ ] 군주: 고구려·백제·신라·가야계 및 시나리오별 주요 군주를 우선 배치
 - [ ] 장수: 알려진 실존 인물을 중심으로 구성하고 사료가 부족한 인물은 별도 표기
 - [ ] 각 인물의 초기 소속·능력치·충성도·활동 시기·관직·관계를 입력
-- [ ] 인물 데이터에 `historicalName`, `displayName`, `birthYear`, `deathYear`, `factionId`, `portraitAssetId` 추가
+- [x] 인물 데이터에 `historicalName`, `displayName`, `birthYear`, `deathYear`, `factionId`, `portraitAssetId` 추가
 - [ ] 모든 데이터에 시대·세력·지역 하드코딩을 넣지 않고 JSON/Repository로 관리
-- [ ] 실제 역사·추정·창작 데이터를 구분하는 `historicalStatus` 필드 추가
-- [ ] 인물별 사료 출처·고증 메모를 별도 문서 또는 데이터 필드로 관리
+- [x] 실제 역사·추정·창작 데이터를 구분하는 `historicalStatus` 필드 추가
+- [x] 1차 24명 인물별 사료 출처·고증 메모를 데이터 필드로 관리
 - [ ] 데이터 로더, schema 검증, 중복 ID·잘못된 인접 관계 테스트 작성
 
 ### Phase 2 — 공통 UI 언어 전환
