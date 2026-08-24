@@ -8513,7 +8513,11 @@ class _BattleScreenState extends State<BattleScreen> {
                       onPressed: battle.finished
                           ? null
                           : () => _act(BattleAction.charge),
-                      icon: const Icon(Icons.flash_on, size: 13),
+                      icon: const BattleSpriteIcon(
+                        asset: AssetRepository.battleIconCharge,
+                        semanticLabel: '돌격',
+                        size: 15,
+                      ),
                       label: const Text('돌격'),
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xffffd995),
@@ -8525,7 +8529,11 @@ class _BattleScreenState extends State<BattleScreen> {
                       onPressed: battle.finished
                           ? null
                           : () => _act(BattleAction.cooperate),
-                      icon: const Icon(Icons.group_work, size: 13),
+                      icon: const BattleSpriteIcon(
+                        asset: AssetRepository.battleIconCooperate,
+                        semanticLabel: '협공',
+                        size: 15,
+                      ),
                       label: const Text('협공'),
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xffffd995),

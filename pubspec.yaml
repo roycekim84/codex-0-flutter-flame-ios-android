@@ -93,6 +93,19 @@ flutter:
     - assets/images/battle_terrain_overlay.png
     - assets/images/battle_effects_strip.png
     - assets/images/event_art_strip.png
+    - assets/images/battle_ui_icon_sprites.png
+    - assets/images/battle_icon_terrain.png
+    - assets/images/battle_icon_weather.png
+    - assets/images/battle_icon_supply.png
+    - assets/images/battle_icon_morale.png
+    - assets/images/battle_icon_move.png
+    - assets/images/battle_icon_attack.png
+    - assets/images/battle_icon_tactic.png
+    - assets/images/battle_icon_information.png
+    - assets/images/battle_icon_wait.png
+    - assets/images/battle_icon_retreat.png
+    - assets/images/battle_icon_charge.png
+    - assets/images/battle_icon_cooperate.png
     - assets/images/personnel_search_art.png
 
   # To add assets to your application, add an assets section, like this:

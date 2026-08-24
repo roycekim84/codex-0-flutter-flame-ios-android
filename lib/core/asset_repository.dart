@@ -33,6 +33,20 @@ class AssetRepository {
       'assets/images/battle_terrain_overlay.png';
   static const battleEffectsStrip = 'assets/images/battle_effects_strip.png';
   static const eventArtStrip = 'assets/images/event_art_strip.png';
+  static const battleUiIconSprites = 'assets/images/battle_ui_icon_sprites.png';
+  static const battleIconTerrain = 'assets/images/battle_icon_terrain.png';
+  static const battleIconWeather = 'assets/images/battle_icon_weather.png';
+  static const battleIconSupply = 'assets/images/battle_icon_supply.png';
+  static const battleIconMorale = 'assets/images/battle_icon_morale.png';
+  static const battleIconMove = 'assets/images/battle_icon_move.png';
+  static const battleIconAttack = 'assets/images/battle_icon_attack.png';
+  static const battleIconTactic = 'assets/images/battle_icon_tactic.png';
+  static const battleIconInformation =
+      'assets/images/battle_icon_information.png';
+  static const battleIconWait = 'assets/images/battle_icon_wait.png';
+  static const battleIconRetreat = 'assets/images/battle_icon_retreat.png';
+  static const battleIconCharge = 'assets/images/battle_icon_charge.png';
+  static const battleIconCooperate = 'assets/images/battle_icon_cooperate.png';
 
   /// Assets decoded by the Flame battle renderer.
   ///

@@ -146,14 +146,30 @@ class BattleInfoPanel extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Expanded(child: _stat('지형', _terrainLabel(battle.terrain))),
+                Expanded(
+                  child: _stat(
+                    '지형',
+                    _terrainLabel(battle.terrain),
+                    AssetRepository.battleIconTerrain,
+                    '지형 아이콘',
+                  ),
+                ),
                 _divider(),
-                Expanded(child: _stat('날씨', '맑음')),
+                Expanded(
+                  child: _stat(
+                    '날씨',
+                    '맑음',
+                    AssetRepository.battleIconWeather,
+                    '맑은 날씨 아이콘',
+                  ),
+                ),
                 _divider(),
                 Expanded(
                   child: _stat(
                     '군량',
                     '${_format(battle.attackerFood)} / ${_format(battle.dailySupplyCost)}',
+                    AssetRepository.battleIconSupply,
+                    '군량 아이콘',
                   ),
                 ),
                 _divider(),
@@ -161,6 +177,8 @@ class BattleInfoPanel extends StatelessWidget {
                   child: _stat(
                     '사기',
                     '${battle.attackerMorale} / ${battle.defenderMorale}',
+                    AssetRepository.battleIconMorale,
+                    '사기 아이콘',
                     warning: shortage,
                   ),
                 ),
@@ -272,12 +290,29 @@ class BattleInfoPanel extends StatelessWidget {
     ],
   );
 
-  Widget _stat(String label, String value, {bool warning = false}) => Column(
+  Widget _stat(
+    String label,
+    String value,
+    String iconAsset,
+    String iconLabel, {
+    bool warning = false,
+  }) => Column(
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
-      Text(
-        label,
-        style: const TextStyle(color: Color(0xffb99a65), fontSize: 11),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          BattleSpriteIcon(
+            asset: iconAsset,
+            semanticLabel: iconLabel,
+            size: 15,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xffb99a65), fontSize: 10),
+          ),
+        ],
       ),
       Text(
         value,
@@ -343,7 +378,11 @@ class BattleCommandBar extends StatelessWidget {
             ),
             OutlinedButton.icon(
               onPressed: disabled ? null : onEndTurn,
-              icon: const Icon(Icons.hourglass_bottom, size: 16),
+              icon: const BattleSpriteIcon(
+                asset: AssetRepository.battleIconWait,
+                semanticLabel: '턴 종료',
+                size: 16,
+              ),
               label: const Text('턴 종료'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
@@ -359,24 +398,36 @@ class BattleCommandBar extends StatelessWidget {
         const SizedBox(height: 4),
         Row(
           children: [
-            _button('이동', Icons.directions_run, disabled ? null : onMove),
+            _button(
+              '이동',
+              AssetRepository.battleIconMove,
+              disabled ? null : onMove,
+            ),
             _button(
               '공격',
-              Icons.gavel,
+              AssetRepository.battleIconAttack,
               disabled ? null : () => onAction(BattleAction.attack),
             ),
             _button(
               '책략',
-              Icons.local_fire_department,
+              AssetRepository.battleIconTactic,
               disabled ? null : () => onAction(BattleAction.fire),
             ),
-            _button('정보', Icons.visibility, disabled ? null : onInfo),
+            _button(
+              '정보',
+              AssetRepository.battleIconInformation,
+              disabled ? null : onInfo,
+            ),
             _button(
               '대기',
-              Icons.pause,
+              AssetRepository.battleIconWait,
               disabled ? null : () => onAction(BattleAction.wait),
             ),
-            _button('퇴각', Icons.undo, disabled ? null : onRetreat),
+            _button(
+              '퇴각',
+              AssetRepository.battleIconRetreat,
+              disabled ? null : onRetreat,
+            ),
           ],
         ),
       ],
@@ -385,7 +436,7 @@ class BattleCommandBar extends StatelessWidget {
 
   Widget _button(
     String label,
-    IconData icon,
+    String iconAsset,
     VoidCallback? onPressed, {
     bool selected = false,
   }) => Expanded(
@@ -407,7 +458,7 @@ class BattleCommandBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 19),
+            BattleSpriteIcon(asset: iconAsset, semanticLabel: label, size: 19),
             Text(label, style: const TextStyle(fontSize: 11)),
           ],
         ),
@@ -433,7 +484,7 @@ class BattleLogPanel extends StatelessWidget {
           border: Border(top: BorderSide(color: Color(0xff4f402a))),
         ),
         child: const Text(
-          '전황 기록 없음 · 부대를 선택해 행동을 시작하십시오',
+          '전황 기록 없음',
           style: TextStyle(color: Color(0xff9d8967), fontSize: 10),
         ),
       );
@@ -460,6 +511,26 @@ class BattleLogPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+class BattleSpriteIcon extends StatelessWidget {
+  const BattleSpriteIcon({
+    super.key,
+    required this.asset,
+    required this.semanticLabel,
+    this.size = 18,
+  });
+
+  final String asset;
+  final String semanticLabel;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: semanticLabel,
+    image: true,
+    child: Image.asset(asset, width: size, height: size, fit: BoxFit.contain),
+  );
 }
 
 BoxDecoration _box(Color color) => BoxDecoration(
