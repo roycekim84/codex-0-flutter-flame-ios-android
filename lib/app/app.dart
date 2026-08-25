@@ -1515,8 +1515,11 @@ class _GameScreenState extends State<GameScreen> {
             );
             await Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) =>
-                    _EnemyForceInfoScreen(state: engine.state, force: force),
+                builder: (_) => _EnemyForceInfoScreen(
+                  state: engine.state,
+                  force: force,
+                  revealed: true,
+                ),
               ),
             );
           },
@@ -6261,7 +6264,7 @@ class _ForceInfoScreen extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                '군주 ${ruler.name}',
+                '군주 ${ruler.displayName ?? ruler.name}',
                 style: const TextStyle(color: Color(0xffd6a85d), fontSize: 13),
               ),
               const SizedBox(height: 5),
@@ -6339,7 +6342,7 @@ class _ForceInfoScreen extends StatelessWidget {
         _GeneratedPortrait(seed: officer.id, size: 48),
         const SizedBox(height: 3),
         Text(
-          officer.name,
+          officer.displayName ?? officer.name,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: Color(0xffe3c480), fontSize: 11),
         ),
@@ -6377,9 +6380,14 @@ class _ForceInfoScreen extends StatelessWidget {
 }
 
 class _EnemyForceInfoScreen extends StatelessWidget {
-  const _EnemyForceInfoScreen({required this.state, required this.force});
+  const _EnemyForceInfoScreen({
+    required this.state,
+    required this.force,
+    this.revealed = false,
+  });
   final GameState state;
   final ForceState force;
+  final bool revealed;
 
   @override
   Widget build(BuildContext context) {
@@ -6396,6 +6404,11 @@ class _EnemyForceInfoScreen extends StatelessWidget {
         ? 0
         : (officers.fold<int>(0, (sum, o) => sum + o.loyalty) / officers.length)
               .round();
+    final hasRevealedProvince =
+        revealed ||
+        state.revealedProvinceIds.any(
+          (id) => provinces.any((province) => province.id == id),
+        );
     return Scaffold(
       backgroundColor: const Color(0xff090807),
       body: SafeArea(
@@ -6486,17 +6499,21 @@ class _EnemyForceInfoScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '군주 ${ruler.name}',
+                                  '군주 ${ruler.displayName ?? ruler.name}',
                                   style: const TextStyle(
                                     color: Color(0xffd6a85d),
                                     fontSize: 13,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                const Text(
-                                  '첩보로 확인된 정보',
+                                Text(
+                                  hasRevealedProvince
+                                      ? '첩보로 확인된 정보'
+                                      : '미확인 세력 정보',
                                   style: TextStyle(
-                                    color: Color(0xff73d18b),
+                                    color: hasRevealedProvince
+                                        ? const Color(0xff73d18b)
+                                        : const Color(0xffd37b5d),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -6511,57 +6528,79 @@ class _EnemyForceInfoScreen extends StatelessWidget {
                       '기본 정보',
                       Column(
                         children: [
-                          _line('총 병력', _formatNumber(soldiers)),
-                          _line('군량', _formatNumber(food)),
-                          _line('장수 수', '${officers.length}명'),
-                          _line('평균 충성', '$averageLoyalty'),
+                          _line(
+                            '총 병력',
+                            hasRevealedProvince
+                                ? _formatNumber(soldiers)
+                                : '????',
+                          ),
+                          _line(
+                            '군량',
+                            hasRevealedProvince ? _formatNumber(food) : '????',
+                          ),
+                          _line(
+                            '장수 수',
+                            hasRevealedProvince ? '${officers.length}명' : '??명',
+                          ),
+                          _line(
+                            '평균 충성',
+                            hasRevealedProvince ? '$averageLoyalty' : '??',
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 10),
                     _panel(
                       '주요 장수',
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: officers
-                            .take(6)
-                            .map(
-                              (o) => Container(
-                                width: 82,
-                                padding: const EdgeInsets.all(5),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x332c2115),
-                                  border: Border.all(
-                                    color: const Color(0xff6d5230),
-                                  ),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Column(
-                                  children: [
-                                    _GeneratedPortrait(seed: o.id, size: 48),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      o.name,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Color(0xffe3c480),
-                                        fontSize: 11,
+                      hasRevealedProvince
+                          ? Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: officers
+                                  .take(6)
+                                  .map(
+                                    (o) => Container(
+                                      width: 82,
+                                      padding: const EdgeInsets.all(5),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0x332c2115),
+                                        border: Border.all(
+                                          color: const Color(0xff6d5230),
+                                        ),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          _GeneratedPortrait(
+                                            seed: o.id,
+                                            size: 48,
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            o.displayName ?? o.name,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Color(0xffe3c480),
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                          Text(
+                                            '충성 ${o.loyalty}',
+                                            style: const TextStyle(
+                                              color: Color(0xffaa9670),
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    Text(
-                                      '충성 ${o.loyalty}',
-                                      style: const TextStyle(
-                                        color: Color(0xffaa9670),
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                  )
+                                  .toList(),
                             )
-                            .toList(),
-                      ),
+                          : const Text(
+                              '잠입 전에는 적 장수 정보가 공개되지 않습니다.',
+                              style: TextStyle(color: Color(0xffc1ab82)),
+                            ),
                     ),
                     const SizedBox(height: 10),
                     _panel(
@@ -6571,7 +6610,10 @@ class _EnemyForceInfoScreen extends StatelessWidget {
                             .map(
                               (p) => _line(
                                 p.name,
-                                '${_formatNumber(p.soldiers)}명',
+                                state.revealedProvinceIds.contains(p.id) ||
+                                        revealed
+                                    ? '${_formatNumber(p.soldiers)}명'
+                                    : '????명',
                               ),
                             )
                             .toList(),
