@@ -9597,12 +9597,44 @@ class _OfficerListScreen extends StatefulWidget {
 
 class _OfficerListScreenState extends State<_OfficerListScreen> {
   String? provinceId;
+  String statusFilter = 'all';
 
-  List<OfficerState> get officers => widget.state.officers.where((officer) {
-    if (officer.forceId != widget.state.playerForceId) return false;
-    if (provinceId == null) return true;
-    return officer.provinceId == provinceId;
-  }).toList();
+  List<OfficerState> get officers {
+    final result = widget.state.officers.where((officer) {
+      if (officer.forceId != widget.state.playerForceId) return false;
+      if (provinceId != null && officer.provinceId != provinceId) return false;
+      final province = widget.state.provinces
+          .where((p) => p.id == officer.provinceId)
+          .firstOrNull;
+      if (statusFilter == 'governor' && province?.governorId != officer.id) {
+        return false;
+      }
+      if (statusFilter == 'officer' && province?.governorId == officer.id) {
+        return false;
+      }
+      return true;
+    }).toList();
+    result.sort((a, b) {
+      final aProvince = widget.state.provinces
+          .where((p) => p.id == a.provinceId)
+          .firstOrNull;
+      final bProvince = widget.state.provinces
+          .where((p) => p.id == b.provinceId)
+          .firstOrNull;
+      final aRank = a.id == widget.state.playerForce.rulerId
+          ? 0
+          : aProvince?.governorId == a.id
+          ? 1
+          : 2;
+      final bRank = b.id == widget.state.playerForce.rulerId
+          ? 0
+          : bProvince?.governorId == b.id
+          ? 1
+          : 2;
+      return aRank != bRank ? aRank - bRank : b.loyalty - a.loyalty;
+    });
+    return result;
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -9652,6 +9684,26 @@ class _OfficerListScreenState extends State<_OfficerListScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: statusFilter,
+                      dropdownColor: const Color(0xff2b2117),
+                      style: const TextStyle(color: Color(0xffffdfa0)),
+                      decoration: _moveDecoration('역할'),
+                      items: const [
+                        DropdownMenuItem(value: 'all', child: Text('전체 장수')),
+                        DropdownMenuItem(value: 'governor', child: Text('태수')),
+                        DropdownMenuItem(
+                          value: 'officer',
+                          child: Text('일반 장수'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) setState(() => statusFilter = value);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
                     '${officers.length}명',
                     style: const TextStyle(
@@ -9751,7 +9803,7 @@ class _OfficerListScreenState extends State<_OfficerListScreen> {
                     children: [
                       Flexible(
                         child: Text(
-                          officer.name,
+                          officer.displayName ?? officer.name,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Color(0xffffdfa0),
@@ -9774,12 +9826,22 @@ class _OfficerListScreenState extends State<_OfficerListScreen> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${province?.name ?? '재야'} · ${officer.status}',
+                    '${province?.name ?? '재야'} · ${isGovernor ? '태수' : _officerStatusLabel(officer.status)}',
                     style: const TextStyle(
                       color: Color(0xffbda783),
                       fontSize: 11,
                     ),
                   ),
+                  if (officer.role != null) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      officer.role!,
+                      style: const TextStyle(
+                        color: Color(0xffa98b5b),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 6),
                   Text(
                     'WAR ${officer.war}   INT ${officer.intelligence}   CHA ${officer.charisma}',
@@ -10000,7 +10062,7 @@ class _OfficerDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                officer.name,
+                officer.displayName ?? officer.name,
                 style: const TextStyle(
                   color: Color(0xffffdfa0),
                   fontSize: 25,
@@ -10014,9 +10076,19 @@ class _OfficerDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '${province?.name ?? '재야'} · ${governor ? '태수' : officer.status}',
+                '${province?.name ?? '재야'} · ${governor ? '태수' : _officerStatusLabel(officer.status)}',
                 style: const TextStyle(color: Color(0xffc1ab82), fontSize: 12),
               ),
+              if (officer.role != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  officer.role!,
+                  style: const TextStyle(
+                    color: Color(0xffa98b5b),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -10164,6 +10236,17 @@ class _OfficerSheet extends StatelessWidget {
 String _portraitAsset(String seed) {
   return AssetRepository.officerPortrait(seed);
 }
+
+String _officerStatusLabel(String status) => switch (status) {
+  'RULER' => '군주',
+  'GOVERNOR' => '태수',
+  'OFFICER' => '장수',
+  'FREE' => '재야',
+  'CAPTIVE' => '포로',
+  'EXILE' => '유배',
+  'DEAD' => '사망',
+  _ => status,
+};
 
 int _eventArtIndex(String event) {
   if (event.contains('홍수')) return 1;
