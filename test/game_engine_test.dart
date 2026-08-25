@@ -37,6 +37,18 @@ void main() {
     expect(errors.any((error) => error.contains('missing_province')), isTrue);
   });
 
+  test('역사 인물 데이터는 출처·초상화·연도 필드를 검증한다', () {
+    final scenario = KoreaScenario.create();
+    final officers = scenario['officers'] as List;
+    final first = officers.first as Map;
+    first['sourceNote'] = '';
+    first['deathYear'] = first['birthYear'];
+
+    final errors = ScenarioValidator.validate(scenario);
+    expect(errors.any((error) => error.contains('sourceNote')), isTrue);
+    expect(errors.any((error) => error.contains('출생 연도')), isTrue);
+  });
+
   test('한국 깃발·초상화 에셋은 실제 파일로 등록되어 있다', () {
     expect(AssetRepository.koreanFactionAssets, hasLength(3));
     expect(AssetRepository.koreanPortraitAssets, hasLength(24));

@@ -61,6 +61,31 @@ abstract final class ScenarioValidator {
       if (province != 'free' && !provinceIds.contains(province)) {
         errors.add('장수 $id: 소속 지역 $province 이(가) 없습니다.');
       }
+      if (officer['historicalStatus'] == 'historical') {
+        for (final field in [
+          'historicalName',
+          'displayName',
+          'sourceNote',
+          'portraitAssetId',
+        ]) {
+          final value = officer[field];
+          if (value is! String || value.trim().isEmpty) {
+            errors.add('장수 $id: 역사 인물 필드 $field 이(가) 없습니다.');
+          }
+        }
+        final birth = officer['birthYear'];
+        final death = officer['deathYear'];
+        if (birth is int && death is int && birth >= death) {
+          errors.add('장수 $id: 출생 연도와 사망 연도 순서가 잘못되었습니다.');
+        }
+      }
+      for (final field in ['war', 'intelligence', 'charisma', 'loyalty']) {
+        final value = officer[field];
+        final maximum = field == 'loyalty' ? 100 : 100;
+        if (value is! int || value < 0 || value > maximum) {
+          errors.add('장수 $id: $field 값이 범위를 벗어났습니다.');
+        }
+      }
     }
 
     // These references are optional in older prototype packs, but when a
