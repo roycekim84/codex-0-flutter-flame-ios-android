@@ -9,12 +9,32 @@ import 'package:codex_strategy/models/game_state.dart';
 import 'package:codex_strategy/repositories/save_repository.dart';
 import 'package:codex_strategy/core/asset_repository.dart';
 import 'package:codex_strategy/core/difficulty.dart';
+import 'package:codex_strategy/core/scenario_validator.dart';
+import 'package:codex_strategy/data/korea_scenario.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 
 void main() {
   GameEngine createEngine() =>
       GameEngine(GameState.fromScenario(DemoScenario.create()));
+
+  test('한국·가상 시나리오 데이터팩은 엔진 경계 검증을 통과한다', () {
+    expect(ScenarioValidator.validate(DemoScenario.create()), isEmpty);
+    expect(ScenarioValidator.validate(KoreaScenario.create()), isEmpty);
+  });
+
+  test('시나리오 검증기는 잘못된 인접 지역과 중복 ID를 잡는다', () {
+    final scenario = DemoScenario.create();
+    final provinces = scenario['provinces'] as List;
+    (provinces.first as Map)['adjacentProvinceIds'] = ['missing_province'];
+    (scenario['officers'] as List).add(
+      Map<String, dynamic>.from((scenario['officers'] as List).first as Map),
+    );
+
+    final errors = ScenarioValidator.validate(scenario);
+    expect(errors.any((error) => error.contains('중복 ID')), isTrue);
+    expect(errors.any((error) => error.contains('missing_province')), isTrue);
+  });
 
   test('전투 렌더러는 투명 부대 스프라이트와 공용 레이어를 사용한다', () {
     expect(

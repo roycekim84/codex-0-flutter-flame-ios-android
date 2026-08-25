@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'demo_scenario.dart';
 import '../core/game_brand.dart';
+import '../core/scenario_validator.dart';
 
 /// First Korean setting data pack.
 ///
@@ -329,6 +330,7 @@ class KoreaScenario {
         'sourceNote': '구당서 흑치상지 열전',
       },
     ]);
+    ScenarioValidator.validateOrThrow(scenario);
     return scenario;
   }
 }
