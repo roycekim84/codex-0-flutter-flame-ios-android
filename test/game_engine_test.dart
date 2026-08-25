@@ -13,6 +13,7 @@ import 'package:codex_strategy/core/scenario_validator.dart';
 import 'package:codex_strategy/data/korea_scenario.dart';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:io';
 
 void main() {
   GameEngine createEngine() =>
@@ -34,6 +35,26 @@ void main() {
     final errors = ScenarioValidator.validate(scenario);
     expect(errors.any((error) => error.contains('중복 ID')), isTrue);
     expect(errors.any((error) => error.contains('missing_province')), isTrue);
+  });
+
+  test('한국 깃발·초상화 에셋은 실제 파일로 등록되어 있다', () {
+    expect(AssetRepository.koreanFactionAssets, hasLength(3));
+    expect(AssetRepository.koreanPortraitAssets, hasLength(24));
+    for (final asset in [
+      ...AssetRepository.koreanFactionAssets,
+      ...AssetRepository.koreanPortraitAssets,
+    ]) {
+      expect(File(asset).existsSync(), isTrue, reason: asset);
+    }
+  });
+
+  test('투명 스프라이트는 PNG 알파 채널을 유지한다', () {
+    for (final asset in AssetRepository.transparentSpriteAssets) {
+      final bytes = File(asset).readAsBytesSync();
+      expect(bytes.length, greaterThan(25), reason: asset);
+      // PNG IHDR color type: 4 = grayscale+alpha, 6 = RGBA.
+      expect({4, 6}, contains(bytes[25]), reason: asset);
+    }
   });
 
   test('전투 렌더러는 투명 부대 스프라이트와 공용 레이어를 사용한다', () {

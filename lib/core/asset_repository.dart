@@ -81,6 +81,47 @@ class AssetRepository {
       'assets/images/korea/portraits/portrait_officer_23.png';
   static const portraitOfficer24 =
       'assets/images/korea/portraits/portrait_officer_24.png';
+
+  static const koreanFactionAssets = <String>[
+    bannerSilla,
+    bannerGoguryeo,
+    bannerBaekje,
+  ];
+
+  static const koreanPortraitAssets = <String>[
+    portraitOfficer1,
+    portraitOfficer2,
+    portraitOfficer3,
+    portraitOfficer4,
+    portraitOfficer5,
+    portraitOfficer6,
+    portraitOfficer7,
+    portraitOfficer8,
+    portraitOfficer9,
+    portraitOfficer10,
+    portraitOfficer11,
+    portraitOfficer12,
+    portraitOfficer13,
+    portraitOfficer14,
+    portraitOfficer15,
+    portraitOfficer16,
+    portraitOfficer17,
+    portraitOfficer18,
+    portraitOfficer19,
+    portraitOfficer20,
+    portraitOfficer21,
+    portraitOfficer22,
+    portraitOfficer23,
+    portraitOfficer24,
+  ];
+
+  /// Bitmap assets that must retain an alpha channel when replaced.
+  static const transparentSpriteAssets = <String>[
+    battleUnitTokenAlpha,
+    battleCavalryTokenAlpha,
+    battleArcherTokenAlpha,
+    ...koreanFactionAssets,
+  ];
   static const battleTerrainOverlay =
       'assets/images/battle_terrain_overlay.png';
   static const battleEffectsStrip = 'assets/images/battle_effects_strip.png';
