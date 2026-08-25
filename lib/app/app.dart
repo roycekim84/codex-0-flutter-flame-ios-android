@@ -17,6 +17,7 @@ import '../data/korea_scenario.dart';
 import '../flame/battle_game.dart';
 import '../models/game_state.dart';
 import '../repositories/save_repository.dart';
+import '../repositories/scenario_repository.dart';
 import '../core/asset_repository.dart';
 import '../core/asset_precache.dart';
 import '../ui/widgets/asset_widgets.dart';
@@ -442,14 +443,34 @@ class ScenarioSelectScreen extends StatefulWidget {
 
 class _ScenarioSelectScreenState extends State<ScenarioSelectScreen> {
   int selectedIndex = 0;
+  Map<String, dynamic>? koreanManifest;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadKoreanManifest();
+  }
+
+  Future<void> _loadKoreanManifest() async {
+    try {
+      final manifest = await const ScenarioRepository().loadKoreanManifest();
+      if (mounted) setState(() => koreanManifest = manifest);
+    } on Object {
+      // The Dart fixture remains the safe fallback for offline or test builds.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final manifestTitle = koreanManifest?['title'] as String?;
+    final manifestSubtitle = koreanManifest?['subtitle'] as String?;
+    final manifestForces = (koreanManifest?['forces'] as List?)?.length;
+    final manifestProvinces = (koreanManifest?['provinces'] as List?)?.length;
     final scenarios = <(String, String, String, Map<String, dynamic>)>[
       (
-        '642년 · 삼국의 유산',
-        '한국 삼국시대 · 12지역 · 3세력',
-        '신라·고구려·백제가 패권을 다툼',
+        manifestTitle ?? '642년 · 삼국의 유산',
+        '한국 삼국시대 · ${manifestProvinces ?? 12}지역 · ${manifestForces ?? 3}세력',
+        manifestSubtitle ?? '신라·고구려·백제가 패권을 다툼',
         KoreaScenario.create(),
       ),
       (
