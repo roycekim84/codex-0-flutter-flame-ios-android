@@ -61,6 +61,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/data/scenarios/scenario_korea_642.json
     - assets/audio/battle_bgm.wav
     - assets/audio/battle_attack.wav
     - assets/audio/battle_fire.wav

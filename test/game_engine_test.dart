@@ -61,6 +61,24 @@ void main() {
     expect((restored['officers'] as List), hasLength(24));
   });
 
+  test('한국 시나리오팩 매니페스트는 세력과 지역 목록을 검증한다', () {
+    const repository = ScenarioRepository();
+    final manifest = repository.decodeManifest('''
+      {
+        "id": "scenario_korea_642",
+        "version": 1,
+        "world": "korean_three_kingdoms",
+        "year": 642,
+        "forces": [{"id": "force_green", "name": "신라"}],
+        "provinces": [{"id": "p_ash", "name": "금성"}]
+      }
+    ''');
+
+    expect(manifest['id'], 'scenario_korea_642');
+    expect(manifest['forces'], hasLength(1));
+    expect(manifest['provinces'], hasLength(1));
+  });
+
   test('한국 깃발·초상화 에셋은 실제 파일로 등록되어 있다', () {
     expect(AssetRepository.koreanFactionAssets, hasLength(3));
     expect(AssetRepository.koreanPortraitAssets, hasLength(24));

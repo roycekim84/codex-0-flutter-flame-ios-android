@@ -14,6 +14,11 @@
 검증한다. 따라서 이후 인물 100명 데이터팩도 엔진 코드 수정 없이 JSON으로 교체할
 수 있다.
 
+`assets/data/scenarios/scenario_korea_642.json`은 시나리오팩 매니페스트다. 매니페스트는
+시나리오 ID·버전·연대·세력·지역 목록을 먼저 제공하고, 상세 장수·인접 관계 데이터는
+현재 검증된 `KoreaScenario` 본문과 단계적으로 합친다. 이 경계를 통해 UI가 데이터팩
+메타데이터를 직접 사용하면서도 전체 본문 분리 전까지 기존 플레이 회귀를 보존한다.
+
 `Force`는 `id`, `name`, `rulerId`, `provinceIds`, `officerIds`, `mapColorValue`,
 `bannerIndex`, `bannerAssetId`, `capitalProvinceId`를 가진다. `Province`는 `id`,
 `name`, `ownerForceId`, `adjacentProvinceIds`, `land`, `publicLoyalty`, `soldiers`,

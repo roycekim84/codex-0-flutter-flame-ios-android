@@ -1,0 +1,28 @@
+{
+  "id": "scenario_korea_642",
+  "version": 1,
+  "world": "korean_three_kingdoms",
+  "title": "642년 · 삼국의 유산",
+  "subtitle": "고구려·백제·신라가 패권을 다투는 시대",
+  "year": 642,
+  "month": 1,
+  "forces": [
+    {"id": "force_green", "name": "신라", "bannerAssetId": "banner_silla"},
+    {"id": "force_red", "name": "고구려", "bannerAssetId": "banner_goguryeo"},
+    {"id": "force_blue", "name": "백제", "bannerAssetId": "banner_baekje"}
+  ],
+  "provinces": [
+    {"id": "p_ash", "name": "금성"},
+    {"id": "p_birch", "name": "경주"},
+    {"id": "p_crown", "name": "평양"},
+    {"id": "p_elm", "name": "국내성"},
+    {"id": "p_iron", "name": "사비"},
+    {"id": "p_jade", "name": "웅진"},
+    {"id": "p_lotus", "name": "한성"},
+    {"id": "p_moon", "name": "김해"},
+    {"id": "p_oak", "name": "요동"},
+    {"id": "p_river", "name": "남해"},
+    {"id": "p_sable", "name": "부여"},
+    {"id": "p_willow", "name": "우산"}
+  ]
+}
