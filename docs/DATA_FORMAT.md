@@ -9,6 +9,11 @@
 `generic_prototype`은 회귀 테스트용 가상 시나리오이며, 한국 삼국시대 데이터팩은
 `scenario_korea_642`를 사용한다. 두 시나리오는 동일한 엔진과 저장 구조를 공유한다.
 
+시나리오 JSON은 `ScenarioRepository`를 통해 읽는다. 로더는 GameState에 전달하기
+전에 세력·지역·장수 ID, 소유권, 인접 관계, 역사 인물 메타데이터와 능력치 범위를
+검증한다. 따라서 이후 인물 100명 데이터팩도 엔진 코드 수정 없이 JSON으로 교체할
+수 있다.
+
 `Force`는 `id`, `name`, `rulerId`, `provinceIds`, `officerIds`, `mapColorValue`,
 `bannerIndex`, `bannerAssetId`, `capitalProvinceId`를 가진다. `Province`는 `id`,
 `name`, `ownerForceId`, `adjacentProvinceIds`, `land`, `publicLoyalty`, `soldiers`,

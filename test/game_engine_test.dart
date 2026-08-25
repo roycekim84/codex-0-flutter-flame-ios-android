@@ -7,6 +7,7 @@ import 'package:codex_strategy/battle/battle_state.dart';
 import 'package:codex_strategy/data/demo_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
 import 'package:codex_strategy/repositories/save_repository.dart';
+import 'package:codex_strategy/repositories/scenario_repository.dart';
 import 'package:codex_strategy/core/asset_repository.dart';
 import 'package:codex_strategy/core/difficulty.dart';
 import 'package:codex_strategy/core/scenario_validator.dart';
@@ -47,6 +48,17 @@ void main() {
     final errors = ScenarioValidator.validate(scenario);
     expect(errors.any((error) => error.contains('sourceNote')), isTrue);
     expect(errors.any((error) => error.contains('출생 연도')), isTrue);
+  });
+
+  test('시나리오 JSON 로더는 한국 데이터팩을 검증하며 왕복 변환한다', () {
+    const repository = ScenarioRepository();
+    final source = repository.encode(KoreaScenario.create());
+    final restored = repository.decode(source);
+
+    expect(restored['id'], 'scenario_korea_642');
+    expect(restored['year'], 642);
+    expect((restored['forces'] as List), hasLength(3));
+    expect((restored['officers'] as List), hasLength(24));
   });
 
   test('한국 깃발·초상화 에셋은 실제 파일로 등록되어 있다', () {
