@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:codex_strategy/core/game_brand.dart';
 import 'package:codex_strategy/core/asset_repository.dart';
+import 'package:codex_strategy/data/demo_scenario.dart';
 import 'package:codex_strategy/data/korea_scenario.dart';
 import 'package:codex_strategy/models/game_state.dart';
 
@@ -10,6 +11,15 @@ void main() {
     expect(GameBrand.subtitle, '삼국의 유산');
     expect(GameBrand.genericScenarioId, 'generic_prototype');
     expect(GameBrand.koreanScenarioId, 'scenario_korea_642');
+  });
+
+  test('한국 시나리오와 가상 회귀 시나리오의 ID가 충돌하지 않는다', () {
+    final generic = DemoScenario.create();
+    final korean = KoreaScenario.create();
+
+    expect(generic['id'], GameBrand.genericScenarioId);
+    expect(korean['id'], GameBrand.koreanScenarioId);
+    expect(generic['id'], isNot(korean['id']));
   });
 
   test('한국 시나리오 데이터팩은 엔진 공용 형식과 한국 데이터를 사용한다', () {
