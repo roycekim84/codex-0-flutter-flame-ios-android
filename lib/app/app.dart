@@ -4697,7 +4697,7 @@ class _PersonnelCommandScreenState extends State<_PersonnelCommandScreen> {
               .map(
                 (o) => DropdownMenuItem(
                   value: o.id,
-                  child: Text('${o.name} · 충성 ${o.loyalty}'),
+                  child: Text('${o.displayName ?? o.name} · 충성 ${o.loyalty}'),
                 ),
               )
               .toList(),
@@ -4707,7 +4707,7 @@ class _PersonnelCommandScreenState extends State<_PersonnelCommandScreen> {
         ),
         const SizedBox(height: 10),
         _rewardRow('공적 하사', '+5', '금 100'),
-        _rewardRow('포상 지급', '+10', '금 200'),
+        _rewardRow('포상 지급', '+5', '금 100'),
         const SizedBox(height: 10),
         FilledButton(
           onPressed: () => widget.onCommand(
@@ -4762,7 +4762,9 @@ class _PersonnelCommandScreenState extends State<_PersonnelCommandScreen> {
               .map(
                 (o) => DropdownMenuItem(
                   value: o.id,
-                  child: Text('${o.name} · INT ${o.intelligence}'),
+                  child: Text(
+                    '${o.displayName ?? o.name} · INT ${o.intelligence}',
+                  ),
                 ),
               )
               .toList(),
@@ -5804,7 +5806,7 @@ class _DomesticTradeScreenState extends State<_DomesticTradeScreen> {
         ),
         const SizedBox(height: 8),
         const Text(
-          '금 +90   ·   군량 +500   ·   민심 -3',
+          '금 +90 + 토지   ·   군량 변화 없음   ·   민심 -4',
           textAlign: TextAlign.center,
           style: TextStyle(color: Color(0xffc1ab82)),
         ),
