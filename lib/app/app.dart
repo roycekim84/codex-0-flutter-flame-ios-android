@@ -3767,7 +3767,7 @@ class _GameOverScreen extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        victory ? '천하통일' : '게임 오버',
+                        victory ? '삼국 통일' : '세력 멸망',
                         style: TextStyle(
                           color: accent,
                           fontSize: 23,
@@ -3812,7 +3812,7 @@ class _GameOverScreen extends StatelessWidget {
                     const SizedBox(height: 18),
                     Center(
                       child: Text(
-                        victory ? '천하를 통일하였습니다!' : '세력이 멸망하였습니다.',
+                        victory ? '해동의 삼국을 하나로 통일하였습니다!' : '지배하던 성을 모두 잃었습니다.',
                         style: TextStyle(
                           color: accent,
                           fontSize: 24,
@@ -3824,8 +3824,8 @@ class _GameOverScreen extends StatelessWidget {
                     Center(
                       child: Text(
                         victory
-                            ? '모든 지역을 하나의 깃발 아래 거두었습니다.'
-                            : '더 이상 지배할 영지와 후계 세력이 없습니다.',
+                            ? '모든 성이 하나의 깃발 아래 모였습니다.'
+                            : '더 이상 지배할 성과 후계 세력이 없습니다.',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Color(0xffc1ab82),
@@ -9121,6 +9121,7 @@ class _BattleScreenState extends State<BattleScreen> {
                                             Navigator.pop(context);
                                             _act(action);
                                           },
+                                          onRetreat: _retreat,
                                         ),
                                       ),
                                     ),
@@ -9396,10 +9397,12 @@ class _BattleUnitDetailScreen extends StatelessWidget {
     required this.battle,
     required this.unit,
     required this.onAction,
+    required this.onRetreat,
   });
   final BattleState battle;
   final BattleUnit unit;
   final void Function(BattleAction action) onAction;
+  final VoidCallback onRetreat;
 
   @override
   Widget build(BuildContext context) {
@@ -9441,12 +9444,12 @@ class _BattleUnitDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     _panel(
-                      '장비 / 상태',
+                      '병종 / 상태',
                       Column(
                         children: [
-                          _line('무기', '기본 무기'),
-                          _line('군마', '보유'),
-                          _line('방어', '기본 갑옷'),
+                          _line('병종', _unitTypeLabel(unit.type)),
+                          _line('무기', '기본 장비'),
+                          _line('상태', unit.burning ? '화재 피해' : '정상'),
                           _line('지형', _terrainLabel(battle.terrain)),
                         ],
                       ),
@@ -9479,7 +9482,7 @@ class _BattleUnitDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     OutlinedButton.icon(
-                      onPressed: () => onAction(BattleAction.wait),
+                      onPressed: onRetreat,
                       icon: const Icon(Icons.undo),
                       label: const Text('퇴각'),
                     ),
@@ -9553,7 +9556,7 @@ class _BattleUnitDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${battle.attackerName} · ${battle.commanderName.isEmpty ? '출전 부대' : '총대장 ${battle.commanderName}'}',
+                '${_isAttacker ? battle.attackerName : battle.defenderName} · ${_isAttacker && battle.commanderName.isNotEmpty ? '총대장 ${battle.commanderName}' : '방어 부대'}',
                 style: const TextStyle(color: Color(0xffd6a85d), fontSize: 12),
               ),
               const SizedBox(height: 6),
@@ -9633,6 +9636,16 @@ class _BattleUnitDetailScreen extends StatelessWidget {
     TerrainType.mountain => '산지',
     TerrainType.river => '강',
     TerrainType.fort => '성',
+  };
+
+  bool get _isAttacker => battle.attackerUnits.any(
+    (candidate) => candidate.officerId == unit.officerId,
+  );
+
+  String _unitTypeLabel(BattleUnitType type) => switch (type) {
+    BattleUnitType.infantry => '보병',
+    BattleUnitType.cavalry => '기병',
+    BattleUnitType.archers => '궁병',
   };
 }
 
@@ -10537,7 +10550,7 @@ class _SaveLoadScreenState extends State<_SaveLoadScreen> {
         const SizedBox(width: 8),
         const Expanded(
           child: Text(
-            '저장 / 불러오기',
+            '기록 / 불러오기',
             style: TextStyle(
               color: Color(0xffffdfa0),
               fontSize: 21,
@@ -10725,8 +10738,8 @@ class _MonthlyEventReportScreen extends StatelessWidget {
                     labelColor: Color(0xffffdfa0),
                     unselectedLabelColor: Color(0xff9d8967),
                     tabs: [
-                      Tab(text: '월간 이벤트'),
-                      Tab(text: 'AI 보고'),
+                      Tab(text: '월간 소식'),
+                      Tab(text: '세력 동향'),
                     ],
                   ),
                 ),
@@ -10754,7 +10767,7 @@ class _MonthlyEventReportScreen extends StatelessWidget {
         const SizedBox(width: 8),
         const Expanded(
           child: Text(
-            '월간 이벤트 · AI 보고',
+            '월간 소식 · 세력 동향',
             style: TextStyle(
               color: Color(0xffffdfa0),
               fontSize: 20,
@@ -10785,7 +10798,7 @@ class _MonthlyEventReportScreen extends StatelessWidget {
         const SizedBox(height: 10),
         if (event != null)
           _eventTile(
-            '월말 사건',
+            '월말 소식',
             event,
             Icons.auto_awesome,
             const Color(0xffd6a85d),
@@ -10796,7 +10809,7 @@ class _MonthlyEventReportScreen extends StatelessWidget {
         else
           ...logs.map(
             (log) => _eventTile(
-              '게임 기록',
+              '전황 기록',
               log,
               Icons.article,
               const Color(0xff9eb8a0),
@@ -10810,14 +10823,14 @@ class _MonthlyEventReportScreen extends StatelessWidget {
     if (state.lastTurnReports.isEmpty) {
       return ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
-        children: [_empty('이번 달 AI 전투 보고가 없습니다.')],
+        children: [_empty('이번 달 세력 동향이 없습니다.')],
       );
     }
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 18),
       children: [
         _periodCard(
-          'AI 세력 동향',
+          '세력 동향',
           '${state.lastTurnReports.length}건의 전투 보고',
           Icons.account_tree,
         ),
@@ -10887,7 +10900,7 @@ class _MonthlyEventReportScreen extends StatelessWidget {
                       builder: (_) => AiBattleReplayScreen(report: report),
                     ),
                   ),
-                  child: const Text('전투 관전'),
+                  child: const Text('전황 관전'),
                 ),
               ],
             ),
@@ -11054,7 +11067,7 @@ class _AiBattleReplayScreenState extends State<AiBattleReplayScreen> {
   Widget build(BuildContext context) {
     final state = battle.state;
     return Scaffold(
-      appBar: AppBar(title: Text('AI 전투 관전 · ${state.day}일째')),
+      appBar: AppBar(title: Text('전황 관전 · ${state.day}일째')),
       body: _RealmBackdrop(
         child: SafeArea(
           child: Column(
