@@ -288,12 +288,11 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 10),
                       _TitleMenuButton(
                         label: '설정',
-                        onPressed: () =>
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('설정 화면은 다음 단계에서 연결됩니다.'),
-                              ),
-                            ),
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const _SettingsScreen(),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       _TitleMenuButton(
@@ -326,6 +325,70 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SettingsScreen extends StatelessWidget {
+  const _SettingsScreen();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: _RealmBackdrop(
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back),
+                  color: const Color(0xffe3c88f),
+                ),
+                const Expanded(
+                  child: Text(
+                    '설정',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xffedd49e),
+                      fontSize: 21,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 48),
+              ],
+            ),
+            const SizedBox(height: 8),
+            AssetPanel(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                children: const [
+                  ListTile(
+                    leading: Icon(Icons.stay_current_portrait),
+                    title: Text('화면 방향'),
+                    subtitle: Text('세로 화면으로 고정'),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.save),
+                    title: Text('자동 저장'),
+                    subtitle: Text('월 시작과 주요 전쟁 전에 자동 저장'),
+                  ),
+                  Divider(),
+                  ListTile(
+                    leading: Icon(Icons.info_outline),
+                    title: Text(GameBrand.title),
+                    subtitle: Text(GameBrand.subtitle),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _TitleMenuButton extends StatelessWidget {
