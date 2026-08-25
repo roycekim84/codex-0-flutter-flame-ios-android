@@ -1344,6 +1344,7 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.threatenForce => '외교 · 협박',
     GameCommandType.infiltrate => '첩보 · 잠입',
     GameCommandType.inciteOfficer => '첩보 · 이간',
+    GameCommandType.bribeOfficer => '첩보 · 매수',
     GameCommandType.spreadRumor => '첩보 · 유언비어',
     GameCommandType.buyFood => '내정 · 군량 구매',
     GameCommandType.sellFood => '내정 · 군량 판매',
@@ -1366,6 +1367,7 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.threatenForce => '관계를 악화시키고 동맹을 파기합니다.',
     GameCommandType.infiltrate => '적 영지 정보를 공개합니다. 금 80을 사용합니다.',
     GameCommandType.inciteOfficer => '적 장수의 충성도를 낮춥니다. 금 100을 사용합니다.',
+    GameCommandType.bribeOfficer => '금 200으로 적 장수의 충성도를 크게 낮춥니다.',
     GameCommandType.spreadRumor => '적 영지의 민심을 낮춥니다. 금 80을 사용합니다.',
     GameCommandType.buyFood => '시장 가격으로 군량을 구매합니다.',
     GameCommandType.sellFood => '시장 가격으로 군량을 판매합니다.',
@@ -1473,7 +1475,11 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _showEspionageDialog() async {
     final enemyOfficers = engine.state.officers
         .where(
-          (o) => o.forceId != engine.state.playerForceId && o.status != 'DEAD',
+          (o) =>
+              o.forceId != engine.state.playerForceId &&
+              o.status != 'DEAD' &&
+              o.status != 'FREE' &&
+              o.status != 'CAPTIVE',
         )
         .toList();
     if (enemyOfficers.isEmpty || selectedOfficerId == null) return;
@@ -4173,12 +4179,7 @@ class _EspionageScreenState extends State<_EspionageScreen> {
   ForceState get force =>
       widget.state.forces.firstWhere((item) => item.id == target.forceId);
 
-  int get successChance =>
-      (35 +
-              performer.intelligence ~/ 2 +
-              performer.charisma ~/ 8 -
-              target.loyalty ~/ 3)
-          .clamp(18, 86);
+  int get loyaltyDrop => 10 + performer.intelligence ~/ 25;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -4241,40 +4242,62 @@ class _EspionageScreenState extends State<_EspionageScreen> {
                   _performerCard(),
                   const SizedBox(height: 16),
                   FilledButton.icon(
-                    onPressed: () => widget.onAction(
-                      GameCommand(
-                        type: GameCommandType.inciteOfficer,
-                        officerId: performer.id,
-                        provinceId: province.id,
-                        targetOfficerId: target.id,
-                      ),
-                    ),
+                    onPressed: widget.state.playerForce.gold >= 100
+                        ? () => widget.onAction(
+                            GameCommand(
+                              type: GameCommandType.inciteOfficer,
+                              officerId: performer.id,
+                              provinceId: province.id,
+                              targetOfficerId: target.id,
+                            ),
+                          )
+                        : null,
                     icon: const Icon(Icons.psychology_alt),
                     label: const Text('이간 실행 · 금 100'),
                     style: _espionageButton(),
                   ),
                   const SizedBox(height: 7),
                   OutlinedButton.icon(
-                    onPressed: () => widget.onAction(
-                      GameCommand(
-                        type: GameCommandType.infiltrate,
-                        officerId: performer.id,
-                        provinceId: province.id,
-                      ),
-                    ),
+                    onPressed: widget.state.playerForce.gold >= 200
+                        ? () => widget.onAction(
+                            GameCommand(
+                              type: GameCommandType.bribeOfficer,
+                              officerId: performer.id,
+                              provinceId: province.id,
+                              targetOfficerId: target.id,
+                            ),
+                          )
+                        : null,
+                    icon: const Icon(Icons.monetization_on),
+                    label: const Text('매수 실행 · 금 200'),
+                    style: _secondaryEspionageButton(),
+                  ),
+                  const SizedBox(height: 7),
+                  OutlinedButton.icon(
+                    onPressed: widget.state.playerForce.gold >= 80
+                        ? () => widget.onAction(
+                            GameCommand(
+                              type: GameCommandType.infiltrate,
+                              officerId: performer.id,
+                              provinceId: province.id,
+                            ),
+                          )
+                        : null,
                     icon: const Icon(Icons.visibility),
                     label: const Text('잠입 · 금 80'),
                     style: _secondaryEspionageButton(),
                   ),
                   const SizedBox(height: 7),
                   OutlinedButton.icon(
-                    onPressed: () => widget.onAction(
-                      GameCommand(
-                        type: GameCommandType.spreadRumor,
-                        officerId: performer.id,
-                        provinceId: province.id,
-                      ),
-                    ),
+                    onPressed: widget.state.playerForce.gold >= 80
+                        ? () => widget.onAction(
+                            GameCommand(
+                              type: GameCommandType.spreadRumor,
+                              officerId: performer.id,
+                              provinceId: province.id,
+                            ),
+                          )
+                        : null,
                     icon: const Icon(Icons.record_voice_over),
                     label: const Text('유언비어 · 금 80'),
                     style: _secondaryEspionageButton(),
@@ -4386,7 +4409,7 @@ class _EspionageScreenState extends State<_EspionageScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              '이간 작전',
+              '이간 작전 예상 효과',
               style: TextStyle(
                 color: Color(0xffffdfa0),
                 fontSize: 16,
@@ -4394,7 +4417,7 @@ class _EspionageScreenState extends State<_EspionageScreen> {
               ),
             ),
             Text(
-              '$successChance%',
+              '-$loyaltyDrop',
               style: const TextStyle(
                 color: Color(0xff73d18b),
                 fontSize: 22,
@@ -4405,14 +4428,14 @@ class _EspionageScreenState extends State<_EspionageScreen> {
         ),
         const SizedBox(height: 7),
         LinearProgressIndicator(
-          value: successChance / 100,
+          value: (loyaltyDrop / 20).clamp(.1, 1),
           minHeight: 7,
           backgroundColor: const Color(0xff49342a),
           color: const Color(0xffc1944e),
         ),
         const SizedBox(height: 8),
         const Text(
-          '대상 장수의 충성도를 낮춰 등용 가능성을 높입니다. 작전은 금 100을 사용합니다.',
+          '대상 장수의 충성도를 낮춰 등용 가능성을 높입니다. 지력에 따라 효과가 커집니다. 금 100을 사용합니다.',
           style: TextStyle(color: Color(0xffc1ab82), fontSize: 12, height: 1.4),
         ),
       ],

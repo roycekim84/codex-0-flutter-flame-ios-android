@@ -383,6 +383,24 @@ void main() {
     expect(target.publicLoyalty, lessThan(publicLoyaltyBefore));
   });
 
+  test('매수는 금을 소모하고 활동 중인 적 장수의 충성도를 낮춘다', () {
+    final engine = createEngine();
+    final actor = engine.state.playerForce.officerIds.first;
+    final target = engine.state.officers.firstWhere(
+      (officer) =>
+          officer.forceId != engine.state.playerForceId &&
+          officer.status != 'DEAD' &&
+          officer.status != 'FREE' &&
+          officer.status != 'CAPTIVE',
+    );
+    final goldBefore = engine.state.playerForce.gold;
+    final loyaltyBefore = target.loyalty;
+
+    expect(engine.bribeOfficer(target.id, actor).success, isTrue);
+    expect(engine.state.playerForce.gold, goldBefore - 200);
+    expect(target.loyalty, lessThan(loyaltyBefore));
+  });
+
   test('군량 구매와 판매는 금·군량을 실제로 교환한다', () {
     final engine = createEngine();
     final province = engine.state.playerForce.provinceIds

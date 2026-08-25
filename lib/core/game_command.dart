@@ -15,6 +15,7 @@ enum GameCommandType {
   threatenForce,
   infiltrate,
   inciteOfficer,
+  bribeOfficer,
   spreadRumor,
   buyFood,
   sellFood,

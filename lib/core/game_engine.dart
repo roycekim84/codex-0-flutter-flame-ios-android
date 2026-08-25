@@ -94,6 +94,12 @@ class GameEngine {
           command.officerId!,
         );
         if (!result.success) return result;
+      case GameCommandType.bribeOfficer:
+        final result = bribeOfficer(
+          command.targetOfficerId!,
+          command.officerId!,
+        );
+        if (!result.success) return result;
       case GameCommandType.spreadRumor:
         final result = spreadRumor(command.provinceId!, command.officerId!);
         if (!result.success) return result;
@@ -330,7 +336,9 @@ class GameEngine {
           (o) =>
               o.id == targetOfficerId &&
               o.forceId != state.playerForceId &&
-              o.status != 'DEAD',
+              o.status != 'DEAD' &&
+              o.status != 'FREE' &&
+              o.status != 'CAPTIVE',
         )
         .firstOrNull;
     final officer = _playerOfficer(officerId);
@@ -347,6 +355,32 @@ class GameEngine {
         .toInt();
     state.log('${target.name} 이간 · 충성 $before → ${target.loyalty} · 금 -100');
     return CommandResult.success('${target.name}의 충성도가 낮아졌습니다.');
+  }
+
+  CommandResult bribeOfficer(String targetOfficerId, String officerId) {
+    final target = state.officers
+        .where(
+          (o) =>
+              o.id == targetOfficerId &&
+              o.forceId != state.playerForceId &&
+              o.status != 'DEAD' &&
+              o.status != 'FREE' &&
+              o.status != 'CAPTIVE',
+        )
+        .firstOrNull;
+    final officer = _playerOfficer(officerId);
+    if (target == null || officer == null) {
+      return const CommandResult.failure('매수할 적 장수와 수행 장수를 확인할 수 없습니다.');
+    }
+    if (state.playerForce.gold < 200) {
+      return const CommandResult.failure('매수 자금이 부족합니다.');
+    }
+    state.playerForce.gold -= 200;
+    final before = target.loyalty;
+    final drop = 12 + officer.charisma ~/ 10 + officer.intelligence ~/ 20;
+    target.loyalty = (before - drop).clamp(0, 100).toInt();
+    state.log('${target.name} 매수 · 충성 $before → ${target.loyalty} · 금 -200');
+    return CommandResult.success('${target.name}에게 매수 공작을 실행했습니다.');
   }
 
   CommandResult spreadRumor(String provinceId, String officerId) {
