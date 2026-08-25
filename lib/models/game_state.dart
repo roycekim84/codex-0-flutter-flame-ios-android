@@ -39,6 +39,8 @@ class ProvinceState {
     this.territoryPoints = const [],
     this.floodControl = 0,
     this.training = 0,
+    this.weaponLevel = 0,
+    this.horseLevel = 0,
   });
   final String id, name;
   String ownerForceId, ownerName;
@@ -47,7 +49,15 @@ class ProvinceState {
   final List<String> adjacentProvinceIds, officerIds;
   String? governorId;
   final double mapX, mapY;
-  int land, publicLoyalty, soldiers, gold, food, floodControl, training;
+  int land,
+      publicLoyalty,
+      soldiers,
+      gold,
+      food,
+      floodControl,
+      training,
+      weaponLevel,
+      horseLevel;
   bool isOwnedBy(String forceId) => ownerForceId == forceId;
 }
 
@@ -246,6 +256,8 @@ class GameState extends ChangeNotifier {
             'food': p.food,
             'floodControl': p.floodControl,
             'training': p.training,
+            'weaponLevel': p.weaponLevel,
+            'horseLevel': p.horseLevel,
             'mapX': p.mapX,
             'mapY': p.mapY,
             'governorId': p.governorId,
@@ -346,6 +358,8 @@ class GameState extends ChangeNotifier {
               territoryPoints: _territoryPoints(x['territoryPoints']),
               floodControl: (x['floodControl'] as num?)?.toInt() ?? 0,
               training: (x['training'] as num?)?.toInt() ?? 0,
+              weaponLevel: (x['weaponLevel'] as num?)?.toInt() ?? 0,
+              horseLevel: (x['horseLevel'] as num?)?.toInt() ?? 0,
             ),
           )
           .toList(),
@@ -441,6 +455,8 @@ class GameState extends ChangeNotifier {
               territoryPoints: _territoryPoints(x['territoryPoints']),
               floodControl: (x['floodControl'] as num?)?.toInt() ?? 0,
               training: (x['training'] as num?)?.toInt() ?? 0,
+              weaponLevel: (x['weaponLevel'] as num?)?.toInt() ?? 0,
+              horseLevel: (x['horseLevel'] as num?)?.toInt() ?? 0,
             ),
           )
           .toList(),

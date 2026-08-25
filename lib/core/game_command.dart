@@ -5,6 +5,8 @@ enum GameCommandType {
   relief,
   train,
   fortify,
+  buyWeapons,
+  buyHorses,
   search,
   recruitOfficer,
   rewardOfficer,

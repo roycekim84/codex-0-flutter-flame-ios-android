@@ -46,6 +46,12 @@ class GameEngine {
         if (!fortify(command.provinceId!)) {
           return const CommandResult.failure('축성할 지역 또는 금이 부족합니다.');
         }
+      case GameCommandType.buyWeapons:
+        final result = buyWeapons(command.provinceId!);
+        if (!result.success) return result;
+      case GameCommandType.buyHorses:
+        final result = buyHorses(command.provinceId!);
+        if (!result.success) return result;
       case GameCommandType.search:
         final result = search(command.provinceId!);
         if (!result.success) return result;
@@ -458,6 +464,36 @@ class GameEngine {
     p.land = (p.land + 2).clamp(0, 100).toInt();
     state.log('${p.name} 축성 · 방어 기반 +2 · 금 -120');
     return true;
+  }
+
+  CommandResult buyWeapons(String provinceId) {
+    final p = _playerProvince(provinceId);
+    if (p == null) {
+      return const CommandResult.failure('무기를 보급할 아군 지역을 찾을 수 없습니다.');
+    }
+    if (state.playerForce.gold < 1200) {
+      return const CommandResult.failure('무기 보급에 필요한 금이 부족합니다.');
+    }
+    state.playerForce.gold -= 1200;
+    final before = p.weaponLevel;
+    p.weaponLevel = (before + 1).clamp(0, 5).toInt();
+    state.log('${p.name} 무기 보급 · 단계 $before → ${p.weaponLevel} · 금 -1200');
+    return CommandResult.success('${p.name}에 무기를 보급했습니다.');
+  }
+
+  CommandResult buyHorses(String provinceId) {
+    final p = _playerProvince(provinceId);
+    if (p == null) {
+      return const CommandResult.failure('군마를 보급할 아군 지역을 찾을 수 없습니다.');
+    }
+    if (state.playerForce.gold < 1600) {
+      return const CommandResult.failure('군마 보급에 필요한 금이 부족합니다.');
+    }
+    state.playerForce.gold -= 1600;
+    final before = p.horseLevel;
+    p.horseLevel = (before + 1).clamp(0, 5).toInt();
+    state.log('${p.name} 군마 보급 · 단계 $before → ${p.horseLevel} · 금 -1600');
+    return CommandResult.success('${p.name}에 군마를 보급했습니다.');
   }
 
   BattleEngine? beginBattle(String targetProvinceId) {

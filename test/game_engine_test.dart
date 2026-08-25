@@ -51,6 +51,21 @@ void main() {
     expect(province.publicLoyalty, 64);
   });
 
+  test('무기·군마 보급은 금을 소모하고 지역 보급 단계를 올린다', () {
+    final engine = createEngine();
+    final province = engine.state.playerForce.provinceIds
+        .map((id) => engine.state.provinces.firstWhere((p) => p.id == id))
+        .first;
+    engine.state.playerForce.gold = 4000;
+    final goldBefore = engine.state.playerForce.gold;
+
+    expect(engine.buyWeapons(province.id).success, isTrue);
+    expect(engine.buyHorses(province.id).success, isTrue);
+    expect(province.weaponLevel, 1);
+    expect(province.horseLevel, 1);
+    expect(engine.state.playerForce.gold, goldBefore - 2800);
+  });
+
   test('실패한 내정 명령은 자원과 장수 행동을 소모하지 않는다', () {
     final engine = createEngine();
     final province = engine.state.provinces.first;

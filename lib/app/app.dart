@@ -1334,6 +1334,8 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.relief => '시혜',
     GameCommandType.train => '훈련',
     GameCommandType.fortify => '축성',
+    GameCommandType.buyWeapons => '군사 · 무기 보급',
+    GameCommandType.buyHorses => '군사 · 군마 보급',
     GameCommandType.search => '탐색',
     GameCommandType.recruitOfficer => '등용',
     GameCommandType.rewardOfficer => '포상',
@@ -1357,6 +1359,8 @@ class _GameScreenState extends State<GameScreen> {
     GameCommandType.relief => '금 80을 사용해 민심을 높입니다.',
     GameCommandType.train => '지역 군대의 훈련을 높입니다. 금 60을 사용합니다.',
     GameCommandType.fortify => '지역 방어 기반을 높입니다. 금 120을 사용합니다.',
+    GameCommandType.buyWeapons => '무기 보급 단계를 높입니다. 금 1,200을 사용합니다.',
+    GameCommandType.buyHorses => '군마 보급 단계를 높입니다. 금 1,600을 사용합니다.',
     GameCommandType.search => '재야 인재와 아이템을 탐색합니다.',
     GameCommandType.recruitOfficer => '발견한 재야 장수를 금 200으로 등용합니다.',
     GameCommandType.rewardOfficer => '장수의 충성도를 높입니다. 금 100을 사용합니다.',
@@ -2784,7 +2788,7 @@ class _MilitaryCommandScreenState extends State<_MilitaryCommandScreen> {
                         builder: (_) => _MilitaryEquipmentScreen(
                           province: widget.province,
                           force: widget.force,
-                          onFortify: widget.onCommand,
+                          onCommand: widget.onCommand,
                         ),
                       ),
                     ),
@@ -3033,11 +3037,11 @@ class _MilitaryEquipmentScreen extends StatefulWidget {
   const _MilitaryEquipmentScreen({
     required this.province,
     required this.force,
-    required this.onFortify,
+    required this.onCommand,
   });
   final ProvinceState province;
   final ForceState force;
-  final Future<void> Function(GameCommandType type) onFortify;
+  final Future<void> Function(GameCommandType type) onCommand;
   @override
   State<_MilitaryEquipmentScreen> createState() =>
       _MilitaryEquipmentScreenState();
@@ -3098,7 +3102,8 @@ class _MilitaryEquipmentScreenState extends State<_MilitaryEquipmentScreen>
                     Icons.gavel,
                     '공격력 +5',
                     '금 1,200',
-                    '무기 레벨 1',
+                    '무기 단계 ${widget.province.weaponLevel}',
+                    GameCommandType.buyWeapons,
                   ),
                   _equipmentTab(
                     context,
@@ -3106,7 +3111,8 @@ class _MilitaryEquipmentScreenState extends State<_MilitaryEquipmentScreen>
                     Icons.directions_run,
                     '기동력 +8',
                     '금 1,600',
-                    '군마 보유 0',
+                    '군마 단계 ${widget.province.horseLevel}',
+                    GameCommandType.buyHorses,
                   ),
                   _fortificationTab(context),
                 ],
@@ -3155,6 +3161,7 @@ class _MilitaryEquipmentScreenState extends State<_MilitaryEquipmentScreen>
     String effect,
     String cost,
     String level,
+    GameCommandType command,
   ) => ListView(
     padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
     children: [
@@ -3190,9 +3197,7 @@ class _MilitaryEquipmentScreenState extends State<_MilitaryEquipmentScreen>
             _itemRow('정예 보급', '공격력 +8', '금 1,600'),
             const SizedBox(height: 10),
             FilledButton(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('장비 구매 시스템은 다음 군사 확장에서 연결됩니다.')),
-              ),
+              onPressed: () => widget.onCommand(command),
               style: _button(),
               child: Text('$title 구매'),
             ),
@@ -3257,7 +3262,7 @@ class _MilitaryEquipmentScreenState extends State<_MilitaryEquipmentScreen>
             ),
             const SizedBox(height: 12),
             FilledButton(
-              onPressed: () => widget.onFortify(GameCommandType.fortify),
+              onPressed: () => widget.onCommand(GameCommandType.fortify),
               style: _button(),
               child: const Text('축성 실행 · 금 120'),
             ),
