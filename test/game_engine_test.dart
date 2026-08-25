@@ -430,6 +430,27 @@ void main() {
     expect(restored.difficultyId, 'chaos');
   });
 
+  test('한국 시나리오 저장·불러오기는 테마 데이터와 영토 소유권을 유지한다', () {
+    final state = GameState.fromScenario(
+      KoreaScenario.create(),
+      selectedForceId: 'force_green',
+      difficultyId: 'clash',
+    );
+    state.provinces.first.ownerForceId = 'force_blue';
+    state.provinces.first.ownerName = '백제';
+    final restored = GameState.fromSaveMap(
+      SaveRepository().decode(SaveRepository().encode(state)),
+    );
+
+    expect(restored.scenarioId, 'scenario_korea_642');
+    expect(restored.difficultyId, 'clash');
+    expect(restored.playerForce.bannerAssetId, 'banner_silla');
+    expect(restored.provinces.first.ownerForceId, 'force_blue');
+    expect(restored.provinces.first.ownerName, '백제');
+    expect(restored.officers.first.historicalName, '선덕여왕');
+    expect(restored.officers.first.portraitAssetId, 'portrait_officer_1');
+  });
+
   test('첩보는 적 영지 정보를 공개하고 장수 충성도와 민심을 낮춘다', () {
     final engine = createEngine();
     final actor = engine.state.playerForce.officerIds.first;
