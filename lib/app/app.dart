@@ -1532,6 +1532,8 @@ class _GameScreenState extends State<GameScreen> {
         .where((o) => o.forceId == engine.state.playerForceId)
         .length;
     final beforeYear = engine.state.year;
+    final beforeMonth = engine.state.month;
+    final beforeLogLength = engine.state.gameLog.length;
     engine.dispatch(const GameCommand(type: GameCommandType.endMonth));
     await _saveAuto();
     if (!mounted) return;
@@ -1542,10 +1544,15 @@ class _GameScreenState extends State<GameScreen> {
     final afterLoyalty = state.officers
         .where((o) => o.forceId == state.playerForceId)
         .fold<int>(0, (sum, o) => sum + o.loyalty);
+    final aiActions = state.gameLog
+        .skip(beforeLogLength)
+        .where((log) => log.contains('AI ·'))
+        .toList();
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => _YearSummaryScreen(
           year: beforeYear,
+          month: beforeMonth,
           nextMonth: state.month,
           forceName: state.playerForce.name,
           goldDelta: state.playerForce.gold - beforeGold,
@@ -1557,6 +1564,7 @@ class _GameScreenState extends State<GameScreen> {
                         beforeLoyalty / beforeOfficerCount)
                     .round(),
           event: state.lastEvent,
+          aiActions: aiActions,
           battleReports: state.lastTurnReports,
           gameOver: state.gameOver,
           outcome: state.outcome,
@@ -3332,6 +3340,7 @@ class _MilitaryEquipmentScreenState extends State<_MilitaryEquipmentScreen>
 class _YearSummaryScreen extends StatelessWidget {
   const _YearSummaryScreen({
     required this.year,
+    required this.month,
     required this.nextMonth,
     required this.forceName,
     required this.goldDelta,
@@ -3339,14 +3348,22 @@ class _YearSummaryScreen extends StatelessWidget {
     required this.soldierDelta,
     required this.loyaltyDelta,
     required this.event,
+    required this.aiActions,
     required this.battleReports,
     required this.gameOver,
     required this.outcome,
     required this.onReplay,
   });
-  final int year, nextMonth, goldDelta, foodDelta, soldierDelta, loyaltyDelta;
+  final int year,
+      month,
+      nextMonth,
+      goldDelta,
+      foodDelta,
+      soldierDelta,
+      loyaltyDelta;
   final String forceName;
   final String? event;
+  final List<String> aiActions;
   final List<AiBattleReport> battleReports;
   final bool gameOver;
   final String? outcome;
@@ -3378,7 +3395,7 @@ class _YearSummaryScreen extends StatelessWidget {
                 children: [
                   Center(
                     child: Text(
-                      '$year년 결산',
+                      '$year년 $month월 결산',
                       style: const TextStyle(
                         color: Color(0xffffdfa0),
                         fontSize: 25,
@@ -3419,6 +3436,10 @@ class _YearSummaryScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   _eventCard(),
+                  if (aiActions.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _aiActionCard(),
+                  ],
                   if (battleReports.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _battleCard(context),
@@ -3474,7 +3495,7 @@ class _YearSummaryScreen extends StatelessWidget {
         const SizedBox(width: 8),
         const Expanded(
           child: Text(
-            '연도 말 요약',
+            '월말 요약',
             style: TextStyle(
               color: Color(0xffffdfa0),
               fontSize: 21,
@@ -3629,6 +3650,60 @@ class _YearSummaryScreen extends StatelessWidget {
             ),
           ),
         ),
+      ],
+    ),
+  );
+
+  Widget _aiActionCard() => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(
+      color: const Color(0x25231b11),
+      border: Border.all(color: const Color(0xff5d472c)),
+      borderRadius: BorderRadius.circular(5),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '세력 동향',
+          style: TextStyle(
+            color: Color(0xffd6a85d),
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 5),
+        ...aiActions
+            .take(8)
+            .map(
+              (action) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 2),
+                      child: Icon(
+                        Icons.flag,
+                        size: 13,
+                        color: Color(0xffa87b3d),
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        action,
+                        style: const TextStyle(
+                          color: Color(0xffc1ab82),
+                          fontSize: 11,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
       ],
     ),
   );
